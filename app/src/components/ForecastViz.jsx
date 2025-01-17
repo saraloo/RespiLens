@@ -344,9 +344,9 @@ const ForecastViz = ({ location, onBack }) => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
             <div className="h-96">
-              {timeSeriesData && (
+              {getTimeSeriesData(true) && (
                 <Line
-                  data={timeSeriesData}
+                  data={getTimeSeriesData(true)}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
