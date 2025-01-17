@@ -3,6 +3,7 @@ import pandas as pd
 import json
 from pathlib import Path
 import logging
+from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,8 +50,8 @@ class FluSightPlotProcessor:
         for ext in ['*.csv', '*.parquet']:
             forecast_files.extend(self.base_path.glob(f"model-output/**/{ext}"))
 
-        # Process each file
-        for file_path in forecast_files:
+        # Process each file with progress bar
+        for file_path in tqdm(forecast_files, desc="Processing forecast files", unit="file"):
             model_name = file_path.parent.name
             available_models.add(model_name)
             
