@@ -132,13 +132,15 @@ const ForecastViz = ({ location, onBack }) => {
       if (refDateIndex !== -1) {
         // Current date forecast
         const currentDateValues = forecastData.data.horizons['0'].values;
-        forecast[refDateIndex] = currentDateValues[3];
-        ci95Lower[refDateIndex] = currentDateValues[0];
-        ci95Upper[refDateIndex] = currentDateValues[6];
-        ci75Lower[refDateIndex] = currentDateValues[1];
-        ci75Upper[refDateIndex] = currentDateValues[5];
-        ci50Lower[refDateIndex] = currentDateValues[2];
-        ci50Upper[refDateIndex] = currentDateValues[4];
+        const currentIndex = fullTimeline ? refDateIndex : (refDateIndex - startIndex);
+        
+        forecast[currentIndex] = currentDateValues[3];
+        ci95Lower[currentIndex] = currentDateValues[0];
+        ci95Upper[currentIndex] = currentDateValues[6];
+        ci75Lower[currentIndex] = currentDateValues[1];
+        ci75Upper[currentIndex] = currentDateValues[5];
+        ci50Lower[currentIndex] = currentDateValues[2];
+        ci50Upper[currentIndex] = currentDateValues[4];
       }
 
       // Future forecasts
@@ -146,16 +148,33 @@ const ForecastViz = ({ location, onBack }) => {
         .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
         .forEach(([horizon, horizonData]) => {
           if (parseInt(horizon) > 0) {
-            const date = new Date(horizonData.date);
-            dates.push(`${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`);
-            observed.push(null);
-            forecast.push(horizonData.values[3]);
-            ci95Lower.push(horizonData.values[0]);
-            ci95Upper.push(horizonData.values[6]);
-            ci75Lower.push(horizonData.values[1]);
-            ci75Upper.push(horizonData.values[5]);
-            ci50Lower.push(horizonData.values[2]);
-            ci50Upper.push(horizonData.values[4]);
+            const forecastDate = new Date(horizonData.date);
+            const dateStr = `${forecastDate.getMonth() + 1}/${forecastDate.getDate()}/${forecastDate.getFullYear()}`;
+            
+            if (fullTimeline) {
+              // For full timeline, add to end
+              dates.push(dateStr);
+              observed.push(null);
+              forecast.push(horizonData.values[3]);
+              ci95Lower.push(horizonData.values[0]);
+              ci95Upper.push(horizonData.values[6]);
+              ci75Lower.push(horizonData.values[1]);
+              ci75Upper.push(horizonData.values[5]);
+              ci50Lower.push(horizonData.values[2]);
+              ci50Upper.push(horizonData.values[4]);
+            } else {
+              // For zoomed view, check if within range
+              const forecastIndex = dates.indexOf(dateStr);
+              if (forecastIndex !== -1) {
+                forecast[forecastIndex] = horizonData.values[3];
+                ci95Lower[forecastIndex] = horizonData.values[0];
+                ci95Upper[forecastIndex] = horizonData.values[6];
+                ci75Lower[forecastIndex] = horizonData.values[1];
+                ci75Upper[forecastIndex] = horizonData.values[5];
+                ci50Lower[forecastIndex] = horizonData.values[2];
+                ci50Upper[forecastIndex] = horizonData.values[4];
+              }
+            }
           }
         });
     }
