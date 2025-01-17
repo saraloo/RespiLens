@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import logging
 from typing import Optional
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -234,6 +236,159 @@ class FluSightPreprocessor:
         logger.info(f"Created payloads for {len(payloads)} locations")
         return payloads
 
+    def validate_and_plot_payload(self, payload, location):
+        """Generate validation plots for a single location's payload"""
+        pdf_path = self.output_path / f"{location}_validation.pdf"
+        
+        with PdfPages(pdf_path) as pdf:
+            # Create figure with two subplots
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+            
+            # Plot ground truth data
+            gt_dates = pd.to_datetime(payload['ground_truth']['dates'])
+            gt_values = payload['ground_truth']['values']
+            
+            # Plot ground truth
+            ax1.plot(gt_dates, gt_values, color='black', marker='.', label='Ground Truth')
+            
+            # Plot forecasts if available
+            forecasts = {}
+            
+            # Get forecasts for both target dates
+            target_dates = ['2023-01-15', '2024-12-15']
+            forecasts = {'2023': {}, '2024': {}}
+            
+            for target_date in target_dates:
+                # Get FluSight-ensemble forecasts for both types
+                if 'wk inc flu hosp' in payload['forecasts']:
+                    forecasts[target_date[:4]]['incidence'] = next((f for f in payload['forecasts']['wk inc flu hosp'] 
+                        if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
+                
+                if 'wk flu hosp rate change' in payload['forecasts']:
+                    forecasts[target_date[:4]]['rate_change'] = next((f for f in payload['forecasts']['wk flu hosp rate change'] 
+                        if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
+            
+            # Store forecasts for quantile comparison
+            latest_2023 = forecasts['2023'].get('incidence') or forecasts['2023'].get('rate_change')
+            latest_2024 = forecasts['2024'].get('incidence') or forecasts['2024'].get('rate_change')
+            
+            # Plot incidence forecasts for both years
+            for year, color in [('2023', 'blue'), ('2024', 'red')]:
+                if forecasts[year].get('incidence') and forecasts[year]['incidence']['data']['type'] == 'quantile':
+                    # Prepare incidence forecast data
+                    dates = []
+                    medians = []
+                    ci95_lower = []
+                    ci95_upper = []
+                    ci50_lower = []
+                    ci50_upper = []
+                
+                for horizon, data in forecasts[year]['incidence']['data']['horizons'].items():
+                    date = pd.to_datetime(data['date'])
+                    dates.append(date)
+                    ci95_lower.append(data['values'][0])  # 2.5%
+                    ci50_lower.append(data['values'][1])  # 25%
+                    medians.append(data['values'][2])     # 50%
+                    ci50_upper.append(data['values'][3])  # 75%
+                    ci95_upper.append(data['values'][4])  # 97.5%
+                    
+                # Plot incidence forecast with quantile ranges
+                ax1.plot(dates, medians, color=color, marker='.', label=f'{year} Incidence Forecast Median')
+                ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{year} Incidence 95% CI')
+                ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{year} Incidence 50% CI')
+            
+            # Plot rate change forecasts for both years
+            for year, color in [('2023', 'blue'), ('2024', 'red')]:
+                if forecasts[year].get('rate_change') and forecasts[year]['rate_change']['data']['type'] == 'pmf':
+                    # Prepare rate change forecast data
+                    dates = []
+                    medians = []
+                    ci95_lower = []
+                    ci95_upper = []
+                    ci50_lower = []
+                    ci50_upper = []
+                
+                for horizon, data in forecasts[year]['rate_change']['data']['horizons'].items():
+                    try:
+                        date = pd.to_datetime(data['date'])
+                        dates.append(date)
+                        # Ensure we have enough values for all quantiles
+                        if len(data['values']) >= 5:
+                            ci95_lower.append(data['values'][0])  # 2.5%
+                            ci50_lower.append(data['values'][1])  # 25%
+                            medians.append(data['values'][2])     # 50%
+                            ci50_upper.append(data['values'][3])  # 75%
+                            ci95_upper.append(data['values'][4])  # 97.5%
+                    except (KeyError, IndexError) as e:
+                        logger.warning(f"Skipping invalid horizon data for {location}: {str(e)}")
+                        continue
+                    
+                # Plot rate change forecast with quantile ranges
+                ax1.plot(dates, medians, color=color, marker='.', label=f'{year} Rate Change Forecast Median')
+                ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{year} Rate Change 95% CI')
+                ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{year} Rate Change 50% CI')
+            
+            # Add vertical lines at both forecast dates
+            for date, color in [('2023-01-15', 'blue'), ('2024-12-15', 'red')]:
+                forecast_date = pd.to_datetime(date)
+                ax1.axvline(forecast_date, color=color, linestyle='--', label=f'{date} Forecast Date')
+            
+            # Formatting
+            ax1.set_title(f"{location} - Hospitalization Forecast")
+            ax1.set_xlabel('Date')
+            ax1.set_ylabel('Hospitalizations')
+            ax1.tick_params(axis='x', rotation=45)
+            ax1.grid(True)
+            ax1.legend()
+            
+            # Quantile comparison plot for both years
+            if latest_2023 and latest_2024 and len(dates) >= 2:
+                try:
+                    date1 = dates[0]
+                    date2 = dates[-1]
+                    
+                    # Get quantile values with validation
+                    # Use 2023 data for first date
+                    if '0' in latest_2023['data']['horizons'] and len(latest_2023['data']['horizons']['0']['values']) >= 5:
+                        date1_vals = latest_2023['data']['horizons']['0']['values']
+                    else:
+                        date1_vals = []
+                    
+                    # Use 2024 data for last date
+                    last_horizon = str(len(dates)-1)
+                    if last_horizon in latest_2024['data']['horizons'] and len(latest_2024['data']['horizons'][last_horizon]['values']) >= 5:
+                        date2_vals = latest_2024['data']['horizons'][last_horizon]['values']
+                    else:
+                        date2_vals = []
+                except (KeyError, IndexError) as e:
+                    logger.warning(f"Skipping quantile comparison for {location}: {str(e)}")
+                    date1_vals = []
+                    date2_vals = []
+                
+                # Only plot if we have valid data for both dates
+                if date1_vals and date2_vals and len(date1_vals) == 5 and len(date2_vals) == 5:
+                    x = [0.025, 0.25, 0.5, 0.75, 0.975]
+                    ax2.plot(x, date1_vals, 'o-', color='blue', label=f'{date1.strftime("%Y-%m-%d")}')
+                    ax2.plot(x, date2_vals, 'o-', color='red', label=f'{date2.strftime("%Y-%m-%d")}')
+                    ax2.fill_between(x, date1_vals, date2_vals, alpha=0.2, color='gray')
+                else:
+                    logger.warning(f"Skipping quantile comparison for {location} due to missing data")
+                
+                ax2.set_title('Quantile Comparison')
+                ax2.set_xlabel('Quantile')
+                ax2.set_ylabel('Hospitalizations')
+                ax2.grid(True)
+                ax2.legend()
+            
+            try:
+                # Save the figure
+                fig.tight_layout()
+                pdf.savefig(fig, bbox_inches='tight')
+            except Exception as e:
+                logger.error(f"Error saving figure for {location}: {str(e)}")
+            finally:
+                plt.close(fig)
+
     def save_payloads(self, payloads):
         """Save payloads to JSON files in the specified output directory"""
         logger.info(f"Saving payloads to {self.output_path}")
@@ -245,15 +400,26 @@ class FluSightPreprocessor:
             'total_locations': len(payloads)
         }
         
+        # Ensure output directory exists
+        self.output_path.mkdir(parents=True, exist_ok=True)
+        
         # Save manifest
-        with open(self.output_path / 'manifest.json', 'w') as f:
+        manifest_path = self.output_path / 'manifest.json'
+        with open(manifest_path, 'w') as f:
             json.dump(manifest, f, indent=2)
         
-        # Save individual location files
+        # Save individual location files and generate validation plots
         for location, payload in payloads.items():
             file_path = self.output_path / f"{location}.json"
             with open(file_path, 'w') as f:
                 json.dump(payload, f)
+            
+            # Generate validation plots
+            try:
+                self.validate_and_plot_payload(payload, location)
+                logger.info(f"Generated validation plots for {location}")
+            except Exception as e:
+                logger.error(f"Error generating validation plots for {location}: {str(e)}")
 
     def process(self):
         """Run the full preprocessing pipeline"""
