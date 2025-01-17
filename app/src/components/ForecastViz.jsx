@@ -146,59 +146,62 @@ const ForecastViz = ({ location, onBack }) => {
         {
           label: '95% CI',
           data: ci95Upper,
-          borderColor: 'rgba(211, 211, 211, 1)',
-          borderWidth: 1,
+          borderColor: 'transparent',
+          borderWidth: 0,
           pointRadius: 0,
+          backgroundColor: 'rgba(211, 211, 211, 0.2)',
           fill: {
             target: {
               value: ci95Lower
             },
-            above: 'rgba(211, 211, 211, 0.3)'
+            above: 'rgba(211, 211, 211, 0.2)'
           }
         },
         {
           label: '75% CI',
           data: ci75Upper,
-          borderColor: 'rgba(211, 211, 211, 1)',
-          borderWidth: 1,
+          borderColor: 'transparent',
+          borderWidth: 0,
           pointRadius: 0,
+          backgroundColor: 'rgba(211, 211, 211, 0.3)',
           fill: {
             target: {
               value: ci75Lower
             },
-            above: 'rgba(211, 211, 211, 0.4)'
+            above: 'rgba(211, 211, 211, 0.3)'
           }
         },
         {
           label: '50% CI',
           data: ci50Upper,
-          borderColor: 'rgba(211, 211, 211, 1)',
-          borderWidth: 1,
+          borderColor: 'transparent',
+          borderWidth: 0,
           pointRadius: 0,
+          backgroundColor: 'rgba(211, 211, 211, 0.4)',
           fill: {
             target: {
               value: ci50Lower
             },
-            above: 'rgba(211, 211, 211, 0.5)'
+            above: 'rgba(211, 211, 211, 0.4)'
           }
+        },
+        {
+          label: 'Median Forecast',
+          data: forecast,
+          borderColor: 'rgba(76, 175, 80, 1)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 3,
+          pointBackgroundColor: 'rgba(76, 175, 80, 1)',
+          fill: false,
         },
         {
           label: 'Observed',
           data: observed,
-          borderColor: 'rgba(63, 81, 181, 0.8)',
+          borderColor: 'rgba(63, 81, 181, 1)',
           borderWidth: 2,
           pointRadius: 3,
-          pointBackgroundColor: 'rgba(63, 81, 181, 0.8)',
-          fill: false,
-        },
-        {
-          label: 'Forecast',
-          data: forecast,
-          borderColor: 'rgba(76, 175, 80, 0.8)',
-          borderWidth: 2,
-          borderDash: [5, 5],
-          pointRadius: 3,
-          pointBackgroundColor: 'rgba(76, 175, 80, 0.8)',
+          pointBackgroundColor: 'rgba(63, 81, 181, 1)',
           fill: false,
         }
       ]
