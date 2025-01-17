@@ -184,6 +184,7 @@ const ForecastViz = ({ location, onBack }) => {
     return {
       labels: dates,
       datasets: [
+        // 95% CI - outermost band
         {
           label: '95% CI',
           data: ci95Upper,
@@ -201,6 +202,7 @@ const ForecastViz = ({ location, onBack }) => {
           borderWidth: 0,
           pointRadius: 0,
         },
+        // 75% CI - middle band
         {
           label: '75% CI',
           data: ci75Upper,
@@ -218,6 +220,7 @@ const ForecastViz = ({ location, onBack }) => {
           borderWidth: 0,
           pointRadius: 0,
         },
+        // 50% CI - innermost band
         {
           label: '50% CI',
           data: ci50Upper,
