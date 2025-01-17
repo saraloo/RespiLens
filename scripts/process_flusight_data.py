@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import logging
 from typing import Optional
-from .validation_plots import ValidationPlotter
+from validation_plots import ValidationPlotter
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
