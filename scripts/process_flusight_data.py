@@ -268,13 +268,9 @@ class FluSightPreprocessor:
                     forecasts[target_date]['rate_change'] = next((f for f in payload['forecasts']['wk flu hosp rate change'] 
                         if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
             
-            # Store forecasts for quantile comparison
-            latest_2023 = forecasts['2023'].get('incidence') or forecasts['2023'].get('rate_change')
-            latest_2024 = forecasts['2024'].get('incidence') or forecasts['2024'].get('rate_change')
-            
-            # Plot incidence forecasts for both years
-            for year, color in [('2023', 'blue'), ('2024', 'red')]:
-                if forecasts[year].get('incidence') and forecasts[year]['incidence']['data']['type'] == 'quantile':
+            # Plot forecasts for each target date
+            for date, color in zip(target_dates, ['blue', 'red']):
+                if forecasts[date].get('incidence') and forecasts[date]['incidence']['data']['type'] == 'quantile':
                     # Prepare incidence forecast data
                     dates = []
                     medians = []
@@ -283,23 +279,23 @@ class FluSightPreprocessor:
                     ci50_lower = []
                     ci50_upper = []
                 
-                for horizon, data in forecasts[year]['incidence']['data']['horizons'].items():
-                    date = pd.to_datetime(data['date'])
-                    dates.append(date)
-                    ci95_lower.append(data['values'][0])  # 2.5%
-                    ci50_lower.append(data['values'][1])  # 25%
-                    medians.append(data['values'][2])     # 50%
-                    ci50_upper.append(data['values'][3])  # 75%
-                    ci95_upper.append(data['values'][4])  # 97.5%
-                    
-                # Plot incidence forecast with quantile ranges
-                ax1.plot(dates, medians, color=color, marker='.', label=f'{year} Incidence Forecast Median')
-                ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{year} Incidence 95% CI')
-                ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{year} Incidence 50% CI')
+                    for horizon, data in forecasts[date]['incidence']['data']['horizons'].items():
+                        forecast_date = pd.to_datetime(data['date'])
+                        dates.append(forecast_date)
+                        ci95_lower.append(data['values'][0])  # 2.5%
+                        ci50_lower.append(data['values'][1])  # 25%
+                        medians.append(data['values'][2])     # 50%
+                        ci50_upper.append(data['values'][3])  # 75%
+                        ci95_upper.append(data['values'][4])  # 97.5%
+                        
+                    # Plot incidence forecast with quantile ranges
+                    ax1.plot(dates, medians, color=color, marker='.', label=f'{date} Incidence Forecast Median')
+                    ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{date} Incidence 95% CI')
+                    ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{date} Incidence 50% CI')
             
-            # Plot rate change forecasts for both years
-            for year, color in [('2023', 'blue'), ('2024', 'red')]:
-                if forecasts[year].get('rate_change') and forecasts[year]['rate_change']['data']['type'] == 'pmf':
+            # Plot rate change forecasts for each target date
+            for date, color in zip(target_dates, ['blue', 'red']):
+                if forecasts[date].get('rate_change') and forecasts[date]['rate_change']['data']['type'] == 'pmf':
                     # Prepare rate change forecast data
                     dates = []
                     medians = []
@@ -308,25 +304,25 @@ class FluSightPreprocessor:
                     ci50_lower = []
                     ci50_upper = []
                 
-                for horizon, data in forecasts[year]['rate_change']['data']['horizons'].items():
-                    try:
-                        date = pd.to_datetime(data['date'])
-                        dates.append(date)
-                        # Ensure we have enough values for all quantiles
-                        if len(data['values']) >= 5:
-                            ci95_lower.append(data['values'][0])  # 2.5%
-                            ci50_lower.append(data['values'][1])  # 25%
-                            medians.append(data['values'][2])     # 50%
-                            ci50_upper.append(data['values'][3])  # 75%
-                            ci95_upper.append(data['values'][4])  # 97.5%
-                    except (KeyError, IndexError) as e:
-                        logger.warning(f"Skipping invalid horizon data for {location}: {str(e)}")
-                        continue
-                    
-                # Plot rate change forecast with quantile ranges
-                ax1.plot(dates, medians, color=color, marker='.', label=f'{year} Rate Change Forecast Median')
-                ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{year} Rate Change 95% CI')
-                ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{year} Rate Change 50% CI')
+                    for horizon, data in forecasts[date]['rate_change']['data']['horizons'].items():
+                        try:
+                            forecast_date = pd.to_datetime(data['date'])
+                            dates.append(forecast_date)
+                            # Ensure we have enough values for all quantiles
+                            if len(data['values']) >= 5:
+                                ci95_lower.append(data['values'][0])  # 2.5%
+                                ci50_lower.append(data['values'][1])  # 25%
+                                medians.append(data['values'][2])     # 50%
+                                ci50_upper.append(data['values'][3])  # 75%
+                                ci95_upper.append(data['values'][4])  # 97.5%
+                        except (KeyError, IndexError) as e:
+                            logger.warning(f"Skipping invalid horizon data for {location}: {str(e)}")
+                            continue
+                        
+                    # Plot rate change forecast with quantile ranges
+                    ax1.plot(dates, medians, color=color, marker='.', label=f'{date} Rate Change Forecast Median')
+                    ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{date} Rate Change 95% CI')
+                    ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{date} Rate Change 50% CI')
             
             # Add vertical lines at both forecast dates
             for date, color in [('2024-01-27', 'blue'), ('2024-12-14', 'red')]:
@@ -341,38 +337,35 @@ class FluSightPreprocessor:
             ax1.grid(True)
             ax1.legend()
             
-            # Quantile comparison plot for both years
-            if latest_2023 and latest_2024 and len(dates) >= 2:
+            # Quantile comparison plot for the two target dates
+            if len(target_dates) == 2:
                 try:
-                    date1 = dates[0]
-                    date2 = dates[-1]
+                    # Get forecasts for both dates
+                    forecast1 = forecasts[target_dates[0]].get('incidence')
+                    forecast2 = forecasts[target_dates[1]].get('incidence')
                     
-                    # Get quantile values with validation
-                    # Use 2023 data for first date
-                    if '0' in latest_2023['data']['horizons'] and len(latest_2023['data']['horizons']['0']['values']) >= 5:
-                        date1_vals = latest_2023['data']['horizons']['0']['values']
-                    else:
-                        date1_vals = []
-                    
-                    # Use 2024 data for last date
-                    last_horizon = str(len(dates)-1)
-                    if last_horizon in latest_2024['data']['horizons'] and len(latest_2024['data']['horizons'][last_horizon]['values']) >= 5:
-                        date2_vals = latest_2024['data']['horizons'][last_horizon]['values']
-                    else:
-                        date2_vals = []
+                    if forecast1 and forecast2:
+                        # Get horizon 0 values for both forecasts
+                        if '0' in forecast1['data']['horizons'] and len(forecast1['data']['horizons']['0']['values']) >= 5:
+                            date1_vals = forecast1['data']['horizons']['0']['values']
+                        else:
+                            date1_vals = []
+                            
+                        if '0' in forecast2['data']['horizons'] and len(forecast2['data']['horizons']['0']['values']) >= 5:
+                            date2_vals = forecast2['data']['horizons']['0']['values']
+                        else:
+                            date2_vals = []
+                            
+                        # Only plot if we have valid data for both dates
+                        if date1_vals and date2_vals and len(date1_vals) == 5 and len(date2_vals) == 5:
+                            x = [0.025, 0.25, 0.5, 0.75, 0.975]
+                            ax2.plot(x, date1_vals, 'o-', color='blue', label=f'{target_dates[0]}')
+                            ax2.plot(x, date2_vals, 'o-', color='red', label=f'{target_dates[1]}')
+                            ax2.fill_between(x, date1_vals, date2_vals, alpha=0.2, color='gray')
+                        else:
+                            logger.warning(f"Skipping quantile comparison for {location} due to missing data")
                 except (KeyError, IndexError) as e:
                     logger.warning(f"Skipping quantile comparison for {location}: {str(e)}")
-                    date1_vals = []
-                    date2_vals = []
-                
-                # Only plot if we have valid data for both dates
-                if date1_vals and date2_vals and len(date1_vals) == 5 and len(date2_vals) == 5:
-                    x = [0.025, 0.25, 0.5, 0.75, 0.975]
-                    ax2.plot(x, date1_vals, 'o-', color='blue', label=f'{date1.strftime("%Y-%m-%d")}')
-                    ax2.plot(x, date2_vals, 'o-', color='red', label=f'{date2.strftime("%Y-%m-%d")}')
-                    ax2.fill_between(x, date1_vals, date2_vals, alpha=0.2, color='gray')
-                else:
-                    logger.warning(f"Skipping quantile comparison for {location} due to missing data")
                 
                 ax2.set_title('Quantile Comparison')
                 ax2.set_xlabel('Quantile')
