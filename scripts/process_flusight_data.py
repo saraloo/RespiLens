@@ -151,45 +151,8 @@ class FluSightPreprocessor:
                 
         return target_dfs
 
-    def process_forecast_data(self, group_df):
-        """Convert DataFrame of predictions into optimized format"""
-        output_type = group_df['output_type'].iloc[0]
-        
-        if output_type == 'quantile':
-            # For quantile forecasts, store values by horizon with shared quantiles
-            quantiles = sorted(group_df['output_type_id'].unique().tolist())
-            horizons = {}
-            
-            for horizon, horizon_df in group_df.groupby('horizon'):
-                horizon_df = horizon_df.sort_values('output_type_id')  # Ensure consistent order
-                horizons[str(int(horizon))] = {
-                    'date': horizon_df['target_end_date'].iloc[0],
-                    'values': horizon_df['value'].tolist()
-                }
-            
-            return {
-                'type': 'quantile',
-                'quantiles': quantiles,
-                'horizons': horizons
-            }
-        else:
-            # For PMF forecasts, store categories and probabilities by horizon
-            horizons = {}
-            for horizon, horizon_df in group_df.groupby('horizon'):
-                horizon_df = horizon_df.sort_values('output_type_id')  # Ensure consistent order
-                horizons[str(int(horizon))] = {
-                    'date': horizon_df['target_end_date'].iloc[0],
-                    'categories': horizon_df['output_type_id'].tolist(),
-                    'values': horizon_df['value'].tolist()
-                }
-            
-            return {
-                'type': 'pmf',
-                'horizons': horizons
-            }
-
     def create_location_payloads(self, target_dfs, ground_truth_data):
-        """Create visualization payloads for each location"""
+        """Create visualization payloads for each location with reorganized forecast structure"""
         logger.info("Creating location payloads...")
         
         try:
@@ -223,27 +186,73 @@ class FluSightPreprocessor:
                     location_data['reference_date'] = pd.to_datetime(location_data['reference_date']).dt.strftime('%Y-%m-%d')
                     location_data['target_end_date'] = pd.to_datetime(location_data['target_end_date']).dt.strftime('%Y-%m-%d')
                     
-                    # Group by model and reference date
-                    target_forecasts = []
-                    
-                    for (date, model), group in location_data.groupby(['reference_date', 'model']):
-                        forecast = {
-                            'reference_date': date,
-                            'model': model,
-                            'data': self.process_forecast_data(group)
-                        }
-                        target_forecasts.append(forecast)
-                    
-                    location_payload['forecasts'][target] = target_forecasts
+                    # Group by reference_date first
+                    for reference_date, date_group in location_data.groupby('reference_date'):
+                        if reference_date not in location_payload['forecasts']:
+                            location_payload['forecasts'][reference_date] = {}
+                        
+                        if target not in location_payload['forecasts'][reference_date]:
+                            location_payload['forecasts'][reference_date][target] = {'models': {}}
+                        
+                        # Then group by model within each reference_date
+                        for model, model_group in date_group.groupby('model'):
+                            forecast_data = self.process_forecast_data(model_group)
+                            location_payload['forecasts'][reference_date][target]['models'][model] = forecast_data
             
             payloads[location] = location_payload
             
         logger.info(f"Created payloads for {len(payloads)} locations")
         return payloads
-    
+
+    def process_forecast_data(self, group_df):
+        """Convert DataFrame of predictions into optimized format"""
+        output_type = group_df['output_type'].iloc[0]
+        
+        if output_type == 'quantile':
+            # For quantile forecasts, store values by horizon with shared quantiles
+            quantiles = sorted(group_df['output_type_id'].astype(float).unique().tolist())
+            horizons = {}
+            
+            for horizon, horizon_df in group_df.groupby('horizon'):
+                horizon_df = horizon_df.sort_values('output_type_id')  # Ensure consistent order
+                horizons[str(int(horizon))] = {
+                    'date': horizon_df['target_end_date'].iloc[0],
+                    'values': horizon_df['value'].tolist()
+                }
+            
+            return {
+                'type': 'quantile',
+                'quantiles': quantiles,
+                'horizons': horizons
+            }
+        else:  # pmf output
+            horizons = {}
+            for horizon, horizon_df in group_df.groupby('horizon'):
+                horizon_df = horizon_df.sort_values('output_type_id')  # Ensure consistent order
+                horizons[str(int(horizon))] = {
+                    'date': horizon_df['target_end_date'].iloc[0],
+                    'categories': horizon_df['output_type_id'].tolist(),
+                    'values': horizon_df['value'].tolist()
+                }
+            
+            return {
+                'type': 'pmf',
+                'horizons': horizons
+            }
+        
     def validate_and_plot_payload(self, payload, location):
-        """Generate validation plots for a single location's payload with improved handling of ground truth data"""
+        """Generate validation plots for a single location's payload with multiple model support"""
         pdf_path = self.output_path / f"{location}_validation.pdf"
+        
+        # Define a color palette for different models
+        model_colors = {
+            'FluSight-ensemble': '#1f77b4',  # blue
+            'UMass-hosp': '#2ca02c',         # green
+            'CovidHub-baseline': '#ff7f0e',   # orange
+            'CDC-baseline': '#d62728'         # red
+        }
+        # Default color for models not in the palette
+        default_color = '#7f7f7f'  # gray
         
         with PdfPages(pdf_path) as pdf:
             # Create figure with a grid layout
@@ -264,142 +273,45 @@ class FluSightPreprocessor:
             gt_dates = gt_dates[sort_idx]
             gt_values = gt_values[sort_idx]
             
-            # Find gaps in the data (more than 7 days between points)
-            date_diffs = np.diff(gt_dates)
-            date_diffs_days = date_diffs / np.timedelta64(1, 'D')
-            gap_indices = np.where(date_diffs_days > 7)[0]
+            # Plot ground truth data with gaps
+            self._plot_ground_truth(ax_ts, gt_dates, gt_values)
             
-            # Split data at gaps and plot each segment separately
-            start_idx = 0
-            for end_idx in gap_indices:
-                segment_dates = gt_dates[start_idx:end_idx + 1]
-                segment_values = gt_values[start_idx:end_idx + 1]
-                if len(segment_dates) > 0:
-                    ax_ts.plot(segment_dates, segment_values, color='black', 
-                            marker='.', linewidth=2, label='Ground Truth' if start_idx == 0 else None)
-                start_idx = end_idx + 1
+            # Get all reference dates from the payload
+            reference_dates = list(payload['forecasts'].keys())
+            current_ref_date = max(reference_dates) if reference_dates else None
             
-            # Plot final segment
-            if start_idx < len(gt_dates):
-                segment_dates = gt_dates[start_idx:]
-                segment_values = gt_values[start_idx:]
-                if len(segment_dates) > 0:
-                    ax_ts.plot(segment_dates, segment_values, color='black', 
-                            marker='.', linewidth=2, label='Ground Truth' if start_idx == 0 else None)
-            
-            # Plot forecasts if available
-            target_dates = ['2024-01-27', '2024-12-14']
-            forecasts = {date: {} for date in target_dates}
-            
-            for target_date in target_dates:
-                # Get FluSight-ensemble forecasts for both types
-                if 'wk inc flu hosp' in payload['forecasts']:
-                    forecasts[target_date]['incidence'] = next((f for f in payload['forecasts']['wk inc flu hosp'] 
-                        if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
+            if current_ref_date:
+                ref_date_data = payload['forecasts'][current_ref_date]
                 
-                if 'wk flu hosp rate change' in payload['forecasts']:
-                    forecasts[target_date]['rate_change'] = next((f for f in payload['forecasts']['wk flu hosp rate change'] 
-                        if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
+                # Plot incidence forecasts for each model
+                if 'wk inc flu hosp' in ref_date_data:
+                    for model_name, model_data in ref_date_data['wk inc flu hosp']['models'].items():
+                        color = model_colors.get(model_name, default_color)
+                        if model_data['type'] == 'quantile':
+                            self._plot_quantile_forecast(ax_ts, model_data, model_name, color)
+                
+                # Plot rate change categorical forecasts
+                if 'wk flu hosp rate change' in ref_date_data:
+                    self._plot_rate_change_histogram(
+                        ax_hist, 
+                        ref_date_data['wk flu hosp rate change']['models'],
+                        model_colors,
+                        default_color
+                    )
+                
+                # Plot quantile comparisons
+                if 'wk inc flu hosp' in ref_date_data:
+                    self._plot_model_quantile_comparison(
+                        ax_quant,
+                        ref_date_data['wk inc flu hosp']['models'],
+                        model_colors,
+                        default_color
+                    )
             
-            # Plot quantile forecasts in time series
-            for date, color in zip(target_dates, ['blue', 'red']):
-                if forecasts[date].get('incidence') and forecasts[date]['incidence']['data']['type'] == 'quantile':
-                    dates, medians, ci95_lower, ci95_upper, ci50_lower, ci50_upper = [], [], [], [], [], []
-                    
-                    try:
-                        for horizon, data in forecasts[date]['incidence']['data']['horizons'].items():
-                            forecast_date = pd.to_datetime(data['date'])
-                            if len(data['values']) >= 5:  # Ensure we have all necessary quantiles
-                                dates.append(forecast_date)
-                                ci95_lower.append(data['values'][0])  # 2.5%
-                                ci50_lower.append(data['values'][1])  # 25%
-                                medians.append(data['values'][2])     # 50%
-                                ci50_upper.append(data['values'][3])  # 75%
-                                ci95_upper.append(data['values'][4])  # 97.5%
-                        
-                        # Only plot if we have valid data
-                        if dates:
-                            ax_ts.plot(dates, medians, color=color, marker='.', 
-                                    label=f'{date} Incidence Forecast Median')
-                            ax_ts.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, 
-                                        color=color, label=f'{date} Incidence 95% CI')
-                            ax_ts.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, 
-                                        color=color, label=f'{date} Incidence 50% CI')
-                    except Exception as e:
-                        logger.warning(f"Error plotting incidence forecast for {date}: {str(e)}")
-
-            # Plot categorical forecasts as histogram
-            category_order = ['large_decrease', 'decrease', 'stable', 'increase', 'large_increase']
-            bar_width = 0.35
-            bar_positions = np.arange(len(category_order))
-            
-            for date_idx, (date, color) in enumerate(zip(target_dates, ['blue', 'red'])):
-                if forecasts[date].get('rate_change') and forecasts[date]['rate_change']['data']['type'] == 'pmf':
-                    try:
-                        # Get horizon 0 data (current week forecast)
-                        horizon_data = forecasts[date]['rate_change']['data']['horizons'].get('0', {})
-                        if horizon_data:
-                            categories = horizon_data.get('categories', [])
-                            values = horizon_data.get('values', [])
-                            
-                            # Create dictionary of categories and their values
-                            cat_values = dict(zip(categories, values))
-                            
-                            # Create bars in specified order
-                            plot_values = [cat_values.get(cat, 0) for cat in category_order]
-                            
-                            # Plot bars
-                            offset = bar_width * (date_idx - 0.5)
-                            bars = ax_hist.bar(bar_positions + offset, plot_values, 
-                                            bar_width, label=date, color=color, alpha=0.7)
-                            
-                            # Add value labels on top of bars
-                            for bar, value in zip(bars, plot_values):
-                                if value > 0:  # Only label non-zero bars
-                                    ax_hist.text(bar.get_x() + bar.get_width()/2, bar.get_height(),
-                                            f'{value:.2f}', ha='center', va='bottom', rotation=45)
-                                    
-                    except Exception as e:
-                        logger.warning(f"Error plotting categorical forecast for {date}: {str(e)}")
-
-            # Add vertical lines at both forecast dates in time series
-            for date, color in zip(target_dates, ['blue', 'red']):
-                forecast_date = pd.to_datetime(date)
-                ax_ts.axvline(forecast_date, color=color, linestyle='--', 
-                        label=f'{date} Forecast Date', alpha=0.5)
-            
-            # Set axis limits for time series
-            if len(gt_dates) > 0:
-                ax_ts.set_xlim(gt_dates.min(), gt_dates.max())
-                valid_values = gt_values[~np.isnan(gt_values)]
-                if len(valid_values) > 0:
-                    y_max = np.percentile(valid_values, 99)  # Use 99th percentile to avoid extreme outliers
-                    ax_ts.set_ylim(0, y_max * 1.1)  # Add 10% padding
-            
-            # Format time series plot
-            ax_ts.set_title(f"{location} - Hospitalization Forecast")
-            ax_ts.set_xlabel('Date')
-            ax_ts.set_ylabel('Hospitalizations')
-            ax_ts.tick_params(axis='x', rotation=45)
-            ax_ts.grid(True, alpha=0.3)
-            
-            # Adjust time series legend
-            handles, labels = ax_ts.get_legend_handles_labels()
-            by_label = dict(zip(labels, handles))
-            ax_ts.legend(by_label.values(), by_label.keys(), loc='upper left')
-            
-            # Format histogram plot
-            ax_hist.set_title('Rate Change Categories (Current Week)')
-            ax_hist.set_xlabel('Category')
-            ax_hist.set_ylabel('Probability')
-            ax_hist.set_xticks(bar_positions)
-            ax_hist.set_xticklabels(category_order, rotation=45)
-            ax_hist.grid(True, axis='y', alpha=0.3)
-            ax_hist.legend()
-            
-            # Plot quantile comparison
-            if len(target_dates) == 2:
-                self._plot_quantile_comparison(ax_quant, forecasts, target_dates)
+            # Format plots
+            self._format_time_series_plot(ax_ts, location, gt_dates, gt_values)
+            self._format_histogram_plot(ax_hist)
+            self._format_quantile_plot(ax_quant)
             
             # Save the figure
             try:
@@ -410,34 +322,139 @@ class FluSightPreprocessor:
             finally:
                 plt.close(fig)
 
-    def _plot_quantile_comparison(self, ax, forecasts, target_dates):
-        """Helper method to plot quantile comparisons"""
-        try:
-            # Get forecasts for both dates
-            forecast1 = forecasts[target_dates[0]].get('incidence')
-            forecast2 = forecasts[target_dates[1]].get('incidence')
-            
-            if forecast1 and forecast2:
-                # Get horizon 0 values for both forecasts
-                date1_vals = forecast1['data']['horizons'].get('0', {}).get('values', [])
-                date2_vals = forecast2['data']['horizons'].get('0', {}).get('values', [])
-                
-                # Only plot if we have valid data for both dates
-                if len(date1_vals) >= 5 and len(date2_vals) >= 5:
-                    x = [0.025, 0.25, 0.5, 0.75, 0.975]
-                    ax.plot(x, date1_vals[:5], 'o-', color='blue', label=target_dates[0])
-                    ax.plot(x, date2_vals[:5], 'o-', color='red', label=target_dates[1])
-                    ax.fill_between(x, date1_vals[:5], date2_vals[:5], alpha=0.2, color='gray')
-                    
-                    # Set y-axis limits with padding
-                    all_vals = date1_vals[:5] + date2_vals[:5]
-                    y_min, y_max = min(all_vals), max(all_vals)
-                    padding = (y_max - y_min) * 0.1
-                    ax.set_ylim(y_min - padding, y_max + padding)
-        except Exception as e:
-            logger.warning(f"Error in quantile comparison plot: {str(e)}")
+    def _plot_ground_truth(self, ax, dates, values):
+        """Plot ground truth data with gap detection"""
+        date_diffs = np.diff(dates)
+        date_diffs_days = date_diffs / np.timedelta64(1, 'D')
+        gap_indices = np.where(date_diffs_days > 7)[0]
         
-        ax.set_title('Quantile Comparison')
+        start_idx = 0
+        for end_idx in gap_indices:
+            segment_dates = dates[start_idx:end_idx + 1]
+            segment_values = values[start_idx:end_idx + 1]
+            if len(segment_dates) > 0:
+                ax.plot(segment_dates, segment_values, color='black', 
+                        marker='.', linewidth=2, label='Ground Truth' if start_idx == 0 else None)
+            start_idx = end_idx + 1
+        
+        if start_idx < len(dates):
+            segment_dates = dates[start_idx:]
+            segment_values = values[start_idx:]
+            if len(segment_dates) > 0:
+                ax.plot(segment_dates, segment_values, color='black', 
+                        marker='.', linewidth=2, label='Ground Truth' if start_idx == 0 else None)
+
+    def _plot_quantile_forecast(self, ax, model_data, model_name, color):
+        """Plot quantile forecasts for a single model"""
+        try:
+            dates, medians, ci95_lower, ci95_upper, ci50_lower, ci50_upper = [], [], [], [], [], []
+            quantile_indices = {
+                0.025: 0,
+                0.25: 1,
+                0.5: 2,
+                0.75: 3,
+                0.975: 4
+            }
+            
+            for horizon, data in model_data['horizons'].items():
+                forecast_date = pd.to_datetime(data['date'])
+                if len(data['values']) >= 5:
+                    dates.append(forecast_date)
+                    ci95_lower.append(data['values'][quantile_indices[0.025]])
+                    ci50_lower.append(data['values'][quantile_indices[0.25]])
+                    medians.append(data['values'][quantile_indices[0.5]])
+                    ci50_upper.append(data['values'][quantile_indices[0.75]])
+                    ci95_upper.append(data['values'][quantile_indices[0.975]])
+            
+            if dates:
+                ax.plot(dates, medians, color=color, marker='.', 
+                        label=f'{model_name} Median')
+                ax.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, 
+                            color=color, label=f'{model_name} 95% CI')
+                ax.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, 
+                            color=color, label=f'{model_name} 50% CI')
+        except Exception as e:
+            logger.warning(f"Error plotting quantile forecast for {model_name}: {str(e)}")
+
+    def _plot_rate_change_histogram(self, ax, models_data, model_colors, default_color):
+        """Plot rate change categorical forecasts for multiple models"""
+        category_order = ['large_decrease', 'decrease', 'stable', 'increase', 'large_increase']
+        bar_width = 0.8 / len(models_data)  # Adjust bar width based on number of models
+        bar_positions = np.arange(len(category_order))
+        
+        for idx, (model_name, model_data) in enumerate(models_data.items()):
+            try:
+                if model_data['type'] == 'pmf':
+                    horizon_data = model_data['horizons'].get('0', {})
+                    if horizon_data:
+                        categories = horizon_data.get('categories', [])
+                        values = horizon_data.get('values', [])
+                        
+                        cat_values = dict(zip(categories, values))
+                        plot_values = [cat_values.get(cat, 0) for cat in category_order]
+                        
+                        offset = bar_width * (idx - len(models_data)/2 + 0.5)
+                        color = model_colors.get(model_name, default_color)
+                        bars = ax.bar(bar_positions + offset, plot_values, 
+                                    bar_width, label=model_name, color=color, alpha=0.7)
+                        
+                        # Add value labels
+                        for bar, value in zip(bars, plot_values):
+                            if value > 0.05:  # Only label bars with significant probability
+                                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height(),
+                                    f'{value:.2f}', ha='center', va='bottom', rotation=45)
+            except Exception as e:
+                logger.warning(f"Error plotting rate change histogram for {model_name}: {str(e)}")
+
+    def _plot_model_quantile_comparison(self, ax, models_data, model_colors, default_color):
+        """Plot quantile comparison for multiple models"""
+        quantiles = [0.025, 0.25, 0.5, 0.75, 0.975]
+        
+        for model_name, model_data in models_data.items():
+            try:
+                if model_data['type'] == 'quantile':
+                    horizon_data = model_data['horizons'].get('0', {})
+                    if horizon_data and len(horizon_data['values']) >= 5:
+                        color = model_colors.get(model_name, default_color)
+                        ax.plot(quantiles, horizon_data['values'][:5], 'o-', 
+                            color=color, label=model_name)
+            except Exception as e:
+                logger.warning(f"Error plotting quantile comparison for {model_name}: {str(e)}")
+
+    def _format_time_series_plot(self, ax, location, gt_dates, gt_values):
+        """Format the time series plot"""
+        if len(gt_dates) > 0:
+            ax.set_xlim(gt_dates.min(), gt_dates.max())
+            valid_values = gt_values[~np.isnan(gt_values)]
+            if len(valid_values) > 0:
+                y_max = np.percentile(valid_values, 99)
+                ax.set_ylim(0, y_max * 1.1)
+        
+        ax.set_title(f"{location} - Hospitalization Forecast")
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Hospitalizations')
+        ax.tick_params(axis='x', rotation=45)
+        ax.grid(True, alpha=0.3)
+        
+        # Adjust legend
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(), loc='upper left')
+
+    def _format_histogram_plot(self, ax):
+        """Format the histogram plot"""
+        ax.set_title('Rate Change Categories (Current Week)')
+        ax.set_xlabel('Category')
+        ax.set_ylabel('Probability')
+        category_order = ['large_decrease', 'decrease', 'stable', 'increase', 'large_increase']
+        ax.set_xticks(np.arange(len(category_order)))
+        ax.set_xticklabels(category_order, rotation=45)
+        ax.grid(True, axis='y', alpha=0.3)
+        ax.legend()
+
+    def _format_quantile_plot(self, ax):
+        """Format the quantile comparison plot"""
+        ax.set_title('Quantile Comparison (Current Week)')
         ax.set_xlabel('Quantile')
         ax.set_ylabel('Hospitalizations')
         ax.grid(True, alpha=0.3)
