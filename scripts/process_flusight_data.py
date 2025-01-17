@@ -64,13 +64,20 @@ class FluSightPlotProcessor:
             'dates': set()
         }
         
+        # Get list of model directories
+        model_dirs = list(self.model_output_path.glob("*"))
+        total_models = len(model_dirs)
+        processed_count = 0
+        
         # Process each model directory
-        for model_dir in self.model_output_path.glob("*"):
+        for model_dir in model_dirs:
             if not model_dir.is_dir():
                 continue
                 
             model_name = model_dir.name
             plot_data['models'].add(model_name)
+            processed_count += 1
+            logger.info(f"Processing model {processed_count}/{total_models}: {model_name}")
             
             # Process CSV and parquet files
             for file_path in model_dir.glob("*.csv"):
