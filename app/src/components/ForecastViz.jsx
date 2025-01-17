@@ -105,15 +105,18 @@ const ForecastViz = ({ location, onBack }) => {
       .find(f => f.reference_date === currentDate && f.model === selectedModel);
 
     if (forecastData) {
-      // Current date forecast
-      const currentDateValues = forecastData.data.horizons['0'].values;
-      forecast[forecast.length - 1] = currentDateValues[3];
-      ci95Lower[ci95Lower.length - 1] = currentDateValues[0];
-      ci95Upper[ci95Upper.length - 1] = currentDateValues[6];
-      ci75Lower[ci75Lower.length - 1] = currentDateValues[1];
-      ci75Upper[ci75Upper.length - 1] = currentDateValues[5];
-      ci50Lower[ci50Lower.length - 1] = currentDateValues[2];
-      ci50Upper[ci50Upper.length - 1] = currentDateValues[4];
+      // Find index of current date in ground truth
+      const refDateIndex = data.ground_truth.dates.indexOf(currentDate);
+      if (refDateIndex !== -1) {
+        // Current date forecast
+        const currentDateValues = forecastData.data.horizons['0'].values;
+        forecast[refDateIndex] = currentDateValues[3];
+        ci95Lower[refDateIndex] = currentDateValues[0];
+        ci95Upper[refDateIndex] = currentDateValues[6];
+        ci75Lower[refDateIndex] = currentDateValues[1];
+        ci75Upper[refDateIndex] = currentDateValues[5];
+        ci50Lower[refDateIndex] = currentDateValues[2];
+        ci50Upper[refDateIndex] = currentDateValues[4];
 
       // Future forecasts
       Object.entries(forecastData.data.horizons)
