@@ -54,8 +54,12 @@ class FluSightPreprocessor:
         logger.info("Reading ground truth data...")
         try:
             df = pd.read_csv(self.target_data_path)
-            # Convert date column to datetime and then to string format
-            df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
+            # Convert date column to datetime
+            df['date'] = pd.to_datetime(df['date'])
+            # Filter to only include dates from October 1st, 2023 onwards
+            df = df[df['date'] >= pd.Timestamp('2023-10-01')]
+            # Convert date to string format
+            df['date'] = df['date'].dt.strftime('%Y-%m-%d')
             
             # Group data by location
             ground_truth = {}
