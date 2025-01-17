@@ -22,6 +22,7 @@ class FluSightPreprocessor:
         """Initialize preprocessor with paths set by environment variables"""
         self.base_path = Path(base_path)
         self.output_path = Path(output_path)
+        self.plotter = ValidationPlotter(self.output_path)
         self.model_output_path = self.base_path / "model-output"
         self.target_data_path = self.base_path / "target-data/target-hospital-admissions.csv"
         
