@@ -89,6 +89,8 @@ const ForecastViz = ({ location, onBack }) => {
     const refDateIndex = data.ground_truth.dates.indexOf(currentDate);
     if (refDateIndex === -1) return null;
     
+    let startIndex = 0; // Initialize startIndex
+    
     if (fullTimeline) {
       // Full timeline shows all ground truth data
       data.ground_truth.dates.forEach((dateStr, i) => {
@@ -105,7 +107,7 @@ const ForecastViz = ({ location, onBack }) => {
       });
     } else {
       // Zoomed view shows 8 weeks before and 5 weeks after
-      const startIndex = Math.max(0, refDateIndex - 8);
+      startIndex = Math.max(0, refDateIndex - 8);
       const endIndex = Math.min(data.ground_truth.dates.length - 1, refDateIndex + 5);
       
       for (let i = startIndex; i <= endIndex; i++) {
