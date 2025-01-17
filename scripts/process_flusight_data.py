@@ -6,6 +6,7 @@ import logging
 from typing import Optional
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import numpy as np
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -235,28 +236,56 @@ class FluSightPreprocessor:
             
         logger.info(f"Created payloads for {len(payloads)} locations")
         return payloads
-
+    
     def validate_and_plot_payload(self, payload, location):
-        """Generate validation plots for a single location's payload"""
+        """Generate validation plots for a single location's payload with improved handling of ground truth data"""
         pdf_path = self.output_path / f"{location}_validation.pdf"
         
         with PdfPages(pdf_path) as pdf:
-            # Create figure with two subplots
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+            # Create figure with a grid layout
+            fig = plt.figure(figsize=(16, 12))
+            gs = plt.GridSpec(2, 2, height_ratios=[2, 1])
             
-            # Plot ground truth data
+            # Create main time series plot
+            ax_ts = fig.add_subplot(gs[0, :])  # Top panel spans both columns
+            ax_hist = fig.add_subplot(gs[1, 0])  # Bottom left panel for histogram
+            ax_quant = fig.add_subplot(gs[1, 1])  # Bottom right panel for quantile comparison
+            
+            # Process ground truth data
             gt_dates = pd.to_datetime(payload['ground_truth']['dates'])
-            gt_values = payload['ground_truth']['values']
+            gt_values = np.array(payload['ground_truth']['values'])
             
-            # Plot ground truth
-            ax1.plot(gt_dates, gt_values, color='black', marker='.', label='Ground Truth', linewidth=2)
+            # Sort ground truth data by date
+            sort_idx = np.argsort(gt_dates)
+            gt_dates = gt_dates[sort_idx]
+            gt_values = gt_values[sort_idx]
+            
+            # Find gaps in the data (more than 7 days between points)
+            date_diffs = np.diff(gt_dates)
+            date_diffs_days = date_diffs / np.timedelta64(1, 'D')
+            gap_indices = np.where(date_diffs_days > 7)[0]
+            
+            # Split data at gaps and plot each segment separately
+            start_idx = 0
+            for end_idx in gap_indices:
+                segment_dates = gt_dates[start_idx:end_idx + 1]
+                segment_values = gt_values[start_idx:end_idx + 1]
+                if len(segment_dates) > 0:
+                    ax_ts.plot(segment_dates, segment_values, color='black', 
+                            marker='.', linewidth=2, label='Ground Truth' if start_idx == 0 else None)
+                start_idx = end_idx + 1
+            
+            # Plot final segment
+            if start_idx < len(gt_dates):
+                segment_dates = gt_dates[start_idx:]
+                segment_values = gt_values[start_idx:]
+                if len(segment_dates) > 0:
+                    ax_ts.plot(segment_dates, segment_values, color='black', 
+                            marker='.', linewidth=2, label='Ground Truth' if start_idx == 0 else None)
             
             # Plot forecasts if available
-            forecasts = {}
-            
-            # Get forecasts for both target dates
             target_dates = ['2024-01-27', '2024-12-14']
-            forecasts = {'2024-01-27': {}, '2024-12-14': {}}
+            forecasts = {date: {} for date in target_dates}
             
             for target_date in target_dates:
                 # Get FluSight-ensemble forecasts for both types
@@ -268,119 +297,147 @@ class FluSightPreprocessor:
                     forecasts[target_date]['rate_change'] = next((f for f in payload['forecasts']['wk flu hosp rate change'] 
                         if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
             
-            # Plot forecasts for each target date
+            # Plot quantile forecasts in time series
             for date, color in zip(target_dates, ['blue', 'red']):
                 if forecasts[date].get('incidence') and forecasts[date]['incidence']['data']['type'] == 'quantile':
-                    # Prepare incidence forecast data
-                    dates = []
-                    medians = []
-                    ci95_lower = []
-                    ci95_upper = []
-                    ci50_lower = []
-                    ci50_upper = []
-                
-                    for horizon, data in forecasts[date]['incidence']['data']['horizons'].items():
-                        forecast_date = pd.to_datetime(data['date'])
-                        dates.append(forecast_date)
-                        ci95_lower.append(data['values'][0])  # 2.5%
-                        ci50_lower.append(data['values'][1])  # 25%
-                        medians.append(data['values'][2])     # 50%
-                        ci50_upper.append(data['values'][3])  # 75%
-                        ci95_upper.append(data['values'][4])  # 97.5%
-                        
-                    # Plot incidence forecast with quantile ranges
-                    ax1.plot(dates, medians, color=color, marker='.', label=f'{date} Incidence Forecast Median')
-                    ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{date} Incidence 95% CI')
-                    ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{date} Incidence 50% CI')
-            
-            # Plot rate change forecasts for each target date
-            for date, color in zip(target_dates, ['blue', 'red']):
-                if forecasts[date].get('rate_change') and forecasts[date]['rate_change']['data']['type'] == 'pmf':
-                    # Prepare rate change forecast data
-                    dates = []
-                    medians = []
-                    ci95_lower = []
-                    ci95_upper = []
-                    ci50_lower = []
-                    ci50_upper = []
-                
-                    for horizon, data in forecasts[date]['rate_change']['data']['horizons'].items():
-                        try:
+                    dates, medians, ci95_lower, ci95_upper, ci50_lower, ci50_upper = [], [], [], [], [], []
+                    
+                    try:
+                        for horizon, data in forecasts[date]['incidence']['data']['horizons'].items():
                             forecast_date = pd.to_datetime(data['date'])
-                            dates.append(forecast_date)
-                            # Ensure we have enough values for all quantiles
-                            if len(data['values']) >= 5:
+                            if len(data['values']) >= 5:  # Ensure we have all necessary quantiles
+                                dates.append(forecast_date)
                                 ci95_lower.append(data['values'][0])  # 2.5%
                                 ci50_lower.append(data['values'][1])  # 25%
                                 medians.append(data['values'][2])     # 50%
                                 ci50_upper.append(data['values'][3])  # 75%
                                 ci95_upper.append(data['values'][4])  # 97.5%
-                        except (KeyError, IndexError) as e:
-                            logger.warning(f"Skipping invalid horizon data for {location}: {str(e)}")
-                            continue
                         
-                    # Plot rate change forecast with quantile ranges
-                    ax1.plot(dates, medians, color=color, marker='.', label=f'{date} Rate Change Forecast Median')
-                    ax1.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, color=color, label=f'{date} Rate Change 95% CI')
-                    ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{date} Rate Change 50% CI')
+                        # Only plot if we have valid data
+                        if dates:
+                            ax_ts.plot(dates, medians, color=color, marker='.', 
+                                    label=f'{date} Incidence Forecast Median')
+                            ax_ts.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2, 
+                                        color=color, label=f'{date} Incidence 95% CI')
+                            ax_ts.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, 
+                                        color=color, label=f'{date} Incidence 50% CI')
+                    except Exception as e:
+                        logger.warning(f"Error plotting incidence forecast for {date}: {str(e)}")
+
+            # Plot categorical forecasts as histogram
+            category_order = ['large_decrease', 'decrease', 'stable', 'increase', 'large_increase']
+            bar_width = 0.35
+            bar_positions = np.arange(len(category_order))
             
-            # Add vertical lines at both forecast dates
-            for date, color in [('2024-01-27', 'blue'), ('2024-12-14', 'red')]:
+            for date_idx, (date, color) in enumerate(zip(target_dates, ['blue', 'red'])):
+                if forecasts[date].get('rate_change') and forecasts[date]['rate_change']['data']['type'] == 'pmf':
+                    try:
+                        # Get horizon 0 data (current week forecast)
+                        horizon_data = forecasts[date]['rate_change']['data']['horizons'].get('0', {})
+                        if horizon_data:
+                            categories = horizon_data.get('categories', [])
+                            values = horizon_data.get('values', [])
+                            
+                            # Create dictionary of categories and their values
+                            cat_values = dict(zip(categories, values))
+                            
+                            # Create bars in specified order
+                            plot_values = [cat_values.get(cat, 0) for cat in category_order]
+                            
+                            # Plot bars
+                            offset = bar_width * (date_idx - 0.5)
+                            bars = ax_hist.bar(bar_positions + offset, plot_values, 
+                                            bar_width, label=date, color=color, alpha=0.7)
+                            
+                            # Add value labels on top of bars
+                            for bar, value in zip(bars, plot_values):
+                                if value > 0:  # Only label non-zero bars
+                                    ax_hist.text(bar.get_x() + bar.get_width()/2, bar.get_height(),
+                                            f'{value:.2f}', ha='center', va='bottom', rotation=45)
+                                    
+                    except Exception as e:
+                        logger.warning(f"Error plotting categorical forecast for {date}: {str(e)}")
+
+            # Add vertical lines at both forecast dates in time series
+            for date, color in zip(target_dates, ['blue', 'red']):
                 forecast_date = pd.to_datetime(date)
-                ax1.axvline(forecast_date, color=color, linestyle='--', label=f'{date} Forecast Date')
+                ax_ts.axvline(forecast_date, color=color, linestyle='--', 
+                        label=f'{date} Forecast Date', alpha=0.5)
             
-            # Formatting
-            ax1.set_title(f"{location} - Hospitalization Forecast")
-            ax1.set_xlabel('Date')
-            ax1.set_ylabel('Hospitalizations')
-            ax1.tick_params(axis='x', rotation=45)
-            ax1.grid(True)
-            ax1.legend()
+            # Set axis limits for time series
+            if len(gt_dates) > 0:
+                ax_ts.set_xlim(gt_dates.min(), gt_dates.max())
+                valid_values = gt_values[~np.isnan(gt_values)]
+                if len(valid_values) > 0:
+                    y_max = np.percentile(valid_values, 99)  # Use 99th percentile to avoid extreme outliers
+                    ax_ts.set_ylim(0, y_max * 1.1)  # Add 10% padding
             
-            # Quantile comparison plot for the two target dates
+            # Format time series plot
+            ax_ts.set_title(f"{location} - Hospitalization Forecast")
+            ax_ts.set_xlabel('Date')
+            ax_ts.set_ylabel('Hospitalizations')
+            ax_ts.tick_params(axis='x', rotation=45)
+            ax_ts.grid(True, alpha=0.3)
+            
+            # Adjust time series legend
+            handles, labels = ax_ts.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            ax_ts.legend(by_label.values(), by_label.keys(), loc='upper left')
+            
+            # Format histogram plot
+            ax_hist.set_title('Rate Change Categories (Current Week)')
+            ax_hist.set_xlabel('Category')
+            ax_hist.set_ylabel('Probability')
+            ax_hist.set_xticks(bar_positions)
+            ax_hist.set_xticklabels(category_order, rotation=45)
+            ax_hist.grid(True, axis='y', alpha=0.3)
+            ax_hist.legend()
+            
+            # Plot quantile comparison
             if len(target_dates) == 2:
-                try:
-                    # Get forecasts for both dates
-                    forecast1 = forecasts[target_dates[0]].get('incidence')
-                    forecast2 = forecasts[target_dates[1]].get('incidence')
-                    
-                    if forecast1 and forecast2:
-                        # Get horizon 0 values for both forecasts
-                        if '0' in forecast1['data']['horizons'] and len(forecast1['data']['horizons']['0']['values']) >= 5:
-                            date1_vals = forecast1['data']['horizons']['0']['values']
-                        else:
-                            date1_vals = []
-                            
-                        if '0' in forecast2['data']['horizons'] and len(forecast2['data']['horizons']['0']['values']) >= 5:
-                            date2_vals = forecast2['data']['horizons']['0']['values']
-                        else:
-                            date2_vals = []
-                            
-                        # Only plot if we have valid data for both dates
-                        if date1_vals and date2_vals and len(date1_vals) == 5 and len(date2_vals) == 5:
-                            x = [0.025, 0.25, 0.5, 0.75, 0.975]
-                            ax2.plot(x, date1_vals, 'o-', color='blue', label=f'{target_dates[0]}')
-                            ax2.plot(x, date2_vals, 'o-', color='red', label=f'{target_dates[1]}')
-                            ax2.fill_between(x, date1_vals, date2_vals, alpha=0.2, color='gray')
-                        else:
-                            logger.warning(f"Skipping quantile comparison for {location} due to missing data")
-                except (KeyError, IndexError) as e:
-                    logger.warning(f"Skipping quantile comparison for {location}: {str(e)}")
-                
-                ax2.set_title('Quantile Comparison')
-                ax2.set_xlabel('Quantile')
-                ax2.set_ylabel('Hospitalizations')
-                ax2.grid(True)
-                ax2.legend()
+                self._plot_quantile_comparison(ax_quant, forecasts, target_dates)
             
+            # Save the figure
             try:
-                # Save the figure
-                fig.tight_layout()
+                plt.tight_layout()
                 pdf.savefig(fig, bbox_inches='tight')
             except Exception as e:
                 logger.error(f"Error saving figure for {location}: {str(e)}")
             finally:
                 plt.close(fig)
+
+    def _plot_quantile_comparison(self, ax, forecasts, target_dates):
+        """Helper method to plot quantile comparisons"""
+        try:
+            # Get forecasts for both dates
+            forecast1 = forecasts[target_dates[0]].get('incidence')
+            forecast2 = forecasts[target_dates[1]].get('incidence')
+            
+            if forecast1 and forecast2:
+                # Get horizon 0 values for both forecasts
+                date1_vals = forecast1['data']['horizons'].get('0', {}).get('values', [])
+                date2_vals = forecast2['data']['horizons'].get('0', {}).get('values', [])
+                
+                # Only plot if we have valid data for both dates
+                if len(date1_vals) >= 5 and len(date2_vals) >= 5:
+                    x = [0.025, 0.25, 0.5, 0.75, 0.975]
+                    ax.plot(x, date1_vals[:5], 'o-', color='blue', label=target_dates[0])
+                    ax.plot(x, date2_vals[:5], 'o-', color='red', label=target_dates[1])
+                    ax.fill_between(x, date1_vals[:5], date2_vals[:5], alpha=0.2, color='gray')
+                    
+                    # Set y-axis limits with padding
+                    all_vals = date1_vals[:5] + date2_vals[:5]
+                    y_min, y_max = min(all_vals), max(all_vals)
+                    padding = (y_max - y_min) * 0.1
+                    ax.set_ylim(y_min - padding, y_max + padding)
+        except Exception as e:
+            logger.warning(f"Error in quantile comparison plot: {str(e)}")
+        
+        ax.set_title('Quantile Comparison')
+        ax.set_xlabel('Quantile')
+        ax.set_ylabel('Hospitalizations')
+        ax.grid(True, alpha=0.3)
+        ax.legend()
 
     def save_payloads(self, payloads):
         """Save payloads to JSON files in the specified output directory"""
