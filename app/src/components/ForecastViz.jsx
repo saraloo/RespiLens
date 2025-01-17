@@ -187,41 +187,53 @@ const ForecastViz = ({ location, onBack }) => {
         {
           label: '95% CI',
           data: ci95Upper,
-          fill: '+1',
-          backgroundColor: 'rgba(130, 202, 157, 0.05)',
+          fill: {
+            target: '-1',
+            above: 'rgba(130, 202, 157, 0.05)',
+            below: 'rgba(130, 202, 157, 0.05)'
+          },
           borderWidth: 0,
+          pointRadius: 0,
         },
         {
           label: '95% CI Lower',
           data: ci95Lower,
-          fill: false,
           borderWidth: 0,
+          pointRadius: 0,
         },
         {
           label: '75% CI',
           data: ci75Upper,
-          fill: '+1',
-          backgroundColor: 'rgba(130, 202, 157, 0.1)',
+          fill: {
+            target: '-1',
+            above: 'rgba(130, 202, 157, 0.1)',
+            below: 'rgba(130, 202, 157, 0.1)'
+          },
           borderWidth: 0,
+          pointRadius: 0,
         },
         {
           label: '75% CI Lower',
           data: ci75Lower,
-          fill: false,
           borderWidth: 0,
+          pointRadius: 0,
         },
         {
           label: '50% CI',
           data: ci50Upper,
-          fill: '+1',
-          backgroundColor: 'rgba(130, 202, 157, 0.2)',
+          fill: {
+            target: '-1',
+            above: 'rgba(130, 202, 157, 0.2)',
+            below: 'rgba(130, 202, 157, 0.2)'
+          },
           borderWidth: 0,
+          pointRadius: 0,
         },
         {
           label: '50% CI Lower',
           data: ci50Lower,
-          fill: false,
           borderWidth: 0,
+          pointRadius: 0,
         },
         {
           label: 'Observed',
