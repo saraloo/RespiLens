@@ -4,9 +4,7 @@ import json
 from pathlib import Path
 import logging
 from typing import Optional
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-import numpy as np
+from .validation_plots import ValidationPlotter
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -244,15 +242,8 @@ class FluSightPreprocessor:
         """Generate validation plots for a single location's payload with multiple model support"""
         pdf_path = self.output_path / f"{location}_validation.pdf"
         
-        # Define a color palette for different models
-        model_colors = {
-            'FluSight-ensemble': '#1f77b4',  # blue
-            'UMass-hosp': '#2ca02c',         # green
-            'CovidHub-baseline': '#ff7f0e',   # orange
-            'CDC-baseline': '#d62728'         # red
-        }
-        # Default color for models not in the palette
-        default_color = '#7f7f7f'  # gray
+        # Initialize validation plotter
+        self.plotter = ValidationPlotter(self.output_path)
         
         with PdfPages(pdf_path) as pdf:
             # Create figure with a grid layout
@@ -487,7 +478,7 @@ class FluSightPreprocessor:
             
             # Generate validation plots
             try:
-                self.validate_and_plot_payload(payload, location)
+                self.plotter.generate_validation_plots(payload, location)
                 logger.info(f"Generated validation plots for {location}")
             except Exception as e:
                 logger.error(f"Error generating validation plots for {location}: {str(e)}")
