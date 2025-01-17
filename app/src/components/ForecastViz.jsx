@@ -310,9 +310,9 @@ const ForecastViz = ({ location, onBack }) => {
           <div className="lg:col-span-2">
             <h3 className="text-lg font-semibold mb-4">Hospitalization Forecast (Zoomed)</h3>
             <div className="h-96">
-              {getTimeSeriesData(true) && (
+              {getTimeSeriesData() && (
                 <Line
-                  data={getTimeSeriesData(true)}
+                  data={getTimeSeriesData()}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
