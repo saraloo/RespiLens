@@ -75,10 +75,7 @@ const ForecastViz = ({ location, onBack }) => {
 
   const getTimeSeriesData = (fullTimeline = false) => {
     if (!data || !currentDate) return null;
-    const refDateIndex = data.ground_truth.dates.indexOf(currentDate);
-    if (refDateIndex === -1) return null;
     
-    const historyStartIndex = fullTimeline ? 0 : Math.max(0, refDateIndex - 8);
     const dates = [];
     const observed = [];
     const forecast = [];
@@ -89,30 +86,19 @@ const ForecastViz = ({ location, onBack }) => {
     const ci50Lower = [];
     const ci50Upper = [];
     
-    // Historical data
-    for (let i = historyStartIndex; i <= refDateIndex; i++) {
-      const date = new Date(data.ground_truth.dates[i]);
+    // Always show full ground truth data
+    data.ground_truth.dates.forEach((dateStr, i) => {
+      const date = new Date(dateStr);
       dates.push(`${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`);
       observed.push(data.ground_truth.values[i]);
-      // Only add forecast data for the current date in full timeline mode
-      if (i === refDateIndex) {
-        forecast.push(null);
-        ci95Lower.push(null);
-        ci95Upper.push(null);
-        ci75Lower.push(null);
-        ci75Upper.push(null);
-        ci50Lower.push(null);
-        ci50Upper.push(null);
-      } else {
-        forecast.push(null);
-        ci95Lower.push(null);
-        ci95Upper.push(null);
-        ci75Lower.push(null);
-        ci75Upper.push(null);
-        ci50Lower.push(null);
-        ci50Upper.push(null);
-      }
-    }
+      forecast.push(null);
+      ci95Lower.push(null);
+      ci95Upper.push(null);
+      ci75Lower.push(null);
+      ci75Upper.push(null);
+      ci50Lower.push(null);
+      ci50Upper.push(null);
+    });
 
     // Forecast data
     const forecastData = data.forecasts['wk inc flu hosp']
