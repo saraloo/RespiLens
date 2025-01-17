@@ -249,23 +249,23 @@ class FluSightPreprocessor:
             gt_values = payload['ground_truth']['values']
             
             # Plot ground truth
-            ax1.plot(gt_dates, gt_values, color='black', marker='.', label='Ground Truth')
+            ax1.plot(gt_dates, gt_values, color='black', marker='.', label='Ground Truth', linewidth=2)
             
             # Plot forecasts if available
             forecasts = {}
             
             # Get forecasts for both target dates
-            target_dates = ['2023-01-15', '2024-12-15']
-            forecasts = {'2023': {}, '2024': {}}
+            target_dates = ['2024-01-27', '2024-12-14']
+            forecasts = {'2024-01-27': {}, '2024-12-14': {}}
             
             for target_date in target_dates:
                 # Get FluSight-ensemble forecasts for both types
                 if 'wk inc flu hosp' in payload['forecasts']:
-                    forecasts[target_date[:4]]['incidence'] = next((f for f in payload['forecasts']['wk inc flu hosp'] 
+                    forecasts[target_date]['incidence'] = next((f for f in payload['forecasts']['wk inc flu hosp'] 
                         if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
                 
                 if 'wk flu hosp rate change' in payload['forecasts']:
-                    forecasts[target_date[:4]]['rate_change'] = next((f for f in payload['forecasts']['wk flu hosp rate change'] 
+                    forecasts[target_date]['rate_change'] = next((f for f in payload['forecasts']['wk flu hosp rate change'] 
                         if f['model'] == 'FluSight-ensemble' and f['reference_date'] == target_date), None)
             
             # Store forecasts for quantile comparison
@@ -329,7 +329,7 @@ class FluSightPreprocessor:
                 ax1.fill_between(dates, ci50_lower, ci50_upper, alpha=0.3, color=color, label=f'{year} Rate Change 50% CI')
             
             # Add vertical lines at both forecast dates
-            for date, color in [('2023-01-15', 'blue'), ('2024-12-15', 'red')]:
+            for date, color in [('2024-01-27', 'blue'), ('2024-12-14', 'red')]:
                 forecast_date = pd.to_datetime(date)
                 ax1.axvline(forecast_date, color=color, linestyle='--', label=f'{date} Forecast Date')
             
