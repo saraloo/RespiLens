@@ -22,12 +22,15 @@ class FluSightPreprocessor:
         self.base_path = Path(base_path)
         self.output_path = Path(output_path)
         self.model_output_path = self.base_path / "model-output"
+        self.target_data_path = self.base_path / "target-data/target-hospital-admissions.csv"
         
         # Validate paths
         if not self.base_path.exists():
             raise ValueError(f"Base path does not exist: {self.base_path}")
         if not self.model_output_path.exists():
             raise ValueError(f"Model output path does not exist: {self.model_output_path}")
+        if not self.target_data_path.exists():
+            raise ValueError(f"Target data file does not exist: {self.target_data_path}")
             
         # Create output directory if it doesn't exist
         self.output_path.mkdir(parents=True, exist_ok=True)
@@ -42,6 +45,29 @@ class FluSightPreprocessor:
             'peak week inc flu hosp',
             'peak inc flu hosp'
         ]
+
+    def read_ground_truth_data(self):
+        """Read and process ground truth hospitalization data"""
+        logger.info("Reading ground truth data...")
+        try:
+            df = pd.read_csv(self.target_data_path)
+            # Convert date column to datetime and then to string format
+            df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
+            
+            # Group data by location
+            ground_truth = {}
+            for location, group in df.groupby('location'):
+                ground_truth[location] = {
+                    'dates': group['date'].tolist(),
+                    'values': group['value'].tolist(),
+                    'weekly_rates': group['weekly_rate'].tolist()
+                }
+            
+            logger.info(f"Processed ground truth data for {len(ground_truth)} locations")
+            return ground_truth
+        except Exception as e:
+            logger.error(f"Error reading ground truth data: {str(e)}")
+            raise
 
     def read_model_outputs(self):
         """Read all model output files and combine them"""
@@ -155,7 +181,7 @@ class FluSightPreprocessor:
                 'horizons': horizons
             }
 
-    def create_location_payloads(self, target_dfs):
+    def create_location_payloads(self, target_dfs, ground_truth_data):
         """Create visualization payloads for each location"""
         logger.info("Creating location payloads...")
         
@@ -170,9 +196,14 @@ class FluSightPreprocessor:
             logger.debug(f"Processing location: {location}")
             metadata = locations_df[locations_df['location'] == location].iloc[0].to_dict()
             
-            # Initialize the location payload with metadata
+            # Initialize the location payload with metadata and ground truth
             location_payload = {
                 'metadata': metadata,
+                'ground_truth': ground_truth_data.get(location, {
+                    'dates': [],
+                    'values': [],
+                    'weekly_rates': []
+                }),
                 'forecasts': {}
             }
             
@@ -229,9 +260,15 @@ class FluSightPreprocessor:
         try:
             logger.info("Starting preprocessing pipeline...")
             
+            # Read ground truth data first
+            ground_truth_data = self.read_ground_truth_data()
+            
+            # Process model outputs
             combined_df = self.read_model_outputs()
             target_dfs = self.filter_and_process_data(combined_df)
-            payloads = self.create_location_payloads(target_dfs)
+            
+            # Create payloads with both forecast and ground truth data
+            payloads = self.create_location_payloads(target_dfs, ground_truth_data)
             self.save_payloads(payloads)
             
             logger.info("Processing complete!")
