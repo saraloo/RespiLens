@@ -117,6 +117,7 @@ const ForecastViz = ({ location, onBack }) => {
         ci75Upper[refDateIndex] = currentDateValues[5];
         ci50Lower[refDateIndex] = currentDateValues[2];
         ci50Upper[refDateIndex] = currentDateValues[4];
+      }
 
       // Future forecasts
       Object.entries(forecastData.data.horizons)
