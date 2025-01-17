@@ -84,13 +84,15 @@ const ForecastViz = ({ location, onBack }) => {
     const forecast = [];
     const ci95Lower = [];
     const ci95Upper = [];
+    const ci75Lower = [];
+    const ci75Upper = [];
     const ci50Lower = [];
     const ci50Upper = [];
     
     // Historical data
     for (let i = historyStartIndex; i <= refDateIndex; i++) {
       const date = new Date(data.ground_truth.dates[i]);
-      dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+      dates.push(`${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`);
       observed.push(data.ground_truth.values[i]);
       forecast.push(null);
       ci95Lower.push(null);
@@ -106,11 +108,13 @@ const ForecastViz = ({ location, onBack }) => {
     if (forecastData) {
       // Current date forecast
       const currentDateValues = forecastData.data.horizons['0'].values;
-      forecast[forecast.length - 1] = currentDateValues[2];
+      forecast[forecast.length - 1] = currentDateValues[3];
       ci95Lower[ci95Lower.length - 1] = currentDateValues[0];
-      ci95Upper[ci95Upper.length - 1] = currentDateValues[4];
-      ci50Lower[ci50Lower.length - 1] = currentDateValues[1];
-      ci50Upper[ci50Upper.length - 1] = currentDateValues[3];
+      ci95Upper[ci95Upper.length - 1] = currentDateValues[6];
+      ci75Lower[ci75Lower.length - 1] = currentDateValues[1];
+      ci75Upper[ci75Upper.length - 1] = currentDateValues[5];
+      ci50Lower[ci50Lower.length - 1] = currentDateValues[2];
+      ci50Upper[ci50Upper.length - 1] = currentDateValues[4];
 
       // Future forecasts
       Object.entries(forecastData.data.horizons)
@@ -118,13 +122,15 @@ const ForecastViz = ({ location, onBack }) => {
         .forEach(([horizon, horizonData]) => {
           if (parseInt(horizon) > 0) {
             const date = new Date(horizonData.date);
-            dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+            dates.push(`${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`);
             observed.push(null);
-            forecast.push(horizonData.values[2]);
+            forecast.push(horizonData.values[3]);
             ci95Lower.push(horizonData.values[0]);
-            ci95Upper.push(horizonData.values[4]);
-            ci50Lower.push(horizonData.values[1]);
-            ci50Upper.push(horizonData.values[3]);
+            ci95Upper.push(horizonData.values[6]);
+            ci75Lower.push(horizonData.values[1]);
+            ci75Upper.push(horizonData.values[5]);
+            ci50Lower.push(horizonData.values[2]);
+            ci50Upper.push(horizonData.values[4]);
           }
         });
     }
@@ -136,7 +142,7 @@ const ForecastViz = ({ location, onBack }) => {
           label: '95% CI',
           data: ci95Upper,
           fill: '+1',
-          backgroundColor: 'rgba(130, 202, 157, 0.1)',
+          backgroundColor: 'rgba(130, 202, 157, 0.05)',
           borderWidth: 0,
         },
         {
@@ -146,10 +152,23 @@ const ForecastViz = ({ location, onBack }) => {
           borderWidth: 0,
         },
         {
+          label: '75% CI',
+          data: ci75Upper,
+          fill: '+1',
+          backgroundColor: 'rgba(130, 202, 157, 0.1)',
+          borderWidth: 0,
+        },
+        {
+          label: '75% CI Lower',
+          data: ci75Lower,
+          fill: false,
+          borderWidth: 0,
+        },
+        {
           label: '50% CI',
           data: ci50Upper,
           fill: '+1',
-          backgroundColor: 'rgba(130, 202, 157, 0.3)',
+          backgroundColor: 'rgba(130, 202, 157, 0.2)',
           borderWidth: 0,
         },
         {
@@ -274,9 +293,9 @@ const ForecastViz = ({ location, onBack }) => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Hospitalization Forecast</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
+          <div className="lg:col-span-2">
+            <h3 className="text-lg font-semibold mb-4">Hospitalization Forecast (Zoomed)</h3>
             <div className="h-96">
               {timeSeriesData && (
                 <Line
@@ -297,6 +316,39 @@ const ForecastViz = ({ location, onBack }) => {
                       legend: {
                         display: true,
                         position: 'top'
+                      },
+                      tooltip: {
+                        enabled: true,
+                        mode: 'index'
+                      }
+                    }
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
+            <div className="h-96">
+              {timeSeriesData && (
+                <Line
+                  data={timeSeriesData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                      intersect: false,
+                      mode: 'index'
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        display: false
                       },
                       tooltip: {
                         enabled: true,
