@@ -73,12 +73,12 @@ const ForecastViz = ({ location, onBack }) => {
     fetchData();
   }, [location]);
 
-  const getTimeSeriesData = () => {
+  const getTimeSeriesData = (fullTimeline = false) => {
     if (!data || !currentDate) return null;
     const refDateIndex = data.ground_truth.dates.indexOf(currentDate);
     if (refDateIndex === -1) return null;
     
-    const historyStartIndex = Math.max(0, refDateIndex - 8);
+    const historyStartIndex = fullTimeline ? 0 : Math.max(0, refDateIndex - 8);
     const dates = [];
     const observed = [];
     const forecast = [];
@@ -94,11 +94,24 @@ const ForecastViz = ({ location, onBack }) => {
       const date = new Date(data.ground_truth.dates[i]);
       dates.push(`${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`);
       observed.push(data.ground_truth.values[i]);
-      forecast.push(null);
-      ci95Lower.push(null);
-      ci95Upper.push(null);
-      ci50Lower.push(null);
-      ci50Upper.push(null);
+      // Only add forecast data for the current date in full timeline mode
+      if (i === refDateIndex) {
+        forecast.push(null);
+        ci95Lower.push(null);
+        ci95Upper.push(null);
+        ci75Lower.push(null);
+        ci75Upper.push(null);
+        ci50Lower.push(null);
+        ci50Upper.push(null);
+      } else {
+        forecast.push(null);
+        ci95Lower.push(null);
+        ci95Upper.push(null);
+        ci75Lower.push(null);
+        ci75Upper.push(null);
+        ci50Lower.push(null);
+        ci50Upper.push(null);
+      }
     }
 
     // Forecast data
@@ -297,9 +310,9 @@ const ForecastViz = ({ location, onBack }) => {
           <div className="lg:col-span-2">
             <h3 className="text-lg font-semibold mb-4">Hospitalization Forecast (Zoomed)</h3>
             <div className="h-96">
-              {timeSeriesData && (
+              {getTimeSeriesData(true) && (
                 <Line
-                  data={timeSeriesData}
+                  data={getTimeSeriesData(true)}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
