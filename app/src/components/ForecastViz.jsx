@@ -1,34 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  Area, BarChart, Bar 
-} from 'recharts';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length > 0) {
-    const date = new Date(label);
-    const formattedDate = date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-
-    return (
-      <div className="bg-white p-3 border rounded shadow">
-        <p className="font-bold mb-2">{formattedDate}</p>
-        {payload
-          .filter(entry => entry.value !== null)
-          .map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: {entry.value.toFixed(1)}
-            </p>
-          ))}
-      </div>
-    );
-  }
-  return null;
-};
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const ForecastViz = ({ location, onBack }) => {
   const [data, setData] = useState(null);
@@ -46,7 +43,6 @@ const ForecastViz = ({ location, onBack }) => {
         const jsonData = await response.json();
         setData(jsonData);
         
-        // Get unique dates and models
         const dates = Array.from(new Set(
           jsonData.forecasts['wk inc flu hosp']
             .map(f => f.reference_date)
@@ -61,7 +57,6 @@ const ForecastViz = ({ location, onBack }) => {
         setCurrentDate(dates[dates.length - 1]);
         setModels(modelList);
         
-        // Set default model to FluSight-ensemble if available
         if (modelList.includes('FluSight-ensemble')) {
           setSelectedModel('FluSight-ensemble');
         } else {
@@ -78,88 +73,196 @@ const ForecastViz = ({ location, onBack }) => {
     fetchData();
   }, [location]);
 
-  // Process data for time series chart
-  const getTimeSeriesData = () => {
-    if (!data || !currentDate) return [];
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  };
 
-    // Find the forecast reference date's index in ground truth
+  const getTimeSeriesData = (showFullTimeline = false) => {
+    if (!data || !currentDate) return null;
     const refDateIndex = data.ground_truth.dates.indexOf(currentDate);
-    if (refDateIndex === -1) return [];
+    if (refDateIndex === -1) return null;
     
-    // Show 8 weeks of history
-    const historyStartIndex = Math.max(0, refDateIndex - 8);
+    const historyStartIndex = showFullTimeline ? 0 : Math.max(0, refDateIndex - 8);
+    const dates = [];
+    const observed = [];
+    const forecast = [];
+    const ci95Lower = [];
+    const ci95Upper = [];
+    const ci75Lower = [];
+    const ci75Upper = [];
+    const ci50Lower = [];
+    const ci50Upper = [];
     
-    // Initialize result array with ground truth data
-    const result = [];
-    
-    // Add historical data
+    // Historical data
     for (let i = historyStartIndex; i <= refDateIndex; i++) {
-      result.push({
-        date: data.ground_truth.dates[i],
-        observed: data.ground_truth.values[i],
-        // Add null values for forecast intervals to maintain continuous line
-        forecast: null,
-        ci95_lower: null,
-        ci95_upper: null,
-        ci50_lower: null,
-        ci50_upper: null
-      });
+      dates.push(formatDate(data.ground_truth.dates[i]));
+      observed.push(data.ground_truth.values[i]);
+      forecast.push(null);
+      ci95Lower.push(null);
+      ci95Upper.push(null);
+      ci75Lower.push(null);
+      ci75Upper.push(null);
+      ci50Lower.push(null);
+      ci50Upper.push(null);
     }
 
-    // Get forecast data for selected date and model
-    const forecast = data.forecasts['wk inc flu hosp']
+    // Forecast data
+    const forecastData = data.forecasts['wk inc flu hosp']
       .find(f => f.reference_date === currentDate && f.model === selectedModel);
 
-    if (forecast) {
-      // Add the reference point (overlapping point)
-      if (forecast.data.horizons['0']) {
-        result.push({
-          date: currentDate,
-          observed: data.ground_truth.values[refDateIndex],
-          forecast: forecast.data.horizons['0'].values[2], // median
-          ci95_lower: forecast.data.horizons['0'].values[0],
-          ci95_upper: forecast.data.horizons['0'].values[4],
-          ci50_lower: forecast.data.horizons['0'].values[1],
-          ci50_upper: forecast.data.horizons['0'].values[3]
-        });
-      }
+    if (forecastData) {
+      // Current date forecast
+      const currentDateValues = forecastData.data.horizons['0'].values;
+      forecast[forecast.length - 1] = currentDateValues[11]; // median
+      ci95Lower[ci95Lower.length - 1] = currentDateValues[0]; // 0.025 quantile
+      ci95Upper[ci95Upper.length - 1] = currentDateValues[22]; // 0.975 quantile
+      ci75Lower[ci75Lower.length - 1] = currentDateValues[3]; // 0.125 quantile
+      ci75Upper[ci75Upper.length - 1] = currentDateValues[19]; // 0.875 quantile
+      ci50Lower[ci50Lower.length - 1] = currentDateValues[5]; // 0.25 quantile
+      ci50Upper[ci50Upper.length - 1] = currentDateValues[17]; // 0.75 quantile
 
-      // Add forecast points
-      Object.entries(forecast.data.horizons)
+      // Future forecasts
+      Object.entries(forecastData.data.horizons)
         .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
         .forEach(([horizon, horizonData]) => {
-          if (parseInt(horizon) > 0) { // Skip horizon 0 as it's already added
-            result.push({
-              date: horizonData.date,
-              observed: null, // No observations for future dates
-              forecast: horizonData.values[2], // median
-              ci95_lower: horizonData.values[0],
-              ci95_upper: horizonData.values[4],
-              ci50_lower: horizonData.values[1],
-              ci50_upper: horizonData.values[3]
-            });
+          if (parseInt(horizon) > 0) {
+            dates.push(formatDate(horizonData.date));
+            observed.push(null);
+            forecast.push(horizonData.values[11]); // median
+            ci95Lower.push(horizonData.values[0]); // 0.025 quantile
+            ci95Upper.push(horizonData.values[22]); // 0.975 quantile
+            ci75Lower.push(horizonData.values[3]); // 0.125 quantile
+            ci75Upper.push(horizonData.values[19]); // 0.875 quantile
+            ci50Lower.push(horizonData.values[5]); // 0.25 quantile
+            ci50Upper.push(horizonData.values[17]); // 0.75 quantile
           }
         });
     }
 
-    return result;
+    return {
+      labels: dates,
+      datasets: [
+        {
+          label: '95% CI',
+          data: ci95Upper,
+          borderColor: 'rgba(211, 211, 211, 1)',
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: {
+            target: {
+              value: ci95Lower
+            },
+            above: 'rgba(211, 211, 211, 0.3)'
+          }
+        },
+        {
+          label: '75% CI',
+          data: ci75Upper,
+          borderColor: 'rgba(211, 211, 211, 1)',
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: {
+            target: {
+              value: ci75Lower
+            },
+            above: 'rgba(211, 211, 211, 0.4)'
+          }
+        },
+        {
+          label: '50% CI',
+          data: ci50Upper,
+          borderColor: 'rgba(211, 211, 211, 1)',
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: {
+            target: {
+              value: ci50Lower
+            },
+            above: 'rgba(211, 211, 211, 0.5)'
+          }
+        },
+        {
+          label: 'Observed',
+          data: observed,
+          borderColor: 'rgba(63, 81, 181, 0.8)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: 'rgba(63, 81, 181, 0.8)',
+          fill: false,
+        },
+        {
+          label: 'Forecast',
+          data: forecast,
+          borderColor: 'rgba(76, 175, 80, 0.8)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 3,
+          pointBackgroundColor: 'rgba(76, 175, 80, 0.8)',
+          fill: false,
+        }
+      ]
+    };
   };
 
-  // Process data for rate change chart
   const getRateChangeData = () => {
-    if (!data || !currentDate) return [];
+    if (!data || !currentDate) return null;
 
     const forecast = data.forecasts['wk flu hosp rate change']
       ?.find(f => f.reference_date === currentDate && f.model === selectedModel);
 
-    if (!forecast) return [];
+    if (!forecast) return null;
 
     const horizon0 = forecast.data.horizons['0'];
-    return horizon0.categories.map((category, i) => ({
-      category,
-      probability: horizon0.values[i]
-    }));
+    
+    return {
+      labels: horizon0.categories,
+      datasets: [{
+        label: 'Probability',
+        data: horizon0.values,
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    };
   };
+
+  const chartOptions = (showFullTimeline = false) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
+    scales: {
+      x: {
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45
+        }
+      },
+      y: {
+        beginAtZero: true
+      }
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          filter: (item) => !item.text.includes('Area')
+        }
+      },
+      tooltip: {
+        enabled: true,
+        mode: 'index'
+      },
+      title: {
+        display: true,
+        text: showFullTimeline ? 'Full Timeline' : 'Recent Timeline with Forecast'
+      }
+    }
+  });
 
   if (loading) {
     return (
@@ -172,10 +275,14 @@ const ForecastViz = ({ location, onBack }) => {
   if (error) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="text-red-500 text-center">{error}</div>
+        <div className="text-red-500">{error}</div>
       </div>
     );
   }
+
+  const timeSeriesData = getTimeSeriesData(false);
+  const fullTimelineData = getTimeSeriesData(true);
+  const rateChangeData = getRateChangeData();
 
   return (
     <div className="container mx-auto p-4">
@@ -189,7 +296,7 @@ const ForecastViz = ({ location, onBack }) => {
         </button>
       </div>
 
-      <div className="border rounded-lg shadow-sm bg-white mb-8">
+      <div className="border rounded-lg shadow-sm bg-white">
         <div className="p-4 border-b">
           <h2 className="text-2xl font-bold">{data.metadata.location_name} Flu Forecasts</h2>
         </div>
@@ -207,7 +314,7 @@ const ForecastViz = ({ location, onBack }) => {
           </button>
           
           <div className="flex items-center gap-4">
-            <span className="font-medium">Week of {currentDate}</span>
+            <span className="font-medium">Week of {formatDate(currentDate)}</span>
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
@@ -231,116 +338,63 @@ const ForecastViz = ({ location, onBack }) => {
           </button>
         </div>
 
-        <div className="p-4">
-          <h3 className="text-lg font-semibold mb-4">Hospitalization Forecast</h3>
-          <div className="h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart 
-                data={getTimeSeriesData()} 
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date"
-                  tickFormatter={(date) => {
-                    const d = new Date(date);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Recent Timeline</h3>
+            <div className="h-96">
+              {timeSeriesData && (
+                <Line
+                  data={timeSeriesData}
+                  options={chartOptions(false)}
+                />
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
+            <div className="h-96">
+              {fullTimelineData && (
+                <Line
+                  data={fullTimelineData}
+                  options={chartOptions(true)}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-2">
+            <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
+            <div className="h-96">
+              {rateChangeData && (
+                <Bar
+                  data={rateChangeData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: {
+                          callback: (value) => `${(value * 100).toFixed(0)}%`
+                        }
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        display: false
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: (context) => `${(context.raw * 100).toFixed(1)}%`
+                        }
+                      }
+                    }
                   }}
                 />
-                <YAxis />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                
-                {/* 95% Confidence Interval */}
-                <Area
-                  type="monotone"
-                  dataKey="ci95_upper"
-                  stroke="none"
-                  fill="#82ca9d"
-                  fillOpacity={0.1}
-                  isAnimationActive={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="ci95_lower"
-                  stroke="none"
-                  fill="#82ca9d"
-                  fillOpacity={0.1}
-                  isAnimationActive={false}
-                />
-                
-                {/* 50% Confidence Interval */}
-                <Area
-                  type="monotone"
-                  dataKey="ci50_upper"
-                  stroke="none"
-                  fill="#82ca9d"
-                  fillOpacity={0.3}
-                  isAnimationActive={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="ci50_lower"
-                  stroke="none"
-                  fill="#82ca9d"
-                  fillOpacity={0.3}
-                  isAnimationActive={false}
-                />
-                
-                {/* Observed Data */}
-                <Line
-                  type="monotone"
-                  dataKey="observed"
-                  stroke="#8884d8"
-                  strokeWidth={2}
-                  dot={true}
-                  connectNulls={true}
-                  isAnimationActive={false}
-                  name="Observed"
-                />
-                
-                {/* Forecast Line */}
-                <Line
-                  type="monotone"
-                  dataKey="forecast"
-                  stroke="#82ca9d"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={true}
-                  connectNulls={true}
-                  isAnimationActive={false}
-                  name="Forecast"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="p-4 border-t">
-          <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={getRateChangeData()} 
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
-                <YAxis 
-                  domain={[0, 1]} 
-                  tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} 
-                />
-                <Tooltip 
-                  formatter={(value) => `${(value * 100).toFixed(1)}%`} 
-                />
-                <Legend />
-                <Bar 
-                  dataKey="probability" 
-                  fill="#8884d8" 
-                  name="Probability" 
-                />
-              </BarChart>
-            </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
       </div>
