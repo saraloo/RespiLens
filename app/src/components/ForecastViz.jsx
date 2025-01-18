@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
 const ForecastViz = ({ location, onBack }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedModels, setSelectedModels] = useState(['FluSight-ensemble']);
+  const [selectedModels, setSelectedModels] = useState([]);
   const [currentDate, setCurrentDate] = useState(null);
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
+  const [isModelFilterOpen, setIsModelFilterOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -18,20 +19,33 @@ const ForecastViz = ({ location, onBack }) => {
         const jsonData = await response.json();
         setData(jsonData);
         
-        const dates = Object.keys(jsonData.forecasts).sort();
-        const modelList = Object.keys(
-          jsonData.forecasts[dates[0]]['wk inc flu hosp'] || {}
-        );
+        const dates = Object.keys(jsonData.forecasts || {}).sort();
+        
+        // Comprehensive model extraction
+        const extractedModels = new Set();
+        dates.forEach(date => {
+          const forecastTypes = ['wk inc flu hosp', 'wk flu hosp rate change'];
+          forecastTypes.forEach(type => {
+            const typeForecast = jsonData.forecasts[date]?.[type] || {};
+            Object.keys(typeForecast).forEach(model => extractedModels.add(model));
+          });
+        });
+
+        const modelList = Array.from(extractedModels);
+        
+        setModels(modelList);
         
         setAvailableDates(dates);
         setCurrentDate(dates[dates.length - 1]);
-        setModels(modelList);
         
-        if (modelList.includes('FluSight-ensemble')) {
-          setSelectedModels(['FluSight-ensemble']);
-        } else {
-          setSelectedModels([modelList[0]]);
-        }
+        // Default model selection
+        const defaultSelection = modelList.length > 0 
+          ? (modelList.includes('FluSight-ensemble') 
+              ? ['FluSight-ensemble'] 
+              : [modelList[0]])
+          : [];
+        
+        setSelectedModels(defaultSelection);
       } catch (err) {
         setError("Failed to load forecast data");
         console.error(err);
@@ -43,7 +57,7 @@ const ForecastViz = ({ location, onBack }) => {
     fetchData();
   }, [location]);
 
-  const getTimeSeriesData = (fullTimeline = false) => {
+  const getTimeSeriesData = () => {
     if (!data || !currentDate) return null;
 
     // Ground truth trace
@@ -59,7 +73,11 @@ const ForecastViz = ({ location, onBack }) => {
 
     // Generate traces for each selected model
     const modelTraces = selectedModels.flatMap(model => {
-      const forecast = data.forecasts[currentDate]['wk inc flu hosp'][model];
+      // Try both forecast types
+      const forecast = 
+        data.forecasts[currentDate]['wk inc flu hosp']?.[model] || 
+        data.forecasts[currentDate]['wk flu hosp rate change']?.[model];
+      
       if (!forecast) return [];
 
       const forecastDates = [];
@@ -70,9 +88,9 @@ const ForecastViz = ({ location, onBack }) => {
       const ci50Lower = [];
 
       // Process all horizons
-      Object.entries(forecast.predictions).forEach(([horizon, pred]) => {
+      Object.entries(forecast.predictions || {}).forEach(([horizon, pred]) => {
         forecastDates.push(pred.date);
-        const values = pred.values;
+        const values = pred.values || [0, 0, 0, 0, 0];
         ci95Lower.push(values[0]); // 2.5%
         ci50Lower.push(values[1]); // 25%
         medianValues.push(values[2]); // 50%
@@ -124,7 +142,7 @@ const ForecastViz = ({ location, onBack }) => {
     if (!data || !currentDate) return null;
 
     return selectedModels.map(model => {
-      const forecast = data.forecasts[currentDate]['wk flu hosp rate change'][model];
+      const forecast = data.forecasts[currentDate]['wk flu hosp rate change']?.[model];
       if (!forecast) return null;
 
       const horizon0 = forecast.predictions['0'];
@@ -143,6 +161,14 @@ const ForecastViz = ({ location, onBack }) => {
         }
       };
     }).filter(Boolean);
+  };
+
+  const toggleModelSelection = (model) => {
+    setSelectedModels(prev => 
+      prev.includes(model)
+        ? prev.filter(m => m !== model)
+        : [...prev, model]
+    );
   };
 
   if (loading) {
@@ -177,55 +203,71 @@ const ForecastViz = ({ location, onBack }) => {
           <h2 className="text-2xl font-bold">{data.metadata.location_name} Flu Forecasts</h2>
         </div>
 
-        <div className="p-4 border-b flex justify-between items-center">
-          <button 
-            onClick={() => {
-              const idx = availableDates.indexOf(currentDate);
-              if (idx > 0) setCurrentDate(availableDates[idx - 1]);
-            }}
-            disabled={availableDates.indexOf(currentDate) === 0}
-            className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          
-          <div className="flex items-center gap-4">
-            <span className="font-medium">Week of {currentDate}</span>
-            <div className="flex flex-wrap gap-2">
-              {models.map(model => (
-                <button
-                  key={model}
-                  onClick={() => {
-                    setSelectedModels(prev => 
-                      prev.includes(model)
-                        ? prev.filter(m => m !== model)
-                        : [...prev, model]
-                    );
-                  }}
-                  className={`px-3 py-1 rounded text-sm ${
-                    selectedModels.includes(model)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {model}
-                </button>
-              ))}
+        <div className="p-4 border-b flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <button 
+              onClick={() => {
+                const idx = availableDates.indexOf(currentDate);
+                if (idx > 0) setCurrentDate(availableDates[idx - 1]);
+              }}
+              disabled={availableDates.indexOf(currentDate) === 0}
+              className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            
+            <div className="flex items-center gap-4">
+              <span className="font-medium">Week of {currentDate}</span>
             </div>
+
+            <button 
+              onClick={() => {
+                const idx = availableDates.indexOf(currentDate);
+                if (idx < availableDates.length - 1) setCurrentDate(availableDates[idx + 1]);
+              }}
+              disabled={availableDates.indexOf(currentDate) === availableDates.length - 1}
+              className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
 
-          <button 
-            onClick={() => {
-              const idx = availableDates.indexOf(currentDate);
-              if (idx < availableDates.length - 1) setCurrentDate(availableDates[idx + 1]);
-            }}
-            disabled={availableDates.indexOf(currentDate) === availableDates.length - 1}
-            className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ArrowRight className="w-5 h-5" />
-          </button>
+          {/* Model Selector */}
+          <div className="relative">
+            <div className="flex justify-center mb-2">
+              <button 
+                onClick={() => setIsModelFilterOpen(!isModelFilterOpen)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+              >
+                <Filter className="w-4 h-4" />
+                <span>Select Models ({selectedModels.length})</span>
+              </button>
+            </div>
+
+            {isModelFilterOpen && (
+              <div className="absolute z-10 w-full bg-white border rounded shadow-lg p-4 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {models.map(model => (
+                    <label 
+                      key={model} 
+                      className="flex items-center space-x-2 cursor-pointer"
+                    >
+                      <input 
+                        type="checkbox"
+                        checked={selectedModels.includes(model)}
+                        onChange={() => toggleModelSelection(model)}
+                        className="form-checkbox h-4 w-4 text-blue-600"
+                      />
+                      <span className="text-sm">{model}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Rest of the component remains the same */}
         <div className="flex flex-col gap-4 p-4">
           {/* Full Timeline */}
           <div className="w-full">
