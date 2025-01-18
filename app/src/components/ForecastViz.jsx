@@ -342,7 +342,7 @@ const ForecastViz = ({ location, onBack }) => {
                     width: '100%',
                     showlegend: true,
                     barmode: 'group',
-                    margin: { l: 50, r: 20, t: 10, b: 80 },
+                    margin: { l: 20, r: 20, t: 10, b: 80 },
                     legend: {
                       orientation: 'h',
                       yanchor: 'bottom',
@@ -352,7 +352,8 @@ const ForecastViz = ({ location, onBack }) => {
                     },
                     xaxis: {
                       title: '',
-                      tickangle: -45
+                      tickangle: -45,
+                      type: 'category'
                     },
                     yaxis: {
                       title: 'Probability (%)',
