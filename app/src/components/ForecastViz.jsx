@@ -284,6 +284,7 @@ const ForecastViz = ({ location, onBack }) => {
                 data={timeSeriesData}
                 layout={{
                   height: 250,
+                  width: '100%',
                   showlegend: true,
                   hovermode: 'x unified',
                   margin: { l: 50, r: 20, t: 10, b: 40 },
@@ -315,7 +316,8 @@ const ForecastViz = ({ location, onBack }) => {
                 }}
                 config={{
                   responsive: true,
-                  displayModeBar: false
+                  displayModeBar: false,
+                  autosize: true
                 }}
               />
             )}
@@ -328,7 +330,8 @@ const ForecastViz = ({ location, onBack }) => {
               <Plot
                 data={timeSeriesData}
                 layout={{
-                  height: 300,
+                  height: 500,
+                  width: '100%',
                   showlegend: true,
                   hovermode: 'x unified',
                   margin: { l: 50, r: 20, t: 10, b: 40 },
@@ -374,6 +377,7 @@ const ForecastViz = ({ location, onBack }) => {
                 data={rateChangeData}
                 layout={{
                   height: 250,
+                  width: '100%',
                   showlegend: true,
                   barmode: 'stack',
                   margin: { l: 150, r: 20, t: 10, b: 40 },
