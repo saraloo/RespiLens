@@ -215,8 +215,8 @@ const ForecastViz = ({ location, onBack }) => {
             </button>
 
             {isModelFilterOpen && (
-              <div className="absolute z-10 left-0 right-0 top-full mt-2 bg-white border rounded shadow-lg p-4 max-h-96 overflow-y-auto min-w-[600px]">
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <div className="absolute z-10 -left-20 -right-20 top-full mt-2 bg-white border rounded shadow-lg p-4 max-h-96 overflow-y-auto min-w-[800px]">
+                <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {models.map(model => (
                     <label 
                       key={model} 
