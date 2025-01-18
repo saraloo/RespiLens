@@ -204,6 +204,38 @@ const ForecastViz = ({ location, onBack }) => {
             <span>Back to State Selection</span>
           </button>
 
+          {/* Model Selector */}
+          <div className="relative">
+            <button
+              onClick={() => setIsModelFilterOpen(!isModelFilterOpen)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+            >
+              <Filter className="w-4 h-4" />
+              <span>Select Models ({selectedModels.length})</span>
+            </button>
+
+            {isModelFilterOpen && (
+              <div className="absolute z-10 left-0 right-0 bg-white border rounded shadow-lg p-4 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {models.map(model => (
+                    <label 
+                      key={model} 
+                      className="flex items-center space-x-2 cursor-pointer"
+                    >
+                      <input 
+                        type="checkbox"
+                        checked={selectedModels.includes(model)}
+                        onChange={() => toggleModelSelection(model)}
+                        className="form-checkbox h-4 w-4 text-blue-600"
+                      />
+                      <span className="text-sm">{model}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <h2 className="text-2xl font-bold text-right">{data.metadata.location_name} Flu Forecasts</h2>
         </div>
 
@@ -236,39 +268,6 @@ const ForecastViz = ({ location, onBack }) => {
             </button>
           </div>
 
-          {/* Model Selector */}
-          <div className="relative">
-            <div className="flex justify-center mb-2">
-              <button 
-                onClick={() => setIsModelFilterOpen(!isModelFilterOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-              >
-                <Filter className="w-4 h-4" />
-                <span>Select Models ({selectedModels.length})</span>
-              </button>
-            </div>
-
-            {isModelFilterOpen && (
-              <div className="absolute z-10 w-full bg-white border rounded shadow-lg p-4 max-h-96 overflow-y-auto">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {models.map(model => (
-                    <label 
-                      key={model} 
-                      className="flex items-center space-x-2 cursor-pointer"
-                    >
-                      <input 
-                        type="checkbox"
-                        checked={selectedModels.includes(model)}
-                        onChange={() => toggleModelSelection(model)}
-                        className="form-checkbox h-4 w-4 text-blue-600"
-                      />
-                      <span className="text-sm">{model}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="flex flex-col gap-8 p-4 w-full">
