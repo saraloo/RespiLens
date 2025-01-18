@@ -1,192 +1,272 @@
+import os
+import json
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
+import argparse
+from typing import Dict, Tuple, Optional
 import logging
-from pathlib import Path
+from tqdm import tqdm
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class ValidationPlotter:
-    def __init__(self, output_path):
-        self.output_path = Path(output_path)
-        self.output_path.mkdir(parents=True, exist_ok=True)
+class FluSightValidator:
+    def __init__(self, data_dir: str, output_dir: str):
+        """Initialize validator with data and output directories"""
+        self.data_dir = Path(data_dir)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Color scheme for the two models we'll compare
-        self.model_colors = {
-            'UNC_IDD-influpaint': '#2ca02c',  # green
-            'FluSight-ensemble': '#1f77b4'     # blue
+        # Target dates for visualization
+        self.target_dates = ['2024-01-15', '2024-12-15']
+        self.model_name = 'FluSight-ensemble'
+        
+        # Color schemes for each target date
+        self.colors = {
+            'groundtruth': '#000000',
+            self.target_dates[0]: '#1f77b4',  # First target date - blue
+            self.target_dates[1]: '#ff7f0e'   # Second target date - orange
         }
         
-    def generate_validation_plots(self, payload, location):
-        """Generate validation plots for a single location"""
-        pdf_path = self.output_path / f"{location}_validation.pdf"
+        # Category order
+        self.category_order = [
+            'large_decrease',
+            'decrease',
+            'stable',
+            'increase',
+            'large_increase'
+        ]
+
+    def find_closest_dates(self, available_dates: list, target_dates: list) -> list:
+        """Find the closest available dates to the target dates"""
+        available_dates = pd.to_datetime(available_dates)
+        target_dates = pd.to_datetime(target_dates)
+        closest_dates = []
         
-        with PdfPages(pdf_path) as pdf:
+        for target in target_dates:
+            time_diff = abs(available_dates - target)
+            closest_idx = time_diff.argmin()
+            closest_dates.append(available_dates[closest_idx].strftime('%Y-%m-%d'))
+            
+        return closest_dates
+
+    def plot_location_validation(self, location: str, payload: Dict):
+        """Create validation plots for a single location"""
+        try:
             # Create figure with two subplots
-            fig, (ax_ts, ax_hist) = plt.subplots(2, 1, figsize=(12, 12), height_ratios=[2, 1])
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), height_ratios=[2, 1])
+            fig.suptitle(f"Validation Plot - {payload['metadata']['location_name']} ({location})")
+
+            # Plot ground truth data
+            dates = pd.to_datetime(payload['ground_truth']['dates'])
+            values = payload['ground_truth']['values']
+            ax1.plot(dates, values, color=self.colors['groundtruth'], 
+                    label='Ground Truth', linewidth=1)
+
+            # Find closest dates to targets in the forecasts
+            available_dates = sorted(list(payload['forecasts'].keys()))
+            plot_dates = self.find_closest_dates(available_dates, self.target_dates)
             
-            # Process ground truth data
-            gt_dates = pd.to_datetime(payload['ground_truth']['dates'])
-            gt_values = np.array(payload['ground_truth']['values'])
+            # Plot projections and categories for each date
+            for target_date, actual_date in zip(self.target_dates, plot_dates):
+                if actual_date in payload['forecasts']:
+                    self._plot_forecast(ax1, payload['forecasts'][actual_date], actual_date, target_date)
+                    self._add_categories(ax2, payload['forecasts'][actual_date], actual_date, target_date)
+
+            # Customize time series plot
+            ax1.set_title('Time Series with Forecasts')
+            ax1.set_xlabel('Date')
+            ax1.set_ylabel('Hospitalizations')
+            ax1.grid(True, alpha=0.3)
+            ax1.legend()
+
+            # Customize categories plot
+            ax2.set_title('Rate Change Categories')
+            ax2.set_xlabel('Categories')
+            ax2.set_ylabel('Probability')
+            ax2.grid(True, alpha=0.3)
+            ax2.legend()
             
-            # Sort ground truth data
-            sort_idx = np.argsort(gt_dates)
-            gt_dates = gt_dates[sort_idx]
-            gt_values = gt_values[sort_idx]
+            # Ensure y-axis starts at 0 for probabilities
+            ax2.set_ylim(0, 1.0)
+
+            # Adjust layout
+            plt.tight_layout()
             
-            # Plot ground truth
-            ax_ts.plot(gt_dates, gt_values, color='black', marker='.', 
-                      linewidth=1, label='Ground Truth', alpha=0.7)
-            
-            # Get latest reference date
-            reference_dates = sorted(payload['forecasts'].keys())
-            if not reference_dates:
-                logger.warning(f"No forecast data found for {location}")
+            # Save plot
+            pdf_path = self.output_dir / f"{location}_validation.pdf"
+            plt.savefig(pdf_path, bbox_inches='tight')
+            plt.close()
+
+        except Exception as e:
+            logger.error(f"Error creating plots for {location}: {str(e)}")
+            plt.close()
+
+    def _plot_forecast(self, ax, date_forecasts: Dict, actual_date: str, target_date: str):
+        """Plot quantile forecasts as continuous time series"""
+        try:
+            if 'wk inc flu hosp' not in date_forecasts:
                 return
                 
-            current_ref_date = reference_dates[-1]
-            ref_date_data = payload['forecasts'][current_ref_date]
+            model_data = date_forecasts['wk inc flu hosp'].get(self.model_name)
+            if not model_data or model_data['type'] != 'quantile':
+                return
+
+            color = self.colors[target_date]
             
-            # Plot incidence forecasts for both models
-            if 'wk inc flu hosp' in ref_date_data:
-                for model_name in ['UNC_IDD-influpaint', 'FluSight-ensemble']:
-                    model_data = ref_date_data['wk inc flu hosp']['models'].get(model_name)
-                    if model_data and 'quantiles' in model_data:
-                        self._plot_forecast(ax_ts, model_data, model_name)
+            # Collect all dates and values across horizons
+            dates = []
+            medians = []
+            q50_lower = []
+            q50_upper = []
+            q95_lower = []
+            q95_upper = []
             
-            # Plot rate change categorical forecasts
-            if 'wk flu hosp rate change' in ref_date_data:
-                self._plot_rate_change_histogram(
-                    ax_hist,
-                    {model: ref_date_data['wk flu hosp rate change']['models'].get(model)
-                     for model in ['UNC_IDD-influpaint', 'FluSight-ensemble']
-                     if ref_date_data['wk flu hosp rate change']['models'].get(model)}
-                )
+            # Sort horizons to ensure correct ordering
+            horizons = sorted(model_data['predictions'].keys(), key=int)
             
-            # Format plots
-            self._format_time_series_plot(ax_ts, location, gt_dates, gt_values)
-            self._format_histogram_plot(ax_hist)
-            
-            # Adjust layout and save
-            plt.tight_layout()
-            pdf.savefig(fig, bbox_inches='tight')
-            plt.close(fig)
-    
-    def _plot_forecast(self, ax, model_data, model_name):
-        """Plot quantile forecasts for a single model"""
-        try:
-            horizons = model_data['quantiles']
-            dates, medians, ci95_lower, ci95_upper = [], [], [], []
-            
-            for horizon, data in horizons.items():
-                forecast_date = pd.to_datetime(data['date'])
-                quantiles = np.array(data['quantiles'])
-                values = np.array(data['values'])
+            for horizon in horizons:
+                pred = model_data['predictions'][horizon]
+                pred_date = pd.to_datetime(pred['date'])
+                dates.append(pred_date)
                 
-                # Get indices for required quantiles
-                median_idx = np.abs(quantiles - 0.5).argmin()
-                lower_idx = np.abs(quantiles - 0.025).argmin()
-                upper_idx = np.abs(quantiles - 0.975).argmin()
+                quantiles = np.array(pred['quantiles'])
+                values = np.array(pred['values'])
                 
-                dates.append(forecast_date)
+                # Find indices for different quantiles
+                median_idx = np.where(quantiles == 0.5)[0][0]
+                q50_lower_idx = np.where(quantiles == 0.25)[0][0]
+                q50_upper_idx = np.where(quantiles == 0.75)[0][0]
+                q95_lower_idx = np.where(quantiles == 0.025)[0][0]
+                q95_upper_idx = np.where(quantiles == 0.975)[0][0]
+                
+                # Collect values
                 medians.append(values[median_idx])
-                ci95_lower.append(values[lower_idx])
-                ci95_upper.append(values[upper_idx])
+                q50_lower.append(values[q50_lower_idx])
+                q50_upper.append(values[q50_upper_idx])
+                q95_lower.append(values[q95_lower_idx])
+                q95_upper.append(values[q95_upper_idx])
             
-            color = self.model_colors.get(model_name, '#7f7f7f')
-            ax.plot(dates, medians, color=color, marker='o', markersize=4,
-                   label=f'{model_name} Median')
-            ax.fill_between(dates, ci95_lower, ci95_upper, alpha=0.2,
-                          color=color, label=f'{model_name} 95% CI')
+            # Plot 95% interval with lighter shade
+            ax.fill_between(dates, q95_lower, q95_upper, 
+                          color=color, alpha=0.2)
             
+            # Plot 50% interval with darker shade
+            ax.fill_between(dates, q50_lower, q50_upper, 
+                          color=color, alpha=0.4)
+            
+            # Plot median line
+            line = ax.plot(dates, medians, '-', color=color, 
+                         label=f'Forecast {actual_date}', linewidth=2)
+            # Add dot at horizon 0 for visual reference
+            ax.plot(dates[0], medians[0], 'o', color=color)
+
         except Exception as e:
-            logger.warning(f"Error plotting forecast for {model_name}: {str(e)}")
-    
-    def _plot_rate_change_histogram(self, ax, models_data):
-        """Plot rate change categorical forecasts"""
-        categories = ['large_decrease', 'decrease', 'stable', 'increase', 'large_increase']
-        x = np.arange(len(categories))
-        width = 0.35  # Width of bars
-        
-        for i, (model_name, model_data) in enumerate(models_data.items()):
-            try:
-                if model_data and 'pmf' in model_data:
-                    horizon_data = model_data['pmf'].get('0', {})  # Get current week
-                    if horizon_data:
-                        # Create mapping of categories to probabilities
-                        probs = {cat: 0.0 for cat in categories}
-                        for cat, prob in zip(horizon_data['categories'], 
-                                           horizon_data['probabilities']):
-                            probs[cat] = prob
-                        
-                        # Plot bars
-                        values = [probs[cat] for cat in categories]
-                        offset = width * (i - 0.5)
-                        bars = ax.bar(x + offset, values, width,
-                                    label=model_name,
-                                    color=self.model_colors.get(model_name),
-                                    alpha=0.7)
-                        
-                        # Add value labels
-                        for bar, value in zip(bars, values):
-                            if value > 0.05:  # Only label significant probabilities
-                                ax.text(bar.get_x() + bar.get_width()/2,
-                                      bar.get_height(),
-                                      f'{value:.2f}',
-                                      ha='center', va='bottom',
-                                      rotation=45)
-                                
-            except Exception as e:
-                logger.warning(f"Error plotting histogram for {model_name}: {str(e)}")
-    
-    def _format_time_series_plot(self, ax, location, gt_dates, gt_values):
-        """Format the time series plot"""
-        # Set title and labels
-        ax.set_title(f"Hospitalization Forecasts - {location}")
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Weekly Hospitalizations')
-        
-        # Set axis limits
-        if len(gt_dates) > 0:
-            ax.set_xlim(gt_dates.min(), gt_dates.max())
-            valid_values = gt_values[~np.isnan(gt_values)]
-            if len(valid_values) > 0:
-                y_max = np.percentile(valid_values, 99)
-                ax.set_ylim(0, y_max * 1.2)
-        
-        # Format ticks and grid
-        ax.tick_params(axis='x', rotation=45)
-        ax.grid(True, alpha=0.3)
-        
-        # Adjust legend
-        ax.legend(loc='upper left')
-    
-    def _format_histogram_plot(self, ax):
-        """Format the categorical histogram plot"""
-        ax.set_title('Rate Change Forecast - Current Week')
-        ax.set_xlabel('Category')
-        ax.set_ylabel('Probability')
-        
-        # Set x-ticks
-        categories = ['large_decrease', 'decrease', 'stable', 'increase', 'large_increase']
-        ax.set_xticks(np.arange(len(categories)))
-        ax.set_xticklabels(categories, rotation=45)
-        
-        # Set y-axis limits and grid
-        ax.set_ylim(0, 1.0)
-        ax.grid(True, axis='y', alpha=0.3)
-        
-        # Adjust legend
-        ax.legend()
+            logger.error(f"Error plotting forecast for date {actual_date}: {str(e)}")
+
+    def _add_categories(self, ax, date_forecasts: Dict, actual_date: str, target_date: str):
+        """Plot categorical forecasts for a specific date"""
+        try:
+            if 'wk flu hosp rate change' not in date_forecasts:
+                return
+                
+            model_data = date_forecasts['wk flu hosp rate change'].get(self.model_name)
+            if not model_data or model_data['type'] != 'pmf':
+                return
+
+            # Get predictions for horizon 0 (current week)
+            pred = model_data['predictions'].get('0')
+            if not pred:
+                return
+
+            # Reorder probabilities to match logical order
+            probabilities = []
+            for cat in self.category_order:
+                idx = pred['categories'].index(cat)
+                probabilities.append(pred['probabilities'][idx])
+
+            # Set bar positions - all categories side by side
+            x_pos = np.arange(len(self.category_order))
+            width = 0.35  # narrower bars to fit side by side
+            
+            # Offset based on which target date we're plotting
+            offset = -width/2 if target_date == self.target_dates[0] else width/2
+            
+            # Create bars
+            bars = ax.bar(x_pos + offset, probabilities, width,
+                         label=f'Forecast {actual_date}',
+                         color=self.colors[target_date],
+                         alpha=0.7)
+
+            # Add value labels on top of bars
+            for i, prob in enumerate(probabilities):
+                ax.text(x_pos[i] + offset, prob, f'{prob:.2f}',
+                       ha='center', va='bottom', fontsize=8)
+
+            # Set x-axis labels - only need to do this once
+            if target_date == self.target_dates[0]:
+                ax.set_xticks(x_pos)
+                ax.set_xticklabels(self.category_order, rotation=45)
+
+        except Exception as e:
+            logger.error(f"Error plotting categories for date {actual_date}: {str(e)}")
+
+    def validate_all_locations(self):
+        """Create validation plots for all locations"""
+        try:
+            # Read metadata
+            with open(self.data_dir / 'metadata.json', 'r') as f:
+                metadata = json.load(f)
+
+            # Process each location
+            for location in tqdm(metadata['locations'], desc="Creating validation plots"):
+                try:
+                    # Read location payload
+                    with open(self.data_dir / f"{location}.json", 'r') as f:
+                        payload = json.load(f)
+                    
+                    # Create validation plots
+                    self.plot_location_validation(location, payload)
+                    
+                except Exception as e:
+                    logger.error(f"Error processing location {location}: {str(e)}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"Error in validate_all_locations: {str(e)}")
+            raise
 
 def main():
-    # Example usage
-    plot_path = Path("./validation_plots")
-    plotter = ValidationPlotter(plot_path)
+    parser = argparse.ArgumentParser(description='Validate FluSight visualization payloads')
+    parser.add_argument('--data-dir', type=str, required=True,
+                      help='Directory containing processed JSON payloads')
+    parser.add_argument('--output-dir', type=str, required=True,
+                      help='Directory for validation PDF outputs')
+    parser.add_argument('--log-level', type=str, default='INFO',
+                      choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
+                      help='Set logging level')
     
-    # Load your payload and generate plots
-    # plotter.generate_validation_plots(payload, "US")
+    args = parser.parse_args()
+    
+    # Set logging level
+    logging.getLogger().setLevel(args.log_level)
+    
+    try:
+        logger.info(f"Starting validation with data dir: {args.data_dir}")
+        logger.info(f"Output dir: {args.output_dir}")
+        
+        validator = FluSightValidator(args.data_dir, args.output_dir)
+        validator.validate_all_locations()
+        
+        logger.info("Validation complete!")
+        
+    except Exception as e:
+        logger.error(f"Failed to run validation: {str(e)}")
+        raise
 
 if __name__ == "__main__":
     main()

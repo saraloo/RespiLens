@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
@@ -6,11 +6,16 @@ const ForecastViz = ({ location, onBack }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedModel, setSelectedModel] = useState('FluSight-ensemble');
+  const [selectedModels, setSelectedModels] = useState(['FluSight-ensemble']);
   const [currentDate, setCurrentDate] = useState(null);
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
-  const [view, setView] = useState('zoomed');
+
+  // Color palette for models
+  const modelColors = [
+    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,24 +24,20 @@ const ForecastViz = ({ location, onBack }) => {
         const jsonData = await response.json();
         setData(jsonData);
         
-        const dates = Array.from(new Set(
-          jsonData.forecasts['wk inc flu hosp']
-            .map(f => f.reference_date)
-        )).sort();
-        
-        const modelList = Array.from(new Set(
-          jsonData.forecasts['wk inc flu hosp']
-            .map(f => f.model)
-        ));
+        const dates = Object.keys(jsonData.forecasts).sort();
+        const modelList = Object.keys(
+          jsonData.forecasts[dates[0]]['wk inc flu hosp'] || {}
+        );
         
         setAvailableDates(dates);
         setCurrentDate(dates[dates.length - 1]);
         setModels(modelList);
         
+        // If FluSight-ensemble exists, default to it, otherwise first model
         if (modelList.includes('FluSight-ensemble')) {
-          setSelectedModel('FluSight-ensemble');
-        } else {
-          setSelectedModel(modelList[0]);
+          setSelectedModels(['FluSight-ensemble']);
+        } else if (modelList.length > 0) {
+          setSelectedModels([modelList[0]]);
         }
       } catch (err) {
         setError("Failed to load forecast data");
@@ -49,165 +50,132 @@ const ForecastViz = ({ location, onBack }) => {
     fetchData();
   }, [location]);
 
-  const getTimeSeriesData = (fullTimeline = false) => {
+  const getTimeSeriesData = () => {
     if (!data || !currentDate) return null;
-    
-    const refDateIndex = data.ground_truth.dates.indexOf(currentDate);
-    if (refDateIndex === -1) return null;
 
-    // Calculate date ranges
-    let startIndex = fullTimeline ? 0 : Math.max(0, refDateIndex - 8);
-    const endIndex = fullTimeline 
-      ? data.ground_truth.dates.length - 1 
-      : Math.min(data.ground_truth.dates.length - 1, refDateIndex + 5);
-
-    // Process ground truth data with strict continuity checking
-    const groundTruthSegments = [];
-    let currentSegment = { x: [], y: [] };
-    
-    for (let i = startIndex; i <= endIndex; i++) {
-      const value = data.ground_truth.values[i];
-      const currentDate = new Date(data.ground_truth.dates[i]);
-      
-      // Check if we should start a new segment
-      const shouldStartNewSegment = 
-        // If current value is missing
-        value === null || value === undefined ||
-        // Or if there's a gap in dates (more than 7 days)
-        (currentSegment.x.length > 0 && 
-         (currentDate - new Date(currentSegment.x[currentSegment.x.length - 1])) > 7 * 24 * 60 * 60 * 1000);
-      
-      if (shouldStartNewSegment) {
-        if (currentSegment.x.length > 0) {
-          groundTruthSegments.push({...currentSegment});
-          currentSegment = { x: [], y: [] };
-        }
-      } else {
-        currentSegment.x.push(data.ground_truth.dates[i]);
-        currentSegment.y.push(value);
-      }
-    }
-    
-    if (currentSegment.x.length > 0) {
-      groundTruthSegments.push(currentSegment);
-    }
-    
-    // Sort dates within each segment to ensure proper line connection
-    groundTruthSegments.forEach(segment => {
-      const paired = segment.x.map((x, i) => ({x, y: segment.y[i]}));
-      paired.sort((a, b) => new Date(a.x) - new Date(b.x));
-      segment.x = paired.map(p => p.x);
-      segment.y = paired.map(p => p.y);
-    });
-
-    const groundTruthTraces = groundTruthSegments.map((segment, idx) => ({
-      x: segment.x,
-      y: segment.y,
-      name: idx === 0 ? 'Observed' : 'Observed_cont',
+    // Ground truth trace
+    const groundTruthTrace = {
+      x: data.ground_truth.dates,
+      y: data.ground_truth.values,
+      name: 'Observed',
       type: 'scatter',
       mode: 'lines+markers',
-      line: { color: '#8884d8', width: 2 },
-      marker: { size: 6 },
-      showlegend: idx === 0
-    }));
-
-    // Get forecast data
-    const forecast = data.forecasts['wk inc flu hosp']
-      .find(f => f.reference_date === currentDate && f.model === selectedModel);
-
-    if (!forecast) {
-      return groundTruthTraces;
-    }
-
-    // Process forecast data
-    const forecastDates = [];
-    const medianValues = [];
-    const ci95Upper = [];
-    const ci95Lower = [];
-    const ci50Upper = [];
-    const ci50Lower = [];
-
-    // Add current date forecast
-    const currentDateValues = forecast.data.horizons['0'].values;
-    forecastDates.push(currentDate);
-    medianValues.push(currentDateValues[2]); // median
-    ci95Lower.push(currentDateValues[0]); // 2.5%
-    ci95Upper.push(currentDateValues[4]); // 97.5%
-    ci50Lower.push(currentDateValues[1]); // 25%
-    ci50Upper.push(currentDateValues[3]); // 75%
-
-    // Add future forecasts
-    Object.entries(forecast.data.horizons)
-      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-      .forEach(([horizon, horizonData]) => {
-        if (parseInt(horizon) > 0) {
-          forecastDates.push(horizonData.date);
-          medianValues.push(horizonData.values[2]);
-          ci95Lower.push(horizonData.values[0]);
-          ci95Upper.push(horizonData.values[4]);
-          ci50Lower.push(horizonData.values[1]);
-          ci50Upper.push(horizonData.values[3]);
-        }
-      });
-
-    // Create confidence interval traces
-    const ci95 = {
-      x: [...forecastDates, ...forecastDates.slice().reverse()],
-      y: [...ci95Upper, ...ci95Lower.slice().reverse()],
-      fill: 'toself',
-      fillcolor: 'rgba(130, 202, 157, 0.2)',
-      line: { color: 'transparent' },
-      name: '95% CI',
-      showlegend: true,
-      type: 'scatter'
-    };
-
-    const ci50 = {
-      x: [...forecastDates, ...forecastDates.slice().reverse()],
-      y: [...ci50Upper, ...ci50Lower.slice().reverse()],
-      fill: 'toself',
-      fillcolor: 'rgba(130, 202, 157, 0.4)',
-      line: { color: 'transparent' },
-      name: '50% CI',
-      showlegend: true,
-      type: 'scatter'
-    };
-
-    const medianForecast = {
-      x: forecastDates,
-      y: medianValues,
-      name: 'Forecast Median',
-      type: 'scatter',
-      mode: 'lines+markers',
-      line: { color: '#82ca9d', width: 2, dash: 'dash' },
+      line: { color: '#000000', width: 2 },
       marker: { size: 6 }
     };
 
-    return [ci95, ci50, ...groundTruthTraces, medianForecast];
+    // Generate traces for each selected model
+    const modelTraces = selectedModels.flatMap((model, modelIndex) => {
+      const forecast = data.forecasts[currentDate]['wk inc flu hosp'][model];
+      if (!forecast) return [];
+
+      const forecastDates = [];
+      const medianValues = [];
+      const ci95Upper = [];
+      const ci95Lower = [];
+      const ci50Upper = [];
+      const ci50Lower = [];
+
+      // Process all horizons
+      Object.entries(forecast.predictions).forEach(([horizon, pred]) => {
+        forecastDates.push(pred.date);
+        const values = pred.values;
+        ci95Lower.push(values[0]); // 2.5%
+        ci50Lower.push(values[1]); // 25%
+        medianValues.push(values[2]); // 50%
+        ci50Upper.push(values[3]); // 75%
+        ci95Upper.push(values[4]); // 97.5%
+      });
+
+      const color = modelColors[modelIndex % modelColors.length];
+
+      return [
+        {
+          x: [...forecastDates, ...forecastDates.slice().reverse()],
+          y: [...ci95Upper, ...ci95Lower.slice().reverse()],
+          fill: 'toself',
+          fillcolor: `${color}20`, // Very transparent
+          line: { color: 'transparent' },
+          name: `${model} 95% CI`,
+          showlegend: true,
+          type: 'scatter'
+        },
+        {
+          x: [...forecastDates, ...forecastDates.slice().reverse()],
+          y: [...ci50Upper, ...ci50Lower.slice().reverse()],
+          fill: 'toself',
+          fillcolor: `${color}40`, // Slightly less transparent
+          line: { color: 'transparent' },
+          name: `${model} 50% CI`,
+          showlegend: true,
+          type: 'scatter'
+        },
+        {
+          x: forecastDates,
+          y: medianValues,
+          name: `${model} Median`,
+          type: 'scatter',
+          mode: 'lines+markers',
+          line: { 
+            color: color,
+            width: 2,
+            dash: 'dash'
+          },
+          marker: { size: 6 }
+        }
+      ];
+    });
+
+    return [groundTruthTrace, ...modelTraces];
   };
 
   const getRateChangeData = () => {
     if (!data || !currentDate) return null;
 
-    const forecast = data.forecasts['wk flu hosp rate change']
-      ?.find(f => f.reference_date === currentDate && f.model === selectedModel);
+    const categoryOrder = [
+      'large_decrease', 'decrease', 'stable', 'increase', 'large_increase'
+    ];
 
-    if (!forecast) return null;
+    return selectedModels.map((model, modelIndex) => {
+      const forecast = data.forecasts[currentDate]['wk flu hosp rate change'][model];
+      if (!forecast) return null;
 
-    const horizon0 = forecast.data.horizons['0'];
-    
-    return [{
-      x: horizon0.categories,
-      y: horizon0.values.map(v => v * 100),
-      type: 'bar',
-      marker: {
-        color: 'rgba(75, 192, 192, 0.6)',
-        line: {
-          color: 'rgba(75, 192, 192, 1)',
-          width: 1
+      const horizon0 = forecast.predictions['0'];
+      
+      // Reorder probabilities to match the standard category order
+      const probabilities = categoryOrder.map(cat => {
+        const catIndex = horizon0.categories.indexOf(cat);
+        return catIndex !== -1 ? horizon0.probabilities[catIndex] : 0;
+      });
+
+      return {
+        name: model,
+        x: probabilities,
+        y: categoryOrder,
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: modelColors[modelIndex % modelColors.length],
+          line: {
+            color: 'rgba(0,0,0,0.5)',
+            width: 1
+          }
         }
-      }
-    }];
+      };
+    }).filter(Boolean);
+  };
+
+  // Compute the date range for the zoomed plot
+  const computeDateRange = (baseDate) => {
+    const zoomedStartDate = new Date(baseDate);
+    zoomedStartDate.setDate(zoomedStartDate.getDate() - 8 * 7); // 8 weeks before
+    const zoomedEndDate = new Date(baseDate);
+    zoomedEndDate.setDate(zoomedEndDate.getDate() + 5 * 7); // 5 weeks after
+
+    return {
+      start: zoomedStartDate.toISOString().split('T')[0],
+      end: zoomedEndDate.toISOString().split('T')[0]
+    };
   };
 
   if (loading) {
@@ -222,8 +190,9 @@ const ForecastViz = ({ location, onBack }) => {
     </div>;
   }
 
-  const timeSeriesData = getTimeSeriesData(view === 'full');
+  const timeSeriesData = getTimeSeriesData();
   const rateChangeData = getRateChangeData();
+  const zoomedDateRange = computeDateRange(currentDate);
 
   return (
     <div className="container mx-auto p-4">
@@ -256,23 +225,27 @@ const ForecastViz = ({ location, onBack }) => {
           
           <div className="flex items-center gap-4">
             <span className="font-medium">Week of {currentDate}</span>
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="border rounded px-3 py-1"
-            >
+            <div className="flex flex-wrap gap-2">
               {models.map(model => (
-                <option key={model} value={model}>{model}</option>
+                <button
+                  key={model}
+                  onClick={() => {
+                    setSelectedModels(prev => 
+                      prev.includes(model)
+                        ? prev.filter(m => m !== model)
+                        : [...prev, model]
+                    );
+                  }}
+                  className={`px-3 py-1 rounded text-sm ${
+                    selectedModels.includes(model)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {model}
+                </button>
               ))}
-            </select>
-            <select
-              value={view}
-              onChange={(e) => setView(e.target.value)}
-              className="border rounded px-3 py-1"
-            >
-              <option value="zoomed">Zoomed View</option>
-              <option value="full">Full Timeline</option>
-            </select>
+            </div>
           </div>
 
           <button 
@@ -287,78 +260,15 @@ const ForecastViz = ({ location, onBack }) => {
           </button>
         </div>
 
-        <div className="grid grid-cols-12 gap-4 p-4">
-          {/* Left column: Overview timeline */}
-          <div className="col-span-3">
+        <div className="flex flex-col gap-4 p-4">
+          {/* Full Timeline */}
+          <div className="w-full">
             <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
             {timeSeriesData && (
               <Plot
                 data={timeSeriesData}
                 layout={{
-                  height: 200,
-                  showlegend: false,
-                  hovermode: 'x unified',
-                  margin: { l: 40, r: 10, t: 10, b: 30 },
-                  xaxis: {
-                    title: '',
-                    tickangle: -45,
-                    tickformat: '%Y-%m'
-                  },
-                  yaxis: {
-                    title: 'Hospitalizations',
-                    zeroline: true
-                  }
-                }}
-                config={{
-                  responsive: true,
-                  displayModeBar: false
-                }}
-              />
-            )}
-          </div>
-
-          {/* Middle column: Rate change forecast */}
-          <div className="col-span-3">
-            <h3 className="text-lg font-semibold mb-4">Rate Change</h3>
-            {rateChangeData && (
-              <Plot
-                data={[{
-                  ...rateChangeData[0],
-                  orientation: 'h',
-                  x: rateChangeData[0].y,
-                  y: ['large_decrease', 'decrease', 'stable', 'increase', 'large_increase'],
-                  type: 'bar'
-                }]}
-                layout={{
-                  height: 200,
-                  showlegend: false,
-                  margin: { l: 120, r: 10, t: 10, b: 30 },
-                  xaxis: {
-                    title: 'Probability (%)',
-                    range: [0, 100]
-                  },
-                  yaxis: {
-                    title: '',
-                    autorange: 'reversed'
-                  },
-                  bargap: 0.2
-                }}
-                config={{
-                  responsive: true,
-                  displayModeBar: false
-                }}
-              />
-            )}
-          </div>
-
-          {/* Right column: Detailed forecast */}
-          <div className="col-span-6">
-            <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
-            {timeSeriesData && (
-              <Plot
-                data={timeSeriesData}
-                layout={{
-                  height: 400,
+                  height: 250,
                   showlegend: true,
                   hovermode: 'x unified',
                   margin: { l: 50, r: 20, t: 10, b: 40 },
@@ -366,13 +276,100 @@ const ForecastViz = ({ location, onBack }) => {
                     title: 'Date',
                     tickangle: -45,
                     range: [
-                      new Date(currentDate).setDate(new Date(currentDate).getDate() - 56), // 8 weeks before
-                      new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)  // 5 weeks after
+                      data.ground_truth.dates[0],
+                      data.ground_truth.dates[data.ground_truth.dates.length - 1]
                     ]
                   },
                   yaxis: {
                     title: 'Hospitalizations',
                     zeroline: true
+                  },
+                  shapes: [{
+                    type: 'line',
+                    x0: currentDate,
+                    x1: currentDate,
+                    y0: 0,
+                    y1: 1,
+                    yref: 'paper',
+                    line: {
+                      color: 'red',
+                      width: 1,
+                      dash: 'dash'
+                    }
+                  }]
+                }}
+                config={{
+                  responsive: true,
+                  displayModeBar: false
+                }}
+              />
+            )}
+          </div>
+
+          {/* Zoomed Timeline */}
+          <div className="w-full">
+            <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
+            {timeSeriesData && (
+              <Plot
+                data={timeSeriesData}
+                layout={{
+                  height: 300,
+                  showlegend: true,
+                  hovermode: 'x unified',
+                  margin: { l: 50, r: 20, t: 10, b: 40 },
+                  xaxis: {
+                    title: 'Date',
+                    tickangle: -45,
+                    range: [
+                      zoomedDateRange.start,
+                      zoomedDateRange.end
+                    ]
+                  },
+                  yaxis: {
+                    title: 'Hospitalizations',
+                    zeroline: true
+                  },
+                  shapes: [{
+                    type: 'line',
+                    x0: currentDate,
+                    x1: currentDate,
+                    y0: 0,
+                    y1: 1,
+                    yref: 'paper',
+                    line: {
+                      color: 'red',
+                      width: 1,
+                      dash: 'dash'
+                    }
+                  }]
+                }}
+                config={{
+                  responsive: true,
+                  displayModeBar: false
+                }}
+              />
+            )}
+          </div>
+
+          {/* Rate Change */}
+          <div className="w-full">
+            <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
+            {rateChangeData && (
+              <Plot
+                data={rateChangeData}
+                layout={{
+                  height: 250,
+                  showlegend: true,
+                  barmode: 'stack',
+                  margin: { l: 150, r: 20, t: 10, b: 40 },
+                  xaxis: {
+                    title: 'Probability (%)',
+                    range: [0, 1],
+                    tickformat: '.0%'
+                  },
+                  yaxis: {
+                    title: '',
+                    autorange: 'reversed'
                   },
                   legend: {
                     orientation: 'h',
