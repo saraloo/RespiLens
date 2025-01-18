@@ -320,8 +320,13 @@ const ForecastViz = ({ location, onBack }) => {
                   }}
                   config={{
                     responsive: true,
-                    displayModeBar: false,
-                    autosize: true
+                    displayModeBar: true,
+                    showSendToCloud: false,
+                    plotlyServerURL: "",
+                    toImageButtonOptions: {
+                      format: 'png',
+                      filename: 'detailed_forecast_plot'
+                    }
                   }}
                 />
               )}
@@ -358,8 +363,13 @@ const ForecastViz = ({ location, onBack }) => {
                   }}
                   config={{
                     responsive: true,
-                    displayModeBar: false,
-                    autosize: true
+                    displayModeBar: true,
+                    showSendToCloud: false,
+                    plotlyServerURL: "",
+                    toImageButtonOptions: {
+                      format: 'png',
+                      filename: 'rate_change_plot'
+                    }
                   }}
                 />
               )}
@@ -406,8 +416,13 @@ const ForecastViz = ({ location, onBack }) => {
                 }}
                 config={{
                   responsive: true,
-                  displayModeBar: false,
-                  autosize: true
+                  displayModeBar: true,
+                  showSendToCloud: false,
+                  plotlyServerURL: "",
+                  toImageButtonOptions: {
+                    format: 'png',
+                    filename: 'full_timeline_plot'
+                  }
                 }}
               />
             )}
