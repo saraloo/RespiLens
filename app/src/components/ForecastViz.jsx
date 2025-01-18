@@ -218,18 +218,17 @@ const ForecastViz = ({ location, onBack }) => {
               <div className="absolute z-10 left-1/2 -translate-x-1/2 top-full mt-2 bg-white border rounded shadow-lg p-4 max-h-196 overflow-y-auto min-w-[1000px]">
                 <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {models.map(model => (
-                    <label 
-                      key={model} 
-                      className="flex items-center space-x-2 cursor-pointer"
+                    <div
+                      key={model}
+                      onClick={() => toggleModelSelection(model)}
+                      className={`p-2 rounded cursor-pointer transition-colors ${
+                        selectedModels.includes(model)
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'hover:bg-gray-100'
+                      }`}
                     >
-                      <input 
-                        type="checkbox"
-                        checked={selectedModels.includes(model)}
-                        onChange={() => toggleModelSelection(model)}
-                        className="form-checkbox h-4 w-4 text-blue-600"
-                      />
                       <span className="text-sm">{model}</span>
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
