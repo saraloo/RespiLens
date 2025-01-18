@@ -270,16 +270,16 @@ const ForecastViz = ({ location, onBack }) => {
         </div>
 
         <div className="flex flex-col gap-8 p-4 w-full">
-          {/* Top Row - Detailed and Categorical Forecasts */}
-          <div className="flex flex-row gap-8 w-full">
+          {/* Vertical Stack of Plots */}
+          <div className="flex flex-col gap-8 w-full">
             {/* Detailed Forecast */}
-            <div className="w-2/3">
+            <div className="w-full">
               <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
               {timeSeriesData && (
                 <Plot
                   data={timeSeriesData}
                   layout={{
-                    height: 500,
+                    height: 400,
                     width: '100%',
                     showlegend: true,
                     hovermode: 'x unified',
@@ -328,13 +328,13 @@ const ForecastViz = ({ location, onBack }) => {
             </div>
 
             {/* Rate Change */}
-            <div className="w-1/4">
+            <div className="w-full">
               <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
               {rateChangeData && (
                 <Plot
                   data={rateChangeData}
                   layout={{
-                    height: 500,
+                    height: 400,
                     width: '100%',
                     showlegend: true,
                     barmode: 'group',
@@ -366,14 +366,14 @@ const ForecastViz = ({ location, onBack }) => {
             </div>
           </div>
 
-          {/* Full Timeline - Centered */}
-          <div className="w-4/5 mx-auto">
+          {/* Full Timeline */}
+          <div className="w-full">
             <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
             {timeSeriesData && (
               <Plot
                 data={timeSeriesData}
                 layout={{
-                  height: 300,
+                  height: 400,
                   width: '100%',
                   showlegend: false,
                   hovermode: 'x unified',
