@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
@@ -10,12 +10,6 @@ const ForecastViz = ({ location, onBack }) => {
   const [currentDate, setCurrentDate] = useState(null);
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
-
-  // Color palette for models
-  const modelColors = [
-    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
-    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
-  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,10 +27,9 @@ const ForecastViz = ({ location, onBack }) => {
         setCurrentDate(dates[dates.length - 1]);
         setModels(modelList);
         
-        // If FluSight-ensemble exists, default to it, otherwise first model
         if (modelList.includes('FluSight-ensemble')) {
           setSelectedModels(['FluSight-ensemble']);
-        } else if (modelList.length > 0) {
+        } else {
           setSelectedModels([modelList[0]]);
         }
       } catch (err) {
@@ -50,7 +43,7 @@ const ForecastViz = ({ location, onBack }) => {
     fetchData();
   }, [location]);
 
-  const getTimeSeriesData = () => {
+  const getTimeSeriesData = (fullTimeline = false) => {
     if (!data || !currentDate) return null;
 
     // Ground truth trace
@@ -60,12 +53,12 @@ const ForecastViz = ({ location, onBack }) => {
       name: 'Observed',
       type: 'scatter',
       mode: 'lines+markers',
-      line: { color: '#000000', width: 2 },
+      line: { color: '#8884d8', width: 2 },
       marker: { size: 6 }
     };
 
     // Generate traces for each selected model
-    const modelTraces = selectedModels.flatMap((model, modelIndex) => {
+    const modelTraces = selectedModels.flatMap(model => {
       const forecast = data.forecasts[currentDate]['wk inc flu hosp'][model];
       if (!forecast) return [];
 
@@ -87,14 +80,12 @@ const ForecastViz = ({ location, onBack }) => {
         ci95Upper.push(values[4]); // 97.5%
       });
 
-      const color = modelColors[modelIndex % modelColors.length];
-
       return [
         {
           x: [...forecastDates, ...forecastDates.slice().reverse()],
           y: [...ci95Upper, ...ci95Lower.slice().reverse()],
           fill: 'toself',
-          fillcolor: `${color}20`, // Very transparent
+          fillcolor: `rgba(130, 202, 157, ${0.1 + selectedModels.indexOf(model) * 0.1})`,
           line: { color: 'transparent' },
           name: `${model} 95% CI`,
           showlegend: true,
@@ -104,7 +95,7 @@ const ForecastViz = ({ location, onBack }) => {
           x: [...forecastDates, ...forecastDates.slice().reverse()],
           y: [...ci50Upper, ...ci50Lower.slice().reverse()],
           fill: 'toself',
-          fillcolor: `${color}40`, // Slightly less transparent
+          fillcolor: `rgba(130, 202, 157, ${0.2 + selectedModels.indexOf(model) * 0.1})`,
           line: { color: 'transparent' },
           name: `${model} 50% CI`,
           showlegend: true,
@@ -117,7 +108,7 @@ const ForecastViz = ({ location, onBack }) => {
           type: 'scatter',
           mode: 'lines+markers',
           line: { 
-            color: color,
+            color: '#82ca9d',
             width: 2,
             dash: 'dash'
           },
@@ -132,50 +123,26 @@ const ForecastViz = ({ location, onBack }) => {
   const getRateChangeData = () => {
     if (!data || !currentDate) return null;
 
-    const categoryOrder = [
-      'large_decrease', 'decrease', 'stable', 'increase', 'large_increase'
-    ];
-
-    return selectedModels.map((model, modelIndex) => {
+    return selectedModels.map(model => {
       const forecast = data.forecasts[currentDate]['wk flu hosp rate change'][model];
       if (!forecast) return null;
 
       const horizon0 = forecast.predictions['0'];
-      
-      // Reorder probabilities to match the standard category order
-      const probabilities = categoryOrder.map(cat => {
-        const catIndex = horizon0.categories.indexOf(cat);
-        return catIndex !== -1 ? horizon0.probabilities[catIndex] : 0;
-      });
-
       return {
         name: model,
-        x: probabilities,
-        y: categoryOrder,
+        x: horizon0.probabilities.map(v => v * 100),
+        y: horizon0.categories,
         type: 'bar',
         orientation: 'h',
         marker: {
-          color: modelColors[modelIndex % modelColors.length],
+          color: `rgba(75, 192, 192, ${0.3 + selectedModels.indexOf(model) * 0.2})`,
           line: {
-            color: 'rgba(0,0,0,0.5)',
+            color: 'rgba(75, 192, 192, 1)',
             width: 1
           }
         }
       };
     }).filter(Boolean);
-  };
-
-  // Compute the date range for the zoomed plot
-  const computeDateRange = (baseDate) => {
-    const zoomedStartDate = new Date(baseDate);
-    zoomedStartDate.setDate(zoomedStartDate.getDate() - 8 * 7); // 8 weeks before
-    const zoomedEndDate = new Date(baseDate);
-    zoomedEndDate.setDate(zoomedEndDate.getDate() + 5 * 7); // 5 weeks after
-
-    return {
-      start: zoomedStartDate.toISOString().split('T')[0],
-      end: zoomedEndDate.toISOString().split('T')[0]
-    };
   };
 
   if (loading) {
@@ -192,7 +159,6 @@ const ForecastViz = ({ location, onBack }) => {
 
   const timeSeriesData = getTimeSeriesData();
   const rateChangeData = getRateChangeData();
-  const zoomedDateRange = computeDateRange(currentDate);
 
   return (
     <div className="container mx-auto p-4">
@@ -273,7 +239,7 @@ const ForecastViz = ({ location, onBack }) => {
                   hovermode: 'x unified',
                   margin: { l: 50, r: 20, t: 10, b: 40 },
                   xaxis: {
-                    title: 'Date',
+                    title: '',
                     tickangle: -45,
                     range: [
                       data.ground_truth.dates[0],
@@ -321,8 +287,8 @@ const ForecastViz = ({ location, onBack }) => {
                     title: 'Date',
                     tickangle: -45,
                     range: [
-                      zoomedDateRange.start,
-                      zoomedDateRange.end
+                      new Date(currentDate).setDate(new Date(currentDate).getDate() - 56),
+                      new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)
                     ]
                   },
                   yaxis: {
@@ -364,8 +330,7 @@ const ForecastViz = ({ location, onBack }) => {
                   margin: { l: 150, r: 20, t: 10, b: 40 },
                   xaxis: {
                     title: 'Probability (%)',
-                    range: [0, 1],
-                    tickformat: '.0%'
+                    range: [0, 100]
                   },
                   yaxis: {
                     title: '',
