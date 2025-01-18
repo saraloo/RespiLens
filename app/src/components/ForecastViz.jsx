@@ -321,6 +321,8 @@ const ForecastViz = ({ location, onBack }) => {
                   config={{
                     responsive: true,
                     displayModeBar: true,
+                    displaylogo: false,
+                    modeBarPosition: 'top',
                     showSendToCloud: false,
                     plotlyServerURL: "",
                     toImageButtonOptions: {
@@ -364,6 +366,8 @@ const ForecastViz = ({ location, onBack }) => {
                   config={{
                     responsive: true,
                     displayModeBar: true,
+                    displaylogo: false,
+                    modeBarPosition: 'top',
                     showSendToCloud: false,
                     plotlyServerURL: "",
                     toImageButtonOptions: {
@@ -417,6 +421,8 @@ const ForecastViz = ({ location, onBack }) => {
                 config={{
                   responsive: true,
                   displayModeBar: true,
+                  displaylogo: false,
+                  modeBarPosition: 'top',
                   showSendToCloud: false,
                   plotlyServerURL: "",
                   toImageButtonOptions: {
