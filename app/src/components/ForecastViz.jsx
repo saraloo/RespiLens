@@ -204,11 +204,7 @@ const ForecastViz = ({ location, onBack }) => {
             <span>Back to State Selection</span>
           </button>
 
-          <h2 className="text-2xl font-bold">{data.metadata.location_name} Flu Forecasts</h2>
-          
-          <div className="w-40">
-            {/* Placeholder to balance the layout */}
-          </div>
+          <h2 className="text-2xl font-bold text-right">{data.metadata.location_name} Flu Forecasts</h2>
         </div>
 
         <div className="p-4 border-b flex flex-col gap-4">
