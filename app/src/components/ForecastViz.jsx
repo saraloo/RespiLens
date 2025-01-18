@@ -274,10 +274,9 @@ const ForecastViz = ({ location, onBack }) => {
           </div>
         </div>
 
-        {/* Rest of the component remains the same */}
-        <div className="flex flex-col gap-4 p-4">
+        <div className="grid grid-cols-1 gap-4 p-4">
           {/* Full Timeline */}
-          <div className="w-full">
+          <div>
             <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
             {timeSeriesData && (
               <Plot
@@ -288,6 +287,12 @@ const ForecastViz = ({ location, onBack }) => {
                   showlegend: true,
                   hovermode: 'x unified',
                   margin: { l: 50, r: 20, t: 10, b: 40 },
+                  legend: {
+                    x: 1.1,
+                    xanchor: 'left',
+                    y: 1,
+                    yanchor: 'top'
+                  },
                   xaxis: {
                     title: '',
                     tickangle: -45,
@@ -323,8 +328,8 @@ const ForecastViz = ({ location, onBack }) => {
             )}
           </div>
 
-          {/* Zoomed Timeline */}
-          <div className="w-full">
+          {/* Detailed Forecast */}
+          <div>
             <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
             {timeSeriesData && (
               <Plot
@@ -335,6 +340,12 @@ const ForecastViz = ({ location, onBack }) => {
                   showlegend: true,
                   hovermode: 'x unified',
                   margin: { l: 50, r: 20, t: 10, b: 40 },
+                  legend: {
+                    x: 1.1,
+                    xanchor: 'left',
+                    y: 1,
+                    yanchor: 'top'
+                  },
                   xaxis: {
                     title: 'Date',
                     tickangle: -45,
@@ -370,7 +381,7 @@ const ForecastViz = ({ location, onBack }) => {
           </div>
 
           {/* Rate Change */}
-          <div className="w-full">
+          <div>
             <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
             {rateChangeData && (
               <Plot
@@ -381,6 +392,13 @@ const ForecastViz = ({ location, onBack }) => {
                   showlegend: true,
                   barmode: 'stack',
                   margin: { l: 150, r: 20, t: 10, b: 40 },
+                  legend: {
+                    orientation: 'h',
+                    yanchor: 'bottom',
+                    y: -0.3,
+                    xanchor: 'center',
+                    x: 0.5
+                  },
                   xaxis: {
                     title: 'Probability (%)',
                     range: [0, 100]
