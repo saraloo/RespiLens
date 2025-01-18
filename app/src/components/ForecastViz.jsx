@@ -275,61 +275,101 @@ const ForecastViz = ({ location, onBack }) => {
         </div>
 
         <div className="flex flex-col gap-8 p-4 w-full">
-          {/* Detailed Forecast */}
-          <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
-            {timeSeriesData && (
-              <Plot
-                data={timeSeriesData}
-                layout={{
-                  height: 500,
-                  width: '100%',
-                  showlegend: true,
-                  hovermode: 'x unified',
-                  margin: { l: 50, r: 20, t: 10, b: 40 },
-                  legend: {
-                    x: 1.1,
-                    xanchor: 'left',
-                    y: 1,
-                    yanchor: 'top'
-                  },
-                  xaxis: {
-                    title: 'Date',
-                    tickangle: -45,
-                    range: [
-                      new Date(currentDate).setDate(new Date(currentDate).getDate() - 56),
-                      new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)
-                    ]
-                  },
-                  yaxis: {
-                    title: 'Hospitalizations',
-                    zeroline: true
-                  },
-                  shapes: [{
-                    type: 'line',
-                    x0: currentDate,
-                    x1: currentDate,
-                    y0: 0,
-                    y1: 1,
-                    yref: 'paper',
-                    line: {
-                      color: 'red',
-                      width: 1,
-                      dash: 'dash'
+          {/* Top Row - Detailed and Categorical Forecasts */}
+          <div className="flex flex-row gap-8 w-full">
+            {/* Detailed Forecast */}
+            <div className="w-2/3">
+              <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
+              {timeSeriesData && (
+                <Plot
+                  data={timeSeriesData}
+                  layout={{
+                    height: 500,
+                    width: '100%',
+                    showlegend: true,
+                    hovermode: 'x unified',
+                    margin: { l: 50, r: 20, t: 10, b: 40 },
+                    legend: {
+                      x: 1.1,
+                      xanchor: 'left',
+                      y: 1,
+                      yanchor: 'top'
+                    },
+                    xaxis: {
+                      title: 'Date',
+                      tickangle: -45,
+                      range: [
+                        new Date(currentDate).setDate(new Date(currentDate).getDate() - 56),
+                        new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)
+                      ]
+                    },
+                    yaxis: {
+                      title: 'Hospitalizations',
+                      zeroline: true
+                    },
+                    shapes: [{
+                      type: 'line',
+                      x0: currentDate,
+                      x1: currentDate,
+                      y0: 0,
+                      y1: 1,
+                      yref: 'paper',
+                      line: {
+                        color: 'red',
+                        width: 1,
+                        dash: 'dash'
+                      }
+                    }]
+                  }}
+                  config={{
+                    responsive: true,
+                    displayModeBar: false,
+                    autosize: true
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Rate Change */}
+            <div className="w-1/3">
+              <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
+              {rateChangeData && (
+                <Plot
+                  data={rateChangeData}
+                  layout={{
+                    height: 500,
+                    width: '100%',
+                    showlegend: true,
+                    barmode: 'stack',
+                    margin: { l: 150, r: 20, t: 10, b: 40 },
+                    legend: {
+                      orientation: 'h',
+                      yanchor: 'bottom',
+                      y: -0.3,
+                      xanchor: 'center',
+                      x: 0.5
+                    },
+                    xaxis: {
+                      title: 'Probability (%)',
+                      range: [0, 100]
+                    },
+                    yaxis: {
+                      title: '',
+                      autorange: 'reversed'
                     }
-                  }]
-                }}
-                config={{
-                  responsive: true,
-                  displayModeBar: false,
-                  autosize: true
-                }}
-              />
-            )}
+                  }}
+                  config={{
+                    responsive: true,
+                    displayModeBar: false,
+                    autosize: true
+                  }}
+                />
+              )}
+            </div>
           </div>
 
-          {/* Full Timeline */}
-          <div className="w-full">
+          {/* Full Timeline - Centered */}
+          <div className="w-4/5 mx-auto">
             <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
             {timeSeriesData && (
               <Plot
@@ -365,43 +405,6 @@ const ForecastViz = ({ location, onBack }) => {
                       dash: 'dash'
                     }
                   }]
-                }}
-                config={{
-                  responsive: true,
-                  displayModeBar: false,
-                  autosize: true
-                }}
-              />
-            )}
-          </div>
-
-          {/* Rate Change */}
-          <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
-            {rateChangeData && (
-              <Plot
-                data={rateChangeData}
-                layout={{
-                  height: 300,
-                  width: '100%',
-                  showlegend: true,
-                  barmode: 'stack',
-                  margin: { l: 150, r: 20, t: 10, b: 40 },
-                  legend: {
-                    orientation: 'h',
-                    yanchor: 'bottom',
-                    y: -0.3,
-                    xanchor: 'center',
-                    x: 0.5
-                  },
-                  xaxis: {
-                    title: 'Probability (%)',
-                    range: [0, 100]
-                  },
-                  yaxis: {
-                    title: '',
-                    autorange: 'reversed'
-                  }
                 }}
                 config={{
                   responsive: true,
