@@ -290,11 +290,13 @@ const ForecastViz = ({ location, onBack }) => {
                     hovermode: 'x unified',
                     margin: { l: 50, r: 20, t: 10, b: 40 },
                     legend: {
-                      x: 1.1,
-                      xanchor: 'left',
-                      y: 1,
-                      yanchor: 'top'
+                      orientation: 'h',
+                      yanchor: 'bottom',
+                      y: -0.3,
+                      xanchor: 'center',
+                      x: 0.5
                     },
+                    margin: { l: 50, r: 20, t: 10, b: 80 }, // Increased bottom margin for legend
                     xaxis: {
                       title: 'Date',
                       tickangle: -45,
