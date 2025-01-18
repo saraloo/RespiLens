@@ -159,10 +159,9 @@ const ForecastViz = ({ location, onBack }) => {
       
       return {
         name: model,
-        x: horizon0.probabilities.map(v => v * 100),
-        y: horizon0.categories,
+        x: horizon0.categories,
+        y: horizon0.probabilities.map(v => v * 100),
         type: 'bar',
-        orientation: 'h',
         marker: {
           color: modelColor
         }
@@ -333,7 +332,7 @@ const ForecastViz = ({ location, onBack }) => {
             </div>
 
             {/* Rate Change */}
-            <div className="w-1/3">
+            <div className="w-1/4">
               <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
               {rateChangeData && (
                 <Plot
@@ -342,8 +341,8 @@ const ForecastViz = ({ location, onBack }) => {
                     height: 500,
                     width: '100%',
                     showlegend: true,
-                    barmode: 'stack',
-                    margin: { l: 150, r: 20, t: 10, b: 40 },
+                    barmode: 'group',
+                    margin: { l: 50, r: 20, t: 10, b: 80 },
                     legend: {
                       orientation: 'h',
                       yanchor: 'bottom',
@@ -352,12 +351,12 @@ const ForecastViz = ({ location, onBack }) => {
                       x: 0.5
                     },
                     xaxis: {
-                      title: 'Probability (%)',
-                      range: [0, 100]
+                      title: '',
+                      tickangle: -45
                     },
                     yaxis: {
-                      title: '',
-                      autorange: 'reversed'
+                      title: 'Probability (%)',
+                      range: [0, 100]
                     }
                   }}
                   config={{
