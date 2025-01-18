@@ -194,19 +194,21 @@ const ForecastViz = ({ location, onBack }) => {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex items-center mb-6">
-        <button 
-          onClick={onBack}
-          className="flex items-center text-blue-600 hover:text-blue-800"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span>Back to State Selection</span>
-        </button>
-      </div>
-
       <div className="border rounded-lg shadow-sm bg-white">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b flex justify-between items-center">
+          <button 
+            onClick={onBack}
+            className="flex items-center text-blue-600 hover:text-blue-800"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span>Back to State Selection</span>
+          </button>
+
           <h2 className="text-2xl font-bold">{data.metadata.location_name} Flu Forecasts</h2>
+          
+          <div className="w-40">
+            {/* Placeholder to balance the layout */}
+          </div>
         </div>
 
         <div className="p-4 border-b flex flex-col gap-4">
