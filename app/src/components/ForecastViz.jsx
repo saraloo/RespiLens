@@ -325,7 +325,7 @@ const ForecastViz = ({ location, onBack }) => {
                     plotlyServerURL: "",
                     toImageButtonOptions: {
                       format: 'png',
-                      filename: 'detailed_forecast_plot'
+                      filename: 'forecast_plot'
                     }
                   }}
                 />
@@ -368,7 +368,7 @@ const ForecastViz = ({ location, onBack }) => {
                     plotlyServerURL: "",
                     toImageButtonOptions: {
                       format: 'png',
-                      filename: 'rate_change_plot'
+                      filename: 'forecast_plot'
                     }
                   }}
                 />
@@ -421,7 +421,7 @@ const ForecastViz = ({ location, onBack }) => {
                   plotlyServerURL: "",
                   toImageButtonOptions: {
                     format: 'png',
-                    filename: 'full_timeline_plot'
+                    filename: 'forecast_plot'
                   }
                 }}
               />
