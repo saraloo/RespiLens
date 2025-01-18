@@ -274,62 +274,9 @@ const ForecastViz = ({ location, onBack }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 p-4">
-          {/* Full Timeline */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
-            {timeSeriesData && (
-              <Plot
-                data={timeSeriesData}
-                layout={{
-                  height: 250,
-                  width: '100%',
-                  showlegend: true,
-                  hovermode: 'x unified',
-                  margin: { l: 50, r: 20, t: 10, b: 40 },
-                  legend: {
-                    x: 1.1,
-                    xanchor: 'left',
-                    y: 1,
-                    yanchor: 'top'
-                  },
-                  xaxis: {
-                    title: '',
-                    tickangle: -45,
-                    range: [
-                      data.ground_truth.dates[0],
-                      data.ground_truth.dates[data.ground_truth.dates.length - 1]
-                    ]
-                  },
-                  yaxis: {
-                    title: 'Hospitalizations',
-                    zeroline: true
-                  },
-                  shapes: [{
-                    type: 'line',
-                    x0: currentDate,
-                    x1: currentDate,
-                    y0: 0,
-                    y1: 1,
-                    yref: 'paper',
-                    line: {
-                      color: 'red',
-                      width: 1,
-                      dash: 'dash'
-                    }
-                  }]
-                }}
-                config={{
-                  responsive: true,
-                  displayModeBar: false,
-                  autosize: true
-                }}
-              />
-            )}
-          </div>
-
+        <div className="flex flex-col gap-8 p-4 w-full">
           {/* Detailed Forecast */}
-          <div>
+          <div className="w-full">
             <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
             {timeSeriesData && (
               <Plot
@@ -374,20 +321,68 @@ const ForecastViz = ({ location, onBack }) => {
                 }}
                 config={{
                   responsive: true,
-                  displayModeBar: false
+                  displayModeBar: false,
+                  autosize: true
+                }}
+              />
+            )}
+          </div>
+
+          {/* Full Timeline */}
+          <div className="w-full">
+            <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
+            {timeSeriesData && (
+              <Plot
+                data={timeSeriesData}
+                layout={{
+                  height: 300,
+                  width: '100%',
+                  showlegend: false,
+                  hovermode: 'x unified',
+                  margin: { l: 50, r: 20, t: 10, b: 40 },
+                  xaxis: {
+                    title: '',
+                    tickangle: -45,
+                    range: [
+                      data.ground_truth.dates[0],
+                      data.ground_truth.dates[data.ground_truth.dates.length - 1]
+                    ]
+                  },
+                  yaxis: {
+                    title: 'Hospitalizations',
+                    zeroline: true
+                  },
+                  shapes: [{
+                    type: 'line',
+                    x0: currentDate,
+                    x1: currentDate,
+                    y0: 0,
+                    y1: 1,
+                    yref: 'paper',
+                    line: {
+                      color: 'red',
+                      width: 1,
+                      dash: 'dash'
+                    }
+                  }]
+                }}
+                config={{
+                  responsive: true,
+                  displayModeBar: false,
+                  autosize: true
                 }}
               />
             )}
           </div>
 
           {/* Rate Change */}
-          <div>
+          <div className="w-full">
             <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
             {rateChangeData && (
               <Plot
                 data={rateChangeData}
                 layout={{
-                  height: 250,
+                  height: 300,
                   width: '100%',
                   showlegend: true,
                   barmode: 'stack',
@@ -406,18 +401,12 @@ const ForecastViz = ({ location, onBack }) => {
                   yaxis: {
                     title: '',
                     autorange: 'reversed'
-                  },
-                  legend: {
-                    orientation: 'h',
-                    yanchor: 'bottom',
-                    y: -0.3,
-                    xanchor: 'center',
-                    x: 0.5
                   }
                 }}
                 config={{
                   responsive: true,
-                  displayModeBar: false
+                  displayModeBar: false,
+                  autosize: true
                 }}
               />
             )}
