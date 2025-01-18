@@ -39,7 +39,7 @@ const ForecastViz = ({ location, onBack }) => {
           });
         });
 
-        const modelList = Array.from(extractedModels);
+        const modelList = Array.from(extractedModels).sort((a, b) => a.localeCompare(b));
         
         setModels(modelList);
         
@@ -115,8 +115,7 @@ const ForecastViz = ({ location, onBack }) => {
           fill: 'toself',
           fillcolor: `${modelColor}20`, // 20% opacity
           line: { color: 'transparent' },
-          name: `${model} 95% CI`,
-          showlegend: true,
+          showlegend: false,
           type: 'scatter'
         },
         {
@@ -125,14 +124,13 @@ const ForecastViz = ({ location, onBack }) => {
           fill: 'toself',
           fillcolor: `${modelColor}40`, // 40% opacity
           line: { color: 'transparent' },
-          name: `${model} 50% CI`,
-          showlegend: true,
+          showlegend: false,
           type: 'scatter'
         },
         {
           x: forecastDates,
           y: medianValues,
-          name: `${model} Median`,
+          name: model,
           type: 'scatter',
           mode: 'lines+markers',
           line: { 
@@ -140,7 +138,8 @@ const ForecastViz = ({ location, onBack }) => {
             width: 2,
             dash: 'solid'
           },
-          marker: { size: 6, color: modelColor }
+          marker: { size: 6, color: modelColor },
+          showlegend: true
         }
       ];
     });
@@ -165,11 +164,7 @@ const ForecastViz = ({ location, onBack }) => {
         type: 'bar',
         orientation: 'h',
         marker: {
-          color: modelColor,
-          line: {
-            color: modelColor,
-            width: 1
-          }
+          color: modelColor
         }
       };
     }).filter(Boolean);
