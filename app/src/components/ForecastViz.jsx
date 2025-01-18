@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
+// Color palette for model visualization
+const MODEL_COLORS = [
+  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+  '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
+  '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5'
+];
+
 const ForecastViz = ({ location, onBack }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,12 +106,14 @@ const ForecastViz = ({ location, onBack }) => {
         ci95Upper.push(values[4]); // 97.5%
       });
 
+      const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
+
       return [
         {
           x: [...forecastDates, ...forecastDates.slice().reverse()],
           y: [...ci95Upper, ...ci95Lower.slice().reverse()],
           fill: 'toself',
-          fillcolor: `rgba(130, 202, 157, ${0.1 + selectedModels.indexOf(model) * 0.1})`,
+          fillcolor: `${modelColor}20`, // 20% opacity
           line: { color: 'transparent' },
           name: `${model} 95% CI`,
           showlegend: true,
@@ -113,7 +123,7 @@ const ForecastViz = ({ location, onBack }) => {
           x: [...forecastDates, ...forecastDates.slice().reverse()],
           y: [...ci50Upper, ...ci50Lower.slice().reverse()],
           fill: 'toself',
-          fillcolor: `rgba(130, 202, 157, ${0.2 + selectedModels.indexOf(model) * 0.1})`,
+          fillcolor: `${modelColor}40`, // 40% opacity
           line: { color: 'transparent' },
           name: `${model} 50% CI`,
           showlegend: true,
@@ -126,11 +136,11 @@ const ForecastViz = ({ location, onBack }) => {
           type: 'scatter',
           mode: 'lines+markers',
           line: { 
-            color: '#82ca9d',
+            color: modelColor,
             width: 2,
-            dash: 'dash'
+            dash: 'solid'
           },
-          marker: { size: 6 }
+          marker: { size: 6, color: modelColor }
         }
       ];
     });
@@ -146,6 +156,8 @@ const ForecastViz = ({ location, onBack }) => {
       if (!forecast) return null;
 
       const horizon0 = forecast.predictions['0'];
+      const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
+      
       return {
         name: model,
         x: horizon0.probabilities.map(v => v * 100),
@@ -153,9 +165,9 @@ const ForecastViz = ({ location, onBack }) => {
         type: 'bar',
         orientation: 'h',
         marker: {
-          color: `rgba(75, 192, 192, ${0.3 + selectedModels.indexOf(model) * 0.2})`,
+          color: modelColor,
           line: {
-            color: 'rgba(75, 192, 192, 1)',
+            color: modelColor,
             width: 1
           }
         }
