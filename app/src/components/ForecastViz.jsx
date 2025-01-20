@@ -23,7 +23,6 @@ const ForecastViz = ({ location, onBack }) => {
   const [currentDate, setCurrentDate] = useState(null);
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
-  const [isModelFilterOpen, setIsModelFilterOpen] = useState(false);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -242,41 +241,6 @@ const ForecastViz = ({ location, onBack }) => {
             <span>Back to State Selection</span>
           </button>
 
-          {/* Model Selector */}
-          <div className="relative">
-            <button
-              onClick={() => setIsModelFilterOpen(!isModelFilterOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-            >
-              <Filter className="w-4 h-4" />
-              <span>Select Models ({selectedModels.length})</span>
-            </button>
-
-            {isModelFilterOpen && (
-              <div className="absolute z-10 left-1/2 -translate-x-1/2 top-full mt-2 bg-white border rounded shadow-lg p-4 max-h-196 overflow-y-auto min-w-[1000px]">
-                <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                  {models.map(model => (
-                    <div
-                      key={model}
-                      onClick={() => toggleModelSelection(model)}
-                      className={`p-2 rounded cursor-pointer transition-colors ${
-                        selectedModels.includes(model)
-                          ? 'text-white'
-                          : 'hover:bg-gray-100'
-                      }`}
-                      style={
-                        selectedModels.includes(model) 
-                          ? { backgroundColor: getModelColor(model, selectedModels) }
-                          : undefined
-                      }
-                    >
-                      <span className="text-sm">{model}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
 
           <h2 className="text-2xl font-bold text-right">{data.metadata.location_name} Flu Forecasts</h2>
         </div>
@@ -411,6 +375,29 @@ const ForecastViz = ({ location, onBack }) => {
                 />
               </div>
             )}
+          </div>
+          
+          <div className="mt-4 border-t pt-4">
+            <div className="flex flex-wrap gap-2">
+              {models.map(model => (
+                <div
+                  key={model}
+                  onClick={() => toggleModelSelection(model)}
+                  className={`px-3 py-1 rounded cursor-pointer text-sm transition-colors ${
+                    selectedModels.includes(model)
+                      ? 'text-white'
+                      : 'border hover:bg-gray-100'
+                  }`}
+                  style={
+                    selectedModels.includes(model) 
+                      ? { backgroundColor: getModelColor(model, selectedModels) }
+                      : undefined
+                  }
+                >
+                  {model}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
