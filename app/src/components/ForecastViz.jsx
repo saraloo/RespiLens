@@ -461,7 +461,7 @@ const ForecastViz = ({ location, onBack }) => {
           <div className="mt-4 border-t pt-4">
             <div className="flex gap-2 mb-2">
               <button
-                onClick={() => setSelectedModels(models)}
+                onClick={() => setSelectedModels(models.filter(Boolean))}
                 className="px-3 py-1 rounded text-sm border hover:bg-gray-100"
               >
                 Select All
