@@ -153,12 +153,22 @@ const ForecastViz = ({ location, onBack }) => {
         
         sortedPredictions.forEach(([horizon, pred]) => {
           forecastDates.push(pred.date);
+          
+          // Find the correct quantile indices
+          const quantiles = pred.quantiles;
           const values = pred.values || [0, 0, 0, 0, 0];
-          ci95Lower.push(values[0]);
-          ci50Lower.push(values[1]);
-          medianValues.push(values[2]);
-          ci50Upper.push(values[3]);
-          ci95Upper.push(values[4]);
+          
+          const q95Lower = values[quantiles.indexOf(0.025)];
+          const q50Lower = values[quantiles.indexOf(0.25)];
+          const median = values[quantiles.indexOf(0.5)];
+          const q50Upper = values[quantiles.indexOf(0.75)];
+          const q95Upper = values[quantiles.indexOf(0.975)];
+          
+          ci95Lower.push(q95Lower);
+          ci50Lower.push(q50Lower);
+          medianValues.push(median);
+          ci50Upper.push(q50Upper);
+          ci95Upper.push(q95Upper);
         });
 
         const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
@@ -168,7 +178,7 @@ const ForecastViz = ({ location, onBack }) => {
             x: [...forecastDates, ...forecastDates.slice().reverse()],
             y: [...ci95Upper, ...ci95Lower.slice().reverse()],
             fill: 'toself',
-            fillcolor: `${modelColor}20`,
+            fillcolor: `${modelColor}10`,
             line: { color: 'transparent' },
             showlegend: false,
             type: 'scatter',
@@ -178,7 +188,7 @@ const ForecastViz = ({ location, onBack }) => {
             x: [...forecastDates, ...forecastDates.slice().reverse()],
             y: [...ci50Upper, ...ci50Lower.slice().reverse()],
             fill: 'toself',
-            fillcolor: `${modelColor}40`,
+            fillcolor: `${modelColor}30`,
             line: { color: 'transparent' },
             showlegend: false,
             type: 'scatter',
