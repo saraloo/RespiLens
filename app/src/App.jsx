@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, useSearchParams } from 'react-router-dom';
 import StateSelector from './components/StateSelector';
 import ForecastViz from './components/ForecastViz';
 
 const AppContent = () => {
+  useEffect(() => {
+    document.title = 'MyForecastHubs';
+  }, []);
   const [searchParams] = useSearchParams();
   const [selectedLocation, setSelectedLocation] = useState(() => {
     // Initialize location from URL if present
