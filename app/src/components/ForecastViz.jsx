@@ -32,6 +32,16 @@ const ForecastViz = ({ location, onBack }) => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const getDefaultRange = useCallback(() => {
+    if (selectedDates.length === 0) return undefined;
+    const minDate = new Date(Math.min(...selectedDates));
+    const maxDate = new Date(Math.max(...selectedDates));
+    return [
+      new Date(minDate.setDate(minDate.getDate() - 56)),
+      new Date(maxDate.setDate(maxDate.getDate() + 35))
+    ];
+  }, [selectedDates]);
+
   // Update URL when selection changes
   useEffect(() => {
     if (selectedDates.length > 0 && selectedModels.length > 0) {
@@ -281,16 +291,6 @@ const ForecastViz = ({ location, onBack }) => {
 
   const timeSeriesData = getTimeSeriesData();
   const rateChangeData = getRateChangeData();
-
-  const getDefaultRange = useCallback(() => {
-    if (selectedDates.length === 0) return undefined;
-    const minDate = new Date(Math.min(...selectedDates));
-    const maxDate = new Date(Math.max(...selectedDates));
-    return [
-      new Date(minDate.setDate(minDate.getDate() - 56)), // 8 weeks before
-      new Date(maxDate.setDate(maxDate.getDate() + 35))  // 5 weeks after
-    ];
-  }, [selectedDates]);
 
   return (
     <div className="container mx-auto p-4">
