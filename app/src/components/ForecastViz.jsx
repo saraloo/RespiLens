@@ -156,12 +156,13 @@ const ForecastViz = ({ location, onBack }) => {
 
       const horizon0 = forecast.predictions['0'];
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
-      
+    
       return {
         name: model,
-        x: horizon0.categories,
-        y: horizon0.probabilities.map(v => v * 100),
+        y: horizon0.categories,  // switched from x to y for horizontal
+        x: horizon0.probabilities.map(v => v * 100),  // switched from y to x for horizontal
         type: 'bar',
+        orientation: 'h',  // make bars horizontal
         marker: {
           color: modelColor
         }
@@ -269,154 +270,61 @@ const ForecastViz = ({ location, onBack }) => {
 
         </div>
 
-        <div className="flex flex-col gap-8 p-4 w-full">
-          {/* Vertical Stack of Plots */}
-          <div className="flex flex-col gap-8 w-full">
-            {/* Detailed Forecast */}
-            <div className="w-full">
-              <h3 className="text-lg font-semibold mb-4">Detailed Forecast</h3>
-              {timeSeriesData && (
-                <Plot
-                  data={timeSeriesData}
-                  layout={{
-                    height: 400,
-                    width: '100%',
-                    showlegend: true,
-                    hovermode: 'x unified',
-                    margin: { l: 50, r: 20, t: 10, b: 40 },
-                    legend: {
-                      orientation: 'h',
-                      yanchor: 'bottom',
-                      y: -0.3,
-                      xanchor: 'center',
-                      x: 0.5
-                    },
-                    margin: { l: 50, r: 20, t: 10, b: 80 }, // Increased bottom margin for legend
-                    xaxis: {
-                      title: 'Date',
-                      tickangle: -45,
-                      range: [
-                        new Date(currentDate).setDate(new Date(currentDate).getDate() - 56),
-                        new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)
-                      ]
-                    },
-                    yaxis: {
-                      title: 'Hospitalizations',
-                      zeroline: true
-                    },
-                    shapes: [{
-                      type: 'line',
-                      x0: currentDate,
-                      x1: currentDate,
-                      y0: 0,
-                      y1: 1,
-                      yref: 'paper',
-                      line: {
-                        color: 'red',
-                        width: 1,
-                        dash: 'dash'
-                      }
-                    }]
-                  }}
-                  config={{
-                    responsive: true,
-                    displayModeBar: true,
-                    displaylogo: false,
-                    modeBarPosition: 'top',
-                    showSendToCloud: false,
-                    plotlyServerURL: "",
-                    toImageButtonOptions: {
-                      format: 'png',
-                      filename: 'forecast_plot'
-                    }
-                  }}
-                />
-              )}
-            </div>
-
-            {/* Rate Change */}
-            <div className="w-full">
-              <h3 className="text-lg font-semibold mb-4">Rate Change Forecast</h3>
-              {rateChangeData && (
-                <Plot
-                  data={rateChangeData}
-                  layout={{
-                    height: 400,
-                    width: '100%',
-                    showlegend: true,
-                    barmode: 'group',
-                    margin: { l: 20, r: 20, t: 10, b: 80 },
-                    legend: {
-                      orientation: 'h',
-                      yanchor: 'bottom',
-                      y: -0.3,
-                      xanchor: 'center',
-                      x: 0.5
-                    },
-                    xaxis: {
-                      title: '',
-                      tickangle: -45,
-                      type: 'category'
-                    },
-                    yaxis: {
-                      title: 'Probability (%)',
-                      range: [0, 100]
-                    }
-                  }}
-                  config={{
-                    responsive: true,
-                    displayModeBar: true,
-                    displaylogo: false,
-                    modeBarPosition: 'top',
-                    showSendToCloud: false,
-                    plotlyServerURL: "",
-                    toImageButtonOptions: {
-                      format: 'png',
-                      filename: 'forecast_plot'
-                    }
-                  }}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Full Timeline */}
+        <div className="p-4 w-full">
           <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">Full Timeline</h3>
-            {timeSeriesData && (
+            <h3 className="text-lg font-semibold mb-4">Forecast Analysis</h3>
+            {timeSeriesData && rateChangeData && (
               <Plot
-                data={timeSeriesData}
+                data={[
+                  ...timeSeriesData,
+                  ...rateChangeData.map(trace => ({
+                    ...trace,
+                    orientation: 'h',
+                    xaxis: 'x2',
+                    yaxis: 'y2'
+                  }))
+                ]}
                 layout={{
-                  height: 400,
-                  width: '100%',
-                  showlegend: false,
+                  height: 600,
+                  grid: {
+                    columns: 5,
+                    rows: 1,
+                    pattern: 'independent',
+                    subplots: [['xy'], ['x2y2']]
+                  },
+                  showlegend: true,
                   hovermode: 'x unified',
-                  margin: { l: 50, r: 20, t: 10, b: 40 },
+                  margin: { l: 50, r: 20, t: 10, b: 80 },
                   xaxis: {
-                    title: '',
-                    tickangle: -45,
-                    range: [
-                      data.ground_truth.dates[0],
-                      data.ground_truth.dates[data.ground_truth.dates.length - 1]
-                    ]
+                    domain: [0, 0.8],
+                    rangeslider: {},
+                    rangeselector: {
+                      buttons: [
+                        {count: 1, label: '1m', step: 'month', stepmode: 'backward'},
+                        {count: 6, label: '6m', step: 'month', stepmode: 'backward'},
+                        {step: 'all', label: 'all'}
+                      ]
+                    }
                   },
                   yaxis: {
-                    title: 'Hospitalizations',
-                    zeroline: true
+                    title: 'Hospitalizations'
                   },
-                  shapes: [{
-                    type: 'line',
-                    x0: currentDate,
-                    x1: currentDate,
-                    y0: 0,
-                    y1: 1,
-                    yref: 'paper',
-                    line: {
-                      color: 'red',
-                      width: 1,
-                      dash: 'dash'
-                    }
-                  }]
+                  xaxis2: {
+                    domain: [0.85, 1],
+                    showgrid: false
+                  },
+                  yaxis2: {
+                    title: '',
+                    showticklabels: true,
+                    type: 'category'
+                  },
+                  legend: {
+                    orientation: 'h',
+                    yanchor: 'bottom',
+                    y: -0.3,
+                    xanchor: 'center',
+                    x: 0.5
+                  }
                 }}
                 config={{
                   responsive: true,
