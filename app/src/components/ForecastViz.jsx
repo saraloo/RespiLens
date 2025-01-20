@@ -280,35 +280,71 @@ const ForecastViz = ({ location, onBack }) => {
           <h2 className="text-2xl font-bold text-right">{data.metadata.location_name} Flu Forecasts</h2>
         </div>
 
-        <div className="p-4 border-b flex flex-col gap-4">
-          <div className="flex justify-between items-center">
-            <button 
-              onClick={() => {
-                const idx = availableDates.indexOf(currentDate);
-                if (idx > 0) setCurrentDate(availableDates[idx - 1]);
-              }}
-              disabled={availableDates.indexOf(currentDate) === 0}
-              className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+        <div className="p-4 border-b">
+          <div className="flex flex-wrap gap-4 items-center">
+            {selectedDates.map((date, index) => (
+              <div key={date} className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const idx = availableDates.indexOf(date);
+                    if (idx > 0) {
+                      const newDates = [...selectedDates];
+                      newDates[index] = availableDates[idx - 1];
+                      setSelectedDates(newDates);
+                      setActiveDate(availableDates[idx - 1]);
+                    }
+                  }}
+                  disabled={availableDates.indexOf(date) === 0}
+                  className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                
+                <div className="flex items-center gap-2">
+                  <span className={`font-medium ${date === activeDate ? 'text-blue-600' : ''}`}>
+                    Week of {date}
+                  </span>
+                  <button
+                    onClick={() => setSelectedDates(dates => dates.filter(d => d !== date))}
+                    className="p-1 rounded-full hover:bg-gray-100"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    const idx = availableDates.indexOf(date);
+                    if (idx < availableDates.length - 1) {
+                      const newDates = [...selectedDates];
+                      newDates[index] = availableDates[idx + 1];
+                      setSelectedDates(newDates);
+                      setActiveDate(availableDates[idx + 1]);
+                    }
+                  }}
+                  disabled={availableDates.indexOf(date) === availableDates.length - 1}
+                  className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            ))}
             
-            <div className="flex items-center gap-4">
-              <span className="font-medium">Week of {currentDate}</span>
-            </div>
-
-            <button 
-              onClick={() => {
-                const idx = availableDates.indexOf(currentDate);
-                if (idx < availableDates.length - 1) setCurrentDate(availableDates[idx + 1]);
-              }}
-              disabled={availableDates.indexOf(currentDate) === availableDates.length - 1}
-              className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            {selectedDates.length < 3 && (
+              <button
+                onClick={() => {
+                  const lastDate = availableDates[availableDates.length - 1];
+                  if (!selectedDates.includes(lastDate)) {
+                    setSelectedDates([...selectedDates, lastDate]);
+                    setActiveDate(lastDate);
+                  }
+                }}
+                className="px-3 py-1 rounded border hover:bg-gray-100"
+              >
+                + Add Date
+              </button>
+            )}
           </div>
-
         </div>
 
         <div className="p-4 w-full">
