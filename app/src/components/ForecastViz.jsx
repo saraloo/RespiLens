@@ -183,7 +183,7 @@ const ForecastViz = ({ location, onBack }) => {
     
       // Create ordered data
       const orderedData = categoryOrder.map(cat => ({
-        category: cat,
+        category: cat.replace('_', '<br>'), // Split label at underscore
         value: horizon0.probabilities[horizon0.categories.indexOf(cat)] * 100
       }));
       
