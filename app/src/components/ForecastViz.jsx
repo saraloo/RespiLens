@@ -143,8 +143,11 @@ const ForecastViz = ({ location, onBack }) => {
       const ci50Upper = [];
       const ci50Lower = [];
 
-      // Process all horizons
-      Object.entries(forecast.predictions || {}).forEach(([horizon, pred]) => {
+      // Process all horizons and sort by target date
+      const sortedPredictions = Object.entries(forecast.predictions || {})
+        .sort((a, b) => new Date(a[1].date) - new Date(b[1].date));
+      
+      sortedPredictions.forEach(([horizon, pred]) => {
         forecastDates.push(pred.date);
         const values = pred.values || [0, 0, 0, 0, 0];
         ci95Lower.push(values[0]); // 2.5%
