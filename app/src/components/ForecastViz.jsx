@@ -282,6 +282,16 @@ const ForecastViz = ({ location, onBack }) => {
   const timeSeriesData = getTimeSeriesData();
   const rateChangeData = getRateChangeData();
 
+  const getDateRange = () => {
+    if (selectedDates.length === 0) return undefined;
+    const minDate = new Date(Math.min(...selectedDates));
+    const maxDate = new Date(Math.max(...selectedDates));
+    return [
+      new Date(minDate.setDate(minDate.getDate() - 56)), // 8 weeks before
+      new Date(maxDate.setDate(maxDate.getDate() + 35))  // 5 weeks after
+    ];
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="border rounded-lg shadow-sm bg-white">
@@ -406,12 +416,7 @@ const ForecastViz = ({ location, onBack }) => {
                         {step: 'all', label: 'all'}
                       ]
                     },
-                    range: selectedDates.length > 0 ? [
-                      new Date(Math.min(...selectedDates))
-                        .setDate(new Date(Math.min(...selectedDates)).getDate() - 56), // 8 weeks before earliest
-                      new Date(Math.max(...selectedDates))
-                        .setDate(new Date(Math.max(...selectedDates)).getDate() + 35)  // 5 weeks after latest
-                    ] : undefined
+                    range: getDateRange()
                   },
                   shapes: selectedDates.map(date => ({
                     type: 'line',
@@ -454,7 +459,16 @@ const ForecastViz = ({ location, onBack }) => {
                   toImageButtonOptions: {
                     format: 'png',
                     filename: 'forecast_plot'
-                  }
+                  },
+                  modeBarButtonsToAdd: [{
+                    name: 'Reset view',
+                    click: function(gd) {
+                      const range = getDateRange();
+                      if (range) {
+                        Plotly.relayout(gd, {'xaxis.range': range});
+                      }
+                    }
+                  }]
                 }}
                 />
               </div>
