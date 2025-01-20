@@ -325,8 +325,25 @@ const ForecastViz = ({ location, onBack }) => {
                         {count: 6, label: '6m', step: 'month', stepmode: 'backward'},
                         {step: 'all', label: 'all'}
                       ]
-                    }
+                    },
+                    range: [
+                      new Date(currentDate).setDate(new Date(currentDate).getDate() - 56), // 8 weeks before
+                      new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)  // 5 weeks after
+                    ]
                   },
+                  shapes: [{
+                    type: 'line',
+                    x0: currentDate,
+                    x1: currentDate,
+                    y0: 0,
+                    y1: 1,
+                    yref: 'paper',
+                    line: {
+                      color: 'red',
+                      width: 1,
+                      dash: 'dash'
+                    }
+                  }],
                   yaxis: {
                     title: 'Hospitalizations'
                   },
