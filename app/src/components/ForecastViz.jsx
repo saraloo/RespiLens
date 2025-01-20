@@ -166,6 +166,14 @@ const ForecastViz = ({ location, onBack }) => {
   const getRateChangeData = () => {
     if (!data || !currentDate) return null;
 
+    const categoryOrder = [
+      'large_increase',
+      'increase',
+      'stable',
+      'decrease',
+      'large_decrease'
+    ];
+
     return selectedModels.map(model => {
       const forecast = data.forecasts[currentDate]['wk flu hosp rate change']?.[model];
       if (!forecast) return null;
@@ -173,15 +181,23 @@ const ForecastViz = ({ location, onBack }) => {
       const horizon0 = forecast.predictions['0'];
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
     
+      // Create ordered data
+      const orderedData = categoryOrder.map(cat => ({
+        category: cat,
+        value: horizon0.probabilities[horizon0.categories.indexOf(cat)] * 100
+      }));
+      
       return {
         name: model,
-        y: horizon0.categories,  // switched from x to y for horizontal
-        x: horizon0.probabilities.map(v => v * 100),  // switched from y to x for horizontal
+        y: orderedData.map(d => d.category),
+        x: orderedData.map(d => d.value),
         type: 'bar',
-        orientation: 'h',  // make bars horizontal
-        marker: {
-          color: modelColor
-        }
+        orientation: 'h',
+        marker: { color: modelColor },
+        showlegend: true,
+        legendgroup: 'histogram',
+        xaxis: 'x2',
+        yaxis: 'y2'
       };
     }).filter(Boolean);
   };
@@ -358,10 +374,11 @@ const ForecastViz = ({ location, onBack }) => {
                   },
                   legend: {
                     orientation: 'h',
-                    yanchor: 'bottom',
-                    y: -0.3,
-                    xanchor: 'center',
-                    x: 0.5
+                    traceorder: 'normal',
+                    x: 1,
+                    y: 1.1,
+                    xanchor: 'right',
+                    yanchor: 'bottom'
                   }
                 }}
                 config={{
