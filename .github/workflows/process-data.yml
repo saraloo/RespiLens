@@ -43,6 +43,7 @@ jobs:
       with:
         name: processed-flusight-data
         path: processed_data/
+        retention-days: 1  # Keep artifact available for the deploy workflow
         
     - name: Commit and push if changed
       run: |
