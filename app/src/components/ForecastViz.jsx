@@ -10,6 +10,11 @@ const MODEL_COLORS = [
   '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5'
 ];
 
+const getModelColor = (model, selectedModels) => {
+  const index = selectedModels.indexOf(model);
+  return index >= 0 ? MODEL_COLORS[index % MODEL_COLORS.length] : null;
+};
+
 const ForecastViz = ({ location, onBack }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -256,9 +261,14 @@ const ForecastViz = ({ location, onBack }) => {
                       onClick={() => toggleModelSelection(model)}
                       className={`p-2 rounded cursor-pointer transition-colors ${
                         selectedModels.includes(model)
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'text-white'
                           : 'hover:bg-gray-100'
                       }`}
+                      style={
+                        selectedModels.includes(model) 
+                          ? { backgroundColor: getModelColor(model, selectedModels) }
+                          : undefined
+                      }
                     >
                       <span className="text-sm">{model}</span>
                     </div>
