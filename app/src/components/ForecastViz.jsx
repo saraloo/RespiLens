@@ -323,17 +323,17 @@ const ForecastViz = ({ location, onBack }) => {
                   height: Math.min(800, windowSize.height * 0.6),
                   autosize: true,
                   grid: {
-                    columns: 5,
+                    columns: 1,
                     rows: 1,
                     pattern: 'independent',
                     subplots: [['xy'], ['x2y2']],
-                    xgap: 0.1
+                    xgap: 0.15
                   },
                   showlegend: true,
                   hovermode: 'x unified',
                   margin: { l: 60, r: 30, t: 30, b: 80 },
                   xaxis: {
-                    domain: [0, 0.8],
+                    domain: [0, 0.75],
                     rangeslider: {},
                     rangeselector: {
                       buttons: [
@@ -364,13 +364,15 @@ const ForecastViz = ({ location, onBack }) => {
                     title: 'Hospitalizations'
                   },
                   xaxis2: {
-                    domain: [0.85, 1],
+                    domain: [0.8, 1],
                     showgrid: false
                   },
                   yaxis2: {
                     title: '',
                     showticklabels: true,
-                    type: 'category'
+                    type: 'category',
+                    side: 'right',
+                    automargin: true
                   },
                   legend: {
                     orientation: 'h',
