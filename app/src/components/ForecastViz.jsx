@@ -187,7 +187,7 @@ const ForecastViz = ({ location, onBack }) => {
             dash: 'solid'
           },
           marker: { size: 6, color: modelColor },
-          showlegend: true
+          showlegend: false
         }
       ];
     });
@@ -331,9 +331,9 @@ const ForecastViz = ({ location, onBack }) => {
                     subplots: [['xy'], ['x2y2']],
                     xgap: 0.15
                   },
-                  showlegend: true,
+                  showlegend: false,
                   hovermode: 'x unified',
-                  margin: { l: 60, r: 30, t: 30, b: 80 },
+                  margin: { l: 60, r: 30, t: 30, b: 30 },
                   xaxis: {
                     domain: [0, 0.8],
                     rangeslider: {},
@@ -379,14 +379,6 @@ const ForecastViz = ({ location, onBack }) => {
                       align: 'right'
                     }
                   },
-                  legend: {
-                    orientation: 'h',
-                    traceorder: 'normal',
-                    x: 0,
-                    y: 1.1,
-                    xanchor: 'left',
-                    yanchor: 'bottom'
-                  }
                 }}
                 config={{
                   responsive: true,
@@ -406,6 +398,20 @@ const ForecastViz = ({ location, onBack }) => {
           </div>
           
           <div className="mt-4 border-t pt-4">
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => setSelectedModels(models)}
+                className="px-3 py-1 rounded text-sm border hover:bg-gray-100"
+              >
+                Select All
+              </button>
+              <button
+                onClick={() => setSelectedModels([])}
+                className="px-3 py-1 rounded text-sm border hover:bg-gray-100"
+              >
+                Select None
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {models.map(model => (
                 <div
