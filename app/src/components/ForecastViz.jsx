@@ -59,7 +59,7 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`/RespiView/processed_data/${location}.json`);
+        const response = await fetch(`processed_data/${location}.json`);
         const jsonData = await response.json();
         setData(jsonData);
         

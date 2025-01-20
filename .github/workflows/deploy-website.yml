@@ -27,6 +27,8 @@ jobs:
         with:
           name: processed-flusight-data
           path: app/public/processed_data
+      - name: Debug directory structure
+        run: ls -R app/public/
         
       - name: Install dependencies
         working-directory: ./app
