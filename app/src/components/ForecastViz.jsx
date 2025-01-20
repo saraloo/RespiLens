@@ -335,6 +335,8 @@ const ForecastViz = ({ location, onBack }) => {
                   <button
                     onClick={() => setSelectedDates(dates => dates.filter(d => d !== date))}
                     className="p-1 rounded-full hover:bg-gray-100"
+                    disabled={selectedDates.length === 1}
+                    style={{ opacity: selectedDates.length === 1 ? 0.5 : 1 }}
                   >
                     ×
                   </button>
@@ -362,11 +364,9 @@ const ForecastViz = ({ location, onBack }) => {
               <button
                 onClick={() => {
                   const lastDate = availableDates[availableDates.length - 1];
-                  if (!selectedDates.includes(lastDate)) {
-                    const newDates = [...selectedDates, lastDate].sort();
-                    setSelectedDates(newDates);
-                    setActiveDate(lastDate);
-                  }
+                  const newDates = [...selectedDates, lastDate].sort();
+                  setSelectedDates(newDates);
+                  setActiveDate(lastDate);
                 }}
                 className="px-3 py-1 rounded border hover:bg-gray-100"
               >
