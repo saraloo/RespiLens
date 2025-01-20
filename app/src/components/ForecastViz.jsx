@@ -21,7 +21,8 @@ const ForecastViz = ({ location, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedModels, setSelectedModels] = useState([]);
-  const [currentDate, setCurrentDate] = useState(null);
+  const [selectedDates, setSelectedDates] = useState([]);
+  const [activeDate, setActiveDate] = useState(null);
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
   const [windowSize, setWindowSize] = useState({
@@ -33,22 +34,24 @@ const ForecastViz = ({ location, onBack }) => {
 
   // Update URL when selection changes
   useEffect(() => {
-    if (currentDate && selectedModels.length > 0) {
+    if (selectedDates.length > 0 && selectedModels.length > 0) {
       setSearchParams({
-        date: currentDate,
+        dates: selectedDates.join(','),
         models: selectedModels.join(','),
         location
       });
     }
-  }, [currentDate, selectedModels, location, setSearchParams]);
+  }, [selectedDates, selectedModels, location, setSearchParams]);
 
   // Read from URL on initial load
   useEffect(() => {
-    const urlDate = searchParams.get('date');
+    const urlDates = searchParams.get('dates')?.split(',');
     const urlModels = searchParams.get('models')?.split(',');
     
-    if (urlDate && availableDates.includes(urlDate)) {
-      setCurrentDate(urlDate);
+    if (urlDates?.length > 0) {
+      const validDates = urlDates.filter(date => availableDates.includes(date));
+      setSelectedDates(validDates);
+      setActiveDate(validDates[0]);
     }
     
     if (urlModels?.length > 0) {
@@ -80,7 +83,8 @@ const ForecastViz = ({ location, onBack }) => {
         setModels(modelList);
         
         setAvailableDates(dates);
-        setCurrentDate(dates[dates.length - 1]);
+        setSelectedDates([dates[dates.length - 1]]);
+        setActiveDate(dates[dates.length - 1]);
         
         // Default model selection
         const defaultSelection = modelList.length > 0 
@@ -114,7 +118,7 @@ const ForecastViz = ({ location, onBack }) => {
   }, []);
 
   const getTimeSeriesData = () => {
-    if (!data || !currentDate) return null;
+    if (!data || selectedDates.length === 0) return null;
 
     // Ground truth trace
     const groundTruthTrace = {
@@ -128,11 +132,11 @@ const ForecastViz = ({ location, onBack }) => {
     };
 
     // Generate traces for each selected model
-    const modelTraces = selectedModels.flatMap(model => {
-      // Try both forecast types
-      const forecast = 
-        data.forecasts[currentDate]['wk inc flu hosp']?.[model] || 
-        data.forecasts[currentDate]['wk flu hosp rate change']?.[model];
+    const modelTraces = selectedModels.flatMap(model => 
+      selectedDates.flatMap((date, dateIndex) => {
+        const forecast = 
+          data.forecasts[date]['wk inc flu hosp']?.[model] || 
+          data.forecasts[date]['wk flu hosp rate change']?.[model];
       
       if (!forecast) return [];
 
@@ -181,7 +185,7 @@ const ForecastViz = ({ location, onBack }) => {
         {
           x: forecastDates,
           y: medianValues,
-          name: model,
+          name: `${model} (${date})`,
           type: 'scatter',
           mode: 'lines+markers',
           line: { 
@@ -352,10 +356,10 @@ const ForecastViz = ({ location, onBack }) => {
                       new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)  // 5 weeks after
                     ]
                   },
-                  shapes: [{
+                  shapes: selectedDates.map(date => ({
                     type: 'line',
-                    x0: currentDate,
-                    x1: currentDate,
+                    x0: date,
+                    x1: date,
                     y0: 0,
                     y1: 1,
                     yref: 'paper',
@@ -364,7 +368,7 @@ const ForecastViz = ({ location, onBack }) => {
                       width: 1,
                       dash: 'dash'
                     }
-                  }],
+                  })),
                   yaxis: {
                     title: 'Hospitalizations'
                   },
