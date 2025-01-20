@@ -290,9 +290,10 @@ const ForecastViz = ({ location, onBack }) => {
           <div className="w-full">
             <h3 className="text-lg font-semibold mb-4">Forecast Analysis</h3>
             {timeSeriesData && rateChangeData && (
-              <Plot
-                style={{ width: '100%', height: '100%' }}
-                data={[
+              <div className="w-full" style={{ height: Math.min(800, windowSize.height * 0.6) }}>
+                <Plot
+                  style={{ width: '100%', height: '100%' }}
+                  data={[
                   ...timeSeriesData,
                   ...rateChangeData.map(trace => ({
                     ...trace,
@@ -302,18 +303,19 @@ const ForecastViz = ({ location, onBack }) => {
                   }))
                 ]}
                 layout={{
-                  width: windowSize.width * 0.9,
-                  height: windowSize.height * 0.7,
+                  width: Math.min(1400, windowSize.width * 0.85),
+                  height: Math.min(800, windowSize.height * 0.6),
                   autosize: true,
                   grid: {
                     columns: 5,
                     rows: 1,
                     pattern: 'independent',
-                    subplots: [['xy'], ['x2y2']]
+                    subplots: [['xy'], ['x2y2']],
+                    xgap: 0.1
                   },
                   showlegend: true,
                   hovermode: 'x unified',
-                  margin: { l: 50, r: 20, t: 10, b: 80 },
+                  margin: { l: 60, r: 30, t: 30, b: 80 },
                   xaxis: {
                     domain: [0, 0.8],
                     rangeslider: {},
@@ -357,7 +359,8 @@ const ForecastViz = ({ location, onBack }) => {
                     filename: 'forecast_plot'
                   }
                 }}
-              />
+                />
+              </div>
             )}
           </div>
         </div>
