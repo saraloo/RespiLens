@@ -315,10 +315,10 @@ const ForecastViz = ({ location, onBack }) => {
                 <button 
                   onClick={() => {
                     const idx = availableDates.indexOf(date);
-                    if (idx > 0) {
+                    if (idx > 0 && availableDates[idx - 1]) {  // Add null check
                       const newDates = [...selectedDates];
                       newDates[index] = availableDates[idx - 1];
-                      setSelectedDates(newDates.sort());
+                      setSelectedDates(newDates.filter(Boolean).sort());  // Add filter for null values
                       setActiveDate(availableDates[idx - 1]);
                     }
                   }}
@@ -363,10 +363,16 @@ const ForecastViz = ({ location, onBack }) => {
             {selectedDates.length < 3 && (
               <button
                 onClick={() => {
-                  const lastDate = availableDates[availableDates.length - 1];
-                  const newDates = [...selectedDates, lastDate].sort();
-                  setSelectedDates(newDates);
-                  setActiveDate(lastDate);
+                  const earliestSelectedDate = availableDates[availableDates.indexOf(Math.min(...selectedDates))];
+                  const earliestDateIdx = availableDates.indexOf(earliestSelectedDate);
+                  const targetIdx = Math.max(0, earliestDateIdx - 4); // Go back 4 weeks, but not before start
+                  const dateToAdd = availableDates[targetIdx];
+                  
+                  if (dateToAdd && !selectedDates.includes(dateToAdd)) {
+                    const newDates = [...selectedDates, dateToAdd].sort();
+                    setSelectedDates(newDates);
+                    setActiveDate(dateToAdd);
+                  }
                 }}
                 className="px-3 py-1 rounded border hover:bg-gray-100"
               >
