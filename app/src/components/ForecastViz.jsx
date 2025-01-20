@@ -295,7 +295,7 @@ const ForecastViz = ({ location, onBack }) => {
                     if (idx > 0) {
                       const newDates = [...selectedDates];
                       newDates[index] = availableDates[idx - 1];
-                      setSelectedDates(newDates);
+                      setSelectedDates(newDates.sort());
                       setActiveDate(availableDates[idx - 1]);
                     }
                   }}
@@ -323,7 +323,7 @@ const ForecastViz = ({ location, onBack }) => {
                     if (idx < availableDates.length - 1) {
                       const newDates = [...selectedDates];
                       newDates[index] = availableDates[idx + 1];
-                      setSelectedDates(newDates);
+                      setSelectedDates(newDates.sort());
                       setActiveDate(availableDates[idx + 1]);
                     }
                   }}
@@ -340,7 +340,8 @@ const ForecastViz = ({ location, onBack }) => {
                 onClick={() => {
                   const lastDate = availableDates[availableDates.length - 1];
                   if (!selectedDates.includes(lastDate)) {
-                    setSelectedDates([...selectedDates, lastDate]);
+                    const newDates = [...selectedDates, lastDate].sort();
+                    setSelectedDates(newDates);
                     setActiveDate(lastDate);
                   }
                 }}
@@ -392,10 +393,12 @@ const ForecastViz = ({ location, onBack }) => {
                         {step: 'all', label: 'all'}
                       ]
                     },
-                    range: [
-                      new Date(selectedDates[0]).setDate(new Date(selectedDates[0]).getDate() - 56),
-                      new Date(selectedDates[selectedDates.length - 1]).setDate(new Date(selectedDates[selectedDates.length - 1]).getDate() + 35)
-                    ]
+                    range: selectedDates.length > 0 ? [
+                      new Date(Math.min(...selectedDates))
+                        .setDate(new Date(Math.min(...selectedDates)).getDate() - 56), // 8 weeks before earliest
+                      new Date(Math.max(...selectedDates))
+                        .setDate(new Date(Math.max(...selectedDates)).getDate() + 35)  // 5 weeks after latest
+                    ] : undefined
                   },
                   shapes: selectedDates.map(date => ({
                     type: 'line',
