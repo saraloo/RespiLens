@@ -307,7 +307,7 @@ const ForecastViz = ({ location, onBack }) => {
                   hovermode: 'x unified',
                   margin: { l: 60, r: 30, t: 30, b: 80 },
                   xaxis: {
-                    domain: [0, 0.75],
+                    domain: [0, 0.8],
                     rangeslider: {},
                     rangeselector: {
                       buttons: [
@@ -338,7 +338,7 @@ const ForecastViz = ({ location, onBack }) => {
                     title: 'Hospitalizations'
                   },
                   xaxis2: {
-                    domain: [0.8, 0.95],
+                    domain: [0.85, 1],
                     showgrid: false
                   },
                   yaxis2: {
