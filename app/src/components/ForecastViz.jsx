@@ -286,7 +286,7 @@ const ForecastViz = ({ location, onBack }) => {
         </div>
 
         <div className="p-4 border-b">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap gap-4 items-center justify-center">
             {selectedDates.map((date, index) => (
               <div key={date} className="flex items-center gap-2">
                 <button 
