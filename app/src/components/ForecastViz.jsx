@@ -363,9 +363,9 @@ const ForecastViz = ({ location, onBack }) => {
             {selectedDates.length < 3 && (
               <button
                 onClick={() => {
-                  const earliestSelectedDate = availableDates[availableDates.indexOf(Math.min(...selectedDates))];
-                  const earliestDateIdx = availableDates.indexOf(earliestSelectedDate);
-                  const targetIdx = Math.max(0, earliestDateIdx - 4); // Go back 4 weeks, but not before start
+                  const earliestCurrentDate = Math.min(...selectedDates);
+                  const earliestDateIdx = availableDates.indexOf(earliestCurrentDate);
+                  const targetIdx = Math.max(0, earliestDateIdx - 4); // Go back 4 weeks from earliest selected date
                   const dateToAdd = availableDates[targetIdx];
                   
                   if (dateToAdd && !selectedDates.includes(dateToAdd)) {
