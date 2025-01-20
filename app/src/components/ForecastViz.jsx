@@ -307,7 +307,7 @@ const ForecastViz = ({ location, onBack }) => {
                   hovermode: 'x unified',
                   margin: { l: 60, r: 30, t: 30, b: 80 },
                   xaxis: {
-                    domain: [0, 0.7],
+                    domain: [0, 0.85],
                     rangeslider: {},
                     rangeselector: {
                       buttons: [
@@ -338,7 +338,7 @@ const ForecastViz = ({ location, onBack }) => {
                     title: 'Hospitalizations'
                   },
                   xaxis2: {
-                    domain: [0.75, 1],
+                    domain: [0.9, 1],
                     showgrid: false
                   },
                   yaxis2: {
@@ -354,9 +354,9 @@ const ForecastViz = ({ location, onBack }) => {
                   legend: {
                     orientation: 'h',
                     traceorder: 'normal',
-                    x: 1,
+                    x: 0,
                     y: 1.1,
-                    xanchor: 'right',
+                    xanchor: 'left',
                     yanchor: 'bottom'
                   }
                 }}
@@ -364,7 +364,7 @@ const ForecastViz = ({ location, onBack }) => {
                   responsive: true,
                   displayModeBar: true,
                   displaylogo: false,
-                  modeBarPosition: 'top',
+                  modeBarPosition: 'left',
                   showSendToCloud: false,
                   plotlyServerURL: "",
                   toImageButtonOptions: {
