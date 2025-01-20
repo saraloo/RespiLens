@@ -167,11 +167,11 @@ const ForecastViz = ({ location, onBack }) => {
     if (!data || !currentDate) return null;
 
     const categoryOrder = [
-      'large_increase',
-      'increase',
-      'stable',
+      'large_decrease',
       'decrease',
-      'large_decrease'
+      'stable',
+      'increase',
+      'large_increase'
     ];
 
     return selectedModels.map(model => {
