@@ -8,6 +8,12 @@ export default defineConfig({
   server: {
     watch: {
       usePolling: true
+    },
+    proxy: {
+      '/processed_data': {
+        target: 'http://localhost:5173',
+        rewrite: (path) => `/RespiView${path}`
+      }
     }
   }
 })
