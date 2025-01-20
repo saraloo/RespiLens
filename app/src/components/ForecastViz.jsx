@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
@@ -27,6 +28,33 @@ const ForecastViz = ({ location, onBack }) => {
     width: window.innerWidth,
     height: window.innerHeight
   });
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Update URL when selection changes
+  useEffect(() => {
+    if (currentDate && selectedModels.length > 0) {
+      setSearchParams({
+        date: currentDate,
+        models: selectedModels.join(','),
+        location
+      });
+    }
+  }, [currentDate, selectedModels, location, setSearchParams]);
+
+  // Read from URL on initial load
+  useEffect(() => {
+    const urlDate = searchParams.get('date');
+    const urlModels = searchParams.get('models')?.split(',');
+    
+    if (urlDate && availableDates.includes(urlDate)) {
+      setCurrentDate(urlDate);
+    }
+    
+    if (urlModels?.length > 0) {
+      setSelectedModels(urlModels.filter(model => models.includes(model)));
+    }
+  }, [searchParams, availableDates, models]);
 
   useEffect(() => {
     const fetchData = async () => {

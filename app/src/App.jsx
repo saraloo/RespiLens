@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
 import StateSelector from './components/StateSelector';
 import ForecastViz from './components/ForecastViz';
 
-const App = () => {
+const AppContent = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
 
   if (!selectedLocation) {
@@ -16,5 +17,11 @@ const App = () => {
     />
   );
 };
+
+const App = () => (
+  <Router>
+    <AppContent />
+  </Router>
+);
 
 export default App;
