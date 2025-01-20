@@ -131,79 +131,82 @@ const ForecastViz = ({ location, onBack }) => {
       marker: { size: 6 }
     };
 
-    // Generate traces for each selected model
+    // Generate traces for each selected model and date combination
     const modelTraces = selectedModels.flatMap(model => 
-      selectedDates.flatMap((date, dateIndex) => {
+      selectedDates.flatMap((date) => {
         const forecast = 
           data.forecasts[date]['wk inc flu hosp']?.[model] || 
           data.forecasts[date]['wk flu hosp rate change']?.[model];
       
-      if (!forecast) return [];
+        if (!forecast) return [];
 
-      const forecastDates = [];
-      const medianValues = [];
-      const ci95Upper = [];
-      const ci95Lower = [];
-      const ci50Upper = [];
-      const ci50Lower = [];
+        const forecastDates = [];
+        const medianValues = [];
+        const ci95Upper = [];
+        const ci95Lower = [];
+        const ci50Upper = [];
+        const ci50Lower = [];
 
-      // Process all horizons and sort by target date
-      const sortedPredictions = Object.entries(forecast.predictions || {})
-        .sort((a, b) => new Date(a[1].date) - new Date(b[1].date));
-      
-      sortedPredictions.forEach(([horizon, pred]) => {
-        forecastDates.push(pred.date);
-        const values = pred.values || [0, 0, 0, 0, 0];
-        ci95Lower.push(values[0]); // 2.5%
-        ci50Lower.push(values[1]); // 25%
-        medianValues.push(values[2]); // 50%
-        ci50Upper.push(values[3]); // 75%
-        ci95Upper.push(values[4]); // 97.5%
-      });
+        // Process all horizons and sort by target date
+        const sortedPredictions = Object.entries(forecast.predictions || {})
+          .sort((a, b) => new Date(a[1].date) - new Date(b[1].date));
+        
+        sortedPredictions.forEach(([horizon, pred]) => {
+          forecastDates.push(pred.date);
+          const values = pred.values || [0, 0, 0, 0, 0];
+          ci95Lower.push(values[0]);
+          ci50Lower.push(values[1]);
+          medianValues.push(values[2]);
+          ci50Upper.push(values[3]);
+          ci95Upper.push(values[4]);
+        });
 
-      const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
+        const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
 
-      return [
-        {
-          x: [...forecastDates, ...forecastDates.slice().reverse()],
-          y: [...ci95Upper, ...ci95Lower.slice().reverse()],
-          fill: 'toself',
-          fillcolor: `${modelColor}20`, // 20% opacity
-          line: { color: 'transparent' },
-          showlegend: false,
-          type: 'scatter'
-        },
-        {
-          x: [...forecastDates, ...forecastDates.slice().reverse()],
-          y: [...ci50Upper, ...ci50Lower.slice().reverse()],
-          fill: 'toself',
-          fillcolor: `${modelColor}40`, // 40% opacity
-          line: { color: 'transparent' },
-          showlegend: false,
-          type: 'scatter'
-        },
-        {
-          x: forecastDates,
-          y: medianValues,
-          name: `${model} (${date})`,
-          type: 'scatter',
-          mode: 'lines+markers',
-          line: { 
-            color: modelColor,
-            width: 2,
-            dash: 'solid'
+        return [
+          {
+            x: [...forecastDates, ...forecastDates.slice().reverse()],
+            y: [...ci95Upper, ...ci95Lower.slice().reverse()],
+            fill: 'toself',
+            fillcolor: `${modelColor}20`,
+            line: { color: 'transparent' },
+            showlegend: false,
+            type: 'scatter',
+            name: `${model} (${date}) 95% CI`
           },
-          marker: { size: 6, color: modelColor },
-          showlegend: false
-        }
-      ];
-    });
+          {
+            x: [...forecastDates, ...forecastDates.slice().reverse()],
+            y: [...ci50Upper, ...ci50Lower.slice().reverse()],
+            fill: 'toself',
+            fillcolor: `${modelColor}40`,
+            line: { color: 'transparent' },
+            showlegend: false,
+            type: 'scatter',
+            name: `${model} (${date}) 50% CI`
+          },
+          {
+            x: forecastDates,
+            y: medianValues,
+            name: `${model} (${date})`,
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { 
+              color: modelColor,
+              width: 2,
+              dash: 'solid'
+            },
+            marker: { size: 6, color: modelColor },
+            showlegend: true
+          }
+        ];
+      })
+    );
 
     return [groundTruthTrace, ...modelTraces];
   };
 
   const getRateChangeData = () => {
-    if (!data || !currentDate) return null;
+    if (!data || selectedDates.length === 0) return null;
 
     const categoryOrder = [
       'large_decrease',
@@ -213,21 +216,23 @@ const ForecastViz = ({ location, onBack }) => {
       'large_increase'
     ];
 
+    // Only show rate change data for active date
     return selectedModels.map(model => {
-      const forecast = data.forecasts[currentDate]['wk flu hosp rate change']?.[model];
+      const forecast = data.forecasts[activeDate]?.['wk flu hosp rate change']?.[model];
       if (!forecast) return null;
 
       const horizon0 = forecast.predictions['0'];
+      if (!horizon0) return null;
+      
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
     
-      // Create ordered data
       const orderedData = categoryOrder.map(cat => ({
-        category: cat.replace('_', '<br>'), // Split label at underscore
+        category: cat.replace('_', '<br>'),
         value: horizon0.probabilities[horizon0.categories.indexOf(cat)] * 100
       }));
       
       return {
-        name: model,
+        name: `${model} (${activeDate})`,
         y: orderedData.map(d => d.category),
         x: orderedData.map(d => d.value),
         type: 'bar',
@@ -388,8 +393,8 @@ const ForecastViz = ({ location, onBack }) => {
                       ]
                     },
                     range: [
-                      new Date(currentDate).setDate(new Date(currentDate).getDate() - 56), // 8 weeks before
-                      new Date(currentDate).setDate(new Date(currentDate).getDate() + 35)  // 5 weeks after
+                      new Date(selectedDates[0]).setDate(new Date(selectedDates[0]).getDate() - 56),
+                      new Date(selectedDates[selectedDates.length - 1]).setDate(new Date(selectedDates[selectedDates.length - 1]).getDate() + 35)
                     ]
                   },
                   shapes: selectedDates.map(date => ({
