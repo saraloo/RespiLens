@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
@@ -282,7 +282,7 @@ const ForecastViz = ({ location, onBack }) => {
   const timeSeriesData = getTimeSeriesData();
   const rateChangeData = getRateChangeData();
 
-  const getDateRange = () => {
+  const getDefaultRange = useCallback(() => {
     if (selectedDates.length === 0) return undefined;
     const minDate = new Date(Math.min(...selectedDates));
     const maxDate = new Date(Math.max(...selectedDates));
@@ -290,7 +290,7 @@ const ForecastViz = ({ location, onBack }) => {
       new Date(minDate.setDate(minDate.getDate() - 56)), // 8 weeks before
       new Date(maxDate.setDate(maxDate.getDate() + 35))  // 5 weeks after
     ];
-  };
+  }, [selectedDates]);
 
   return (
     <div className="container mx-auto p-4">
@@ -408,7 +408,9 @@ const ForecastViz = ({ location, onBack }) => {
                   margin: { l: 60, r: 30, t: 30, b: 30 },
                   xaxis: {
                     domain: [0, 0.8],
-                    rangeslider: {},
+                    rangeslider: {
+                      range: getDefaultRange()
+                    },
                     rangeselector: {
                       buttons: [
                         {count: 1, label: '1m', step: 'month', stepmode: 'backward'},
@@ -416,7 +418,7 @@ const ForecastViz = ({ location, onBack }) => {
                         {step: 'all', label: 'all'}
                       ]
                     },
-                    range: getDateRange()
+                    range: getDefaultRange()
                   },
                   shapes: selectedDates.map(date => ({
                     type: 'line',
@@ -463,9 +465,12 @@ const ForecastViz = ({ location, onBack }) => {
                   modeBarButtonsToAdd: [{
                     name: 'Reset view',
                     click: function(gd) {
-                      const range = getDateRange();
+                      const range = getDefaultRange();
                       if (range) {
-                        Plotly.relayout(gd, {'xaxis.range': range});
+                        Plotly.relayout(gd, {
+                          'xaxis.range': range,
+                          'xaxis.rangeslider.range': range
+                        });
                       }
                     }
                   }]
