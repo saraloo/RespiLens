@@ -372,7 +372,10 @@ const ForecastViz = ({ location, onBack }) => {
                     showticklabels: true,
                     type: 'category',
                     side: 'right',
-                    automargin: true
+                    automargin: true,
+                    tickfont: {
+                      align: 'right'
+                    }
                   },
                   legend: {
                     orientation: 'h',
