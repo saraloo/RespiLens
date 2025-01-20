@@ -293,7 +293,7 @@ const ForecastViz = ({ location, onBack }) => {
                   }))
                 ]}
                 layout={{
-                  width: Math.min(1400, windowSize.width * 0.85),
+                  width: Math.min(1200, windowSize.width * 0.8),
                   height: Math.min(800, windowSize.height * 0.6),
                   autosize: true,
                   grid: {
@@ -307,7 +307,7 @@ const ForecastViz = ({ location, onBack }) => {
                   hovermode: 'x unified',
                   margin: { l: 60, r: 30, t: 30, b: 80 },
                   xaxis: {
-                    domain: [0, 0.85],
+                    domain: [0, 0.75],
                     rangeslider: {},
                     rangeselector: {
                       buttons: [
@@ -338,7 +338,7 @@ const ForecastViz = ({ location, onBack }) => {
                     title: 'Hospitalizations'
                   },
                   xaxis2: {
-                    domain: [0.9, 1],
+                    domain: [0.8, 0.95],
                     showgrid: false
                   },
                   yaxis2: {
