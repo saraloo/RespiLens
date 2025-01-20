@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
@@ -19,6 +19,10 @@ const ForecastViz = ({ location, onBack }) => {
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
   const [isModelFilterOpen, setIsModelFilterOpen] = useState(false);
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,6 +68,18 @@ const ForecastViz = ({ location, onBack }) => {
 
     fetchData();
   }, [location]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getTimeSeriesData = () => {
     if (!data || !currentDate) return null;
@@ -275,6 +291,7 @@ const ForecastViz = ({ location, onBack }) => {
             <h3 className="text-lg font-semibold mb-4">Forecast Analysis</h3>
             {timeSeriesData && rateChangeData && (
               <Plot
+                style={{ width: '100%', height: '100%' }}
                 data={[
                   ...timeSeriesData,
                   ...rateChangeData.map(trace => ({
@@ -285,7 +302,9 @@ const ForecastViz = ({ location, onBack }) => {
                   }))
                 ]}
                 layout={{
-                  height: 600,
+                  width: windowSize.width * 0.9,
+                  height: windowSize.height * 0.7,
+                  autosize: true,
                   grid: {
                     columns: 5,
                     rows: 1,
