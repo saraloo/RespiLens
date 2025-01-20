@@ -154,15 +154,18 @@ const ForecastViz = ({ location, onBack }) => {
         sortedPredictions.forEach(([horizon, pred]) => {
           forecastDates.push(pred.date);
           
-          // Find the correct quantile indices
-          const quantiles = pred.quantiles;
-          const values = pred.values || [0, 0, 0, 0, 0];
+          if (forecast.type !== 'quantile') {
+            return;
+          }
+          const quantiles = pred.quantiles || [];
+          const values = pred.values || [];
           
-          const q95Lower = values[quantiles.indexOf(0.025)];
-          const q50Lower = values[quantiles.indexOf(0.25)];
-          const median = values[quantiles.indexOf(0.5)];
-          const q50Upper = values[quantiles.indexOf(0.75)];
-          const q95Upper = values[quantiles.indexOf(0.975)];
+          // Default to 0 if quantile not found
+          const q95Lower = values[quantiles.indexOf(0.025)] || 0;
+          const q50Lower = values[quantiles.indexOf(0.25)] || 0;
+          const median = values[quantiles.indexOf(0.5)] || 0;
+          const q50Upper = values[quantiles.indexOf(0.75)] || 0;
+          const q95Upper = values[quantiles.indexOf(0.975)] || 0;
           
           ci95Lower.push(q95Lower);
           ci50Lower.push(q50Lower);
