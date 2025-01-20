@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, useSearchParams } from 'react-router-dom';
 import StateSelector from './components/StateSelector';
 import ForecastViz from './components/ForecastViz';
 
 const AppContent = () => {
-  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [searchParams] = useSearchParams();
+  const [selectedLocation, setSelectedLocation] = useState(() => {
+    // Initialize location from URL if present
+    return searchParams.get('location') || null;
+  });
 
   if (!selectedLocation) {
     return <StateSelector onStateSelect={setSelectedLocation} />;
