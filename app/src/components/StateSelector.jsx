@@ -69,7 +69,9 @@ const StateSelector = ({ onStateSelect }) => {
     <div className="container mx-auto p-4">
       <div className="flex items-center justify-center gap-4 mb-6">
         <img src="respiview-logo.svg" alt="RespiView Logo" className="h-14 w-14" />
-        <h1 className="text-3xl font-bold text-blue-600">RespiView</h1>
+        <h1 className="text-3xl font-bold text-blue-600">
+          RespiView<sup className="text-red-500 text-xs">α</sup>
+        </h1>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
         {states.map((state) => (
