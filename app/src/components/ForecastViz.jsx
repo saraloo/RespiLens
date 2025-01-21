@@ -82,8 +82,10 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setSelectedDates([]); // Clear dates before loading new data
-        setLoading(true);  // Set loading state immediately
+        // Clear both dates and models before loading new data
+        setSelectedDates([]);
+        setSelectedModels([]);
+        setLoading(true);
         
         // Sanitize location code and fetch data
         const response = await fetch(`processed_data/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json`);
@@ -107,17 +109,7 @@ const ForecastViz = ({ location, onBack }) => {
         setModels(modelList);
         
         setAvailableDates(dates);
-        setSelectedDates([dates[dates.length - 1]]);
-        setActiveDate(dates[dates.length - 1]);
-        
-        // Default model selection
-        const defaultSelection = modelList.length > 0 
-          ? (modelList.includes('FluSight-ensemble') 
-              ? ['FluSight-ensemble'] 
-              : [modelList[0]])
-          : [];
-        
-        setSelectedModels(defaultSelection);
+        setModels(modelList);
       } catch (err) {
         setError(`Failed to load forecast data: ${err.message}`);
         console.error('Full error:', err);
@@ -128,6 +120,25 @@ const ForecastViz = ({ location, onBack }) => {
 
     fetchData();
   }, [location]);
+
+  // Set default selections after data is loaded
+  useEffect(() => {
+    if (!loading && data && availableDates.length > 0 && models.length > 0) {
+      // Set default selections only when data is fully loaded
+      if (selectedDates.length === 0) {
+        const latestDate = availableDates[availableDates.length - 1];
+        setSelectedDates([latestDate]);
+        setActiveDate(latestDate);
+      }
+      
+      if (selectedModels.length === 0) {
+        const defaultSelection = models.includes('FluSight-ensemble') 
+          ? ['FluSight-ensemble'] 
+          : [models[0]];
+        setSelectedModels(defaultSelection);
+      }
+    }
+  }, [loading, data, availableDates, models, selectedDates.length, selectedModels.length]);
 
   useEffect(() => {
     const handleResize = () => {
