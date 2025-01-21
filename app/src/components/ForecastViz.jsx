@@ -124,7 +124,7 @@ const ForecastViz = ({ location, onBack }) => {
   // Set default selections after data is loaded
   useEffect(() => {
     if (!loading && data && availableDates.length > 0 && models.length > 0) {
-      // Set default selections only when data is fully loaded
+      // ONLY set defaults if we don't have any selections yet
       if (selectedDates.length === 0) {
         const latestDate = availableDates[availableDates.length - 1];
         setSelectedDates([latestDate]);
@@ -138,26 +138,7 @@ const ForecastViz = ({ location, onBack }) => {
         setSelectedModels(defaultSelection);
       }
     }
-  }, [loading, data, availableDates, models, selectedDates.length, selectedModels.length]);
-
-  // Set default selections after data is loaded
-  useEffect(() => {
-    if (!loading && data && availableDates.length > 0 && models.length > 0) {
-      // Set default selections only when data is fully loaded
-      if (selectedDates.length === 0) {
-        const latestDate = availableDates[availableDates.length - 1];
-        setSelectedDates([latestDate]);
-        setActiveDate(latestDate);
-      }
-      
-      if (selectedModels.length === 0) {
-        const defaultSelection = models.includes('FluSight-ensemble') 
-          ? ['FluSight-ensemble'] 
-          : [models[0]];
-        setSelectedModels(defaultSelection);
-      }
-    }
-  }, [loading, data, availableDates, models, selectedDates.length, selectedModels.length]);
+  }, [loading, data, availableDates, models]); // Remove selectedDates.length and selectedModels.length from dependencies
 
   useEffect(() => {
     const handleResize = () => {
