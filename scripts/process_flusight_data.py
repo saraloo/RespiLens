@@ -199,13 +199,13 @@ class FluSightPreprocessor:
             )),
             'locations': [
                 {
-                    'location': str(loc['location']),  # Convert to string
-                    'abbreviation': str(loc['abbreviation']),  # Convert to string
-                    'location_name': str(loc['location_name']),  # Convert to string
-                    'population': float(loc['population'])  # Convert to float
+                    'location': str(row.location),
+                    'abbreviation': str(row.abbreviation),
+                    'location_name': str(row.location_name),
+                    'population': float(row.population)
                 }
-                for _, loc in locations.iterrows()
-                if pd.notna(loc['location_name']) and pd.notna(loc['abbreviation'])  # Only include rows with valid data
+                for _, row in locations.iterrows()
+                if pd.notna(row.location_name) and pd.notna(row.abbreviation)
             ],
             'demo_mode': self.demo_mode
         }
