@@ -1,7 +1,7 @@
 # Fluview
 
 Hey, there are other flusight vizualization but realized most of them are geared towards CDC/academics instead of state health department and public. Moreover, these hub data remains not accesssible enough. The goal is to make one more with these users in mind, and to have the following important features:
-- ability to link a certain view to a URL to share forecast
+- **ability to link a certain view to a URL to share forecast**
 - static and updated everyweek
 - multi view (categorical forecasts, scores, timeseries)
 - multi-date on one view to compare
@@ -10,6 +10,8 @@ Hey, there are other flusight vizualization but realized most of them are geared
 
 Most other viz I am aware off are made by the amazing Reichlab:
 - http://flusightnetwork.io: very great, but only past season and only one model somehow
+- https://zoltardata.com/project/360/viz the zotltra view is only past season but is very great, I like the suffle color button. Only last year
+- https://reichlab.io/flusight-dashboard/ very detailed dashboard, incredible for modelers. Currently 404 and also it is relatively static for other users.
 
 ## Features
 Features
