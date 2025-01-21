@@ -9,23 +9,23 @@ const StateSelector = ({ onStateSelect }) => {
     const fetchStates = async () => {
       try {
         // Fetch manifest
-        const manifestResponse = await fetch('/processed_data/manifest.json');
+        const manifestResponse = await fetch('/processed_data/metadata.json');
         if (!manifestResponse.ok) {
-          throw new Error(`Failed to fetch manifest: ${manifestResponse.statusText}`);
+          throw new Error(`Failed to fetch metadata: ${manifestResponse.statusText}`);
         }
         
-        const manifest = await manifestResponse.json();
-        console.log('Loaded manifest:', manifest);
+        const metadata = await manifestResponse.json();
+        console.log('Loaded metadata:', metadata);
 
-        if (!manifest.locations || !Array.isArray(manifest.locations)) {
-          throw new Error('Invalid manifest format');
+        if (!metadata.locations || !Array.isArray(metadata.locations)) {
+          throw new Error('Invalid metadata format');
         }
 
         // Fetch data for each location
         const statesData = [];
-        for (const loc of manifest.locations) {
+        for (const loc of metadata.locations) {
           try {
-            const response = await fetch(`/processed_data/${loc}.json`);
+            const response = await fetch(`/processed_data/${loc}_flusight.json`);
             if (!response.ok) {
               console.error(`Failed to fetch data for location ${loc}`);
               continue;
