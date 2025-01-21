@@ -1,5 +1,16 @@
 # Fluview
 
+Hey, there are other flusight vizualization but realized most of them are geared towards CDC/academics instead of state health department and public. Moreover, these hub data remains not accesssible enough. The goal is to make one more with these users in mind, and to have the following important features:
+- ability to link a certain view to a URL to share forecast
+- static and updated everyweek
+- multi view (categorical forecasts, scores, timeseries)
+- multi-date on one view to compare
+- any number of model
+
+
+Most other viz I am aware off are made by the amazing Reichlab:
+- http://flusightnetwork.io: very great, but only past season and only one model somehow
+
 ## Features
 Features
 ### TODO
@@ -13,7 +24,8 @@ Features
 - [ ] add some text to welcome and disclaim
 - [ ] model description when we hover on name
 - [ ] validation plot for rsv
-- [ ] 
+- [ ] Add WIS score and
+- [ ] allow to select top scoring model past 8 week or full past for this state
 
 
 
