@@ -82,9 +82,6 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Clear both dates and models before loading new data
-        setSelectedDates([]);
-        setSelectedModels([]);
         setLoading(true);
         
         // Sanitize location code and fetch data
@@ -120,6 +117,18 @@ const ForecastViz = ({ location, onBack }) => {
 
     fetchData();
   }, [location]);
+
+  // Validate selected dates after loading new data
+  useEffect(() => {
+    if (!loading && data && availableDates.length > 0) {
+      // Validate existing selected dates against new available dates
+      setSelectedDates(prev => {
+        const validDates = prev.filter(date => availableDates.includes(date));
+        // If no valid dates remain, set to latest available date
+        return validDates.length > 0 ? validDates : [availableDates[availableDates.length - 1]];
+      });
+    }
+  }, [loading, data, availableDates]);
 
   // Set default selections after data is loaded
   useEffect(() => {
