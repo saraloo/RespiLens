@@ -294,14 +294,24 @@ class FluSightPreprocessor:
             
             # Flu payload
             flu_payload = {
-                'metadata': location_info,
+                'metadata': {
+                    'location': str(location_info['location']),
+                    'abbreviation': str(location_info['abbreviation']),
+                    'location_name': str(location_info['location_name']),
+                    'population': float(location_info['population'])
+                },
                 'ground_truth': ground_truth.get(location, {'dates': [], 'values': [], 'rates': []}),
                 'forecasts': flu_forecast_data.get(location, {})
             }
             
             # RSV payload
             rsv_payload = {
-                'metadata': location_info,
+                'metadata': {
+                    'location': str(location_info['location']),
+                    'abbreviation': str(location_info['abbreviation']),
+                    'location_name': str(location_info['location_name']),
+                    'population': float(location_info['population'])
+                },
                 'ground_truth': ground_truth.get(location, {'dates': [], 'values': [], 'rates': []}),
                 'forecasts': rsv_forecast_data.get(location, {})
             }
