@@ -1,6 +1,8 @@
-# Fluview
+# RespiView ![respiview-logo](https://github.com/user-attachments/assets/f4b54c2a-9d27-4453-9a85-72b1b2f965a2)
 
-Hey, there are other flusight vizualization but realized most of them are geared towards CDC/academics instead of state health department and public. Moreover, these hub data remains not accesssible enough. The goal is to make one more with these users in mind, and to have the following important features:
+
+
+Hey, there are other flusight vizualization but realized most of them are geared towards CDC/academics instead of state health department and public. Moreover, these hub data remains not accesssible enough. The goal is to make one more with these users in mind, and to have the following important (to me only) features:
 - **ability to link a certain view to a URL to share forecast**
 - static and updated everyweek
 - multi view (categorical forecasts, scores, timeseries)
@@ -28,6 +30,7 @@ Features
 - [ ] validation plot for rsv
 - [ ] Add WIS score and
 - [ ] allow to select top scoring model past 8 week or full past for this state
+- [ ] logo as favicon
 
 
 
