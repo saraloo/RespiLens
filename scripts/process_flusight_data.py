@@ -214,8 +214,8 @@ class FluSightPreprocessor:
             json.dump(metadata, f, indent=2)
         
         # Create and save location-specific payloads
-        for location in tqdm(locations['location'], desc="Creating location payloads"):
-            location_info = locations[locations['location'] == location].iloc[0].to_dict()
+        for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
+            location = location_info['location']
             
             payload = {
                 'metadata': location_info,
@@ -224,8 +224,10 @@ class FluSightPreprocessor:
             }
             
             # Save location payload with abbreviation in filename
-            # Use abbreviation if available, fall back to location code
-            location_abbrev = location_info.get('abbreviation', location)
+            # Normalize the location abbreviation and remove any whitespace
+            location_abbrev = str(location_info['abbreviation']).strip()
+            if not location_abbrev:
+                continue  # Skip if no valid abbreviation
             with open(self.output_path / f"{location_abbrev}_flusight.json", 'w') as f:
                 json.dump(payload, f)
 
