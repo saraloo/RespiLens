@@ -52,34 +52,39 @@ const ForecastViz = ({ location, onBack }) => {
 
   // Update URL when selection changes
   useEffect(() => {
-    if (selectedDates.length > 0 && selectedModels.length > 0) {
+    if (!loading && selectedDates.length > 0 && selectedModels.length > 0) {
       setSearchParams({
         dates: selectedDates.join(','),
         models: selectedModels.join(','),
         location
       });
     }
-  }, [selectedDates, selectedModels, location, setSearchParams]);
+  }, [selectedDates, selectedModels, location, setSearchParams, loading]);
 
   // Read from URL on initial load
   useEffect(() => {
-    const urlDates = searchParams.get('dates')?.split(',');
-    const urlModels = searchParams.get('models')?.split(',');
-    
-    if (urlDates?.length > 0) {
-      const validDates = urlDates.filter(date => availableDates.includes(date));
-      setSelectedDates(validDates);
-      setActiveDate(validDates[0]);
+    if (!loading && data) {  // Only run when data is loaded
+      const urlDates = searchParams.get('dates')?.split(',');
+      const urlModels = searchParams.get('models')?.split(',');
+      
+      if (urlDates?.length > 0) {
+        const validDates = urlDates.filter(date => availableDates.includes(date));
+        setSelectedDates(validDates);
+        setActiveDate(validDates[0]);
+      }
+      
+      if (urlModels?.length > 0) {
+        setSelectedModels(urlModels.filter(model => models.includes(model)));
+      }
     }
-    
-    if (urlModels?.length > 0) {
-      setSelectedModels(urlModels.filter(model => models.includes(model)));
-    }
-  }, [searchParams, availableDates, models]);
+  }, [searchParams, availableDates, models, loading, data]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setSelectedDates([]); // Clear dates before loading new data
+        setLoading(true);  // Set loading state immediately
+        
         // Sanitize location code and fetch data
         const response = await fetch(`processed_data/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json`);
         const jsonData = await response.json();
