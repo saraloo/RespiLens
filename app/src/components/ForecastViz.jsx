@@ -368,20 +368,21 @@ const ForecastViz = ({ location, onBack }) => {
             {selectedDates.length < 3 && (
               <button
                 onClick={() => {
-                  // Get currently selected dates and available dates
-                  const latestSelectedDate = Math.max(...selectedDates);
+                  // Get latest selected date
+                  const latestSelectedDate = selectedDates[selectedDates.length - 1];
                   const latestSelectedIdx = availableDates.indexOf(latestSelectedDate);
                   
-                  // Try to add one week later than the latest selected date
                   let dateToAdd;
                   if (latestSelectedIdx < availableDates.length - 1) {
-                    // If we can add a later date, do so
+                    // If not at the end of available dates, add the next date
                     dateToAdd = availableDates[latestSelectedIdx + 1];
                   } else {
-                    // If we can't add a later date, add one week before the earliest selected date
-                    const earliestSelectedDate = Math.min(...selectedDates);
-                    const earliestSelectedIdx = availableDates.indexOf(earliestSelectedDate);
-                    dateToAdd = availableDates[Math.max(0, earliestSelectedIdx - 1)];
+                    // If at the end, add one before the first selected date
+                    const firstSelectedDate = selectedDates[0];
+                    const firstSelectedIdx = availableDates.indexOf(firstSelectedDate);
+                    if (firstSelectedIdx > 0) {
+                      dateToAdd = availableDates[firstSelectedIdx - 1];
+                    }
                   }
                   
                   if (dateToAdd && !selectedDates.includes(dateToAdd)) {
