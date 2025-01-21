@@ -89,7 +89,10 @@ const ForecastViz = ({ location, onBack }) => {
         setLoading(true);
         
         // Sanitize location code and fetch data
-        const response = await fetch(`./processed_data/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json');
+        const response = await fetch(`./processed_data/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const jsonData = await response.json();
         setData(jsonData);
         
@@ -106,8 +109,6 @@ const ForecastViz = ({ location, onBack }) => {
         });
 
         const modelList = Array.from(extractedModels).sort((a, b) => a.localeCompare(b));
-        
-        setModels(modelList);
         
         setAvailableDates(dates);
         setModels(modelList);
