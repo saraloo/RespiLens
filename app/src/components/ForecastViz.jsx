@@ -34,12 +34,20 @@ const ForecastViz = ({ location, onBack }) => {
 
   const getDefaultRange = useCallback(() => {
     if (selectedDates.length === 0) return undefined;
-    const minDate = new Date(Math.min(...selectedDates));
-    const maxDate = new Date(Math.max(...selectedDates));
-    return [
-      new Date(minDate.setDate(minDate.getDate() - 56)),
-      new Date(maxDate.setDate(maxDate.getDate() + 35))
-    ];
+    
+    // Find first and last selected dates
+    const firstDate = new Date(selectedDates[0]); // selectedDates is already sorted
+    const lastDate = new Date(selectedDates[selectedDates.length - 1]);
+    
+    // Create new date objects to avoid modifying the original dates
+    const startDate = new Date(firstDate);
+    const endDate = new Date(lastDate);
+    
+    // Set range to 8 weeks before first date and 5 weeks after last date
+    startDate.setDate(startDate.getDate() - (8 * 7));
+    endDate.setDate(endDate.getDate() + (5 * 7));
+    
+    return [startDate, endDate];
   }, [selectedDates]);
 
   // Update URL when selection changes
