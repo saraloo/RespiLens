@@ -5,14 +5,17 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/RespiView/',
+  build: {
+    outDir: 'dist'  // Ensure consistent output directory
+  },
   server: {
     watch: {
       usePolling: true
     },
     proxy: {
       '/processed_data': {
-        target: 'http://localhost:5173',
-        rewrite: (path) => `/RespiView${path}`
+        target: 'http://localhost:5173/RespiView',
+        rewrite: (path) => path
       }
     }
   }

@@ -9,7 +9,7 @@ const StateSelector = ({ onStateSelect }) => {
     const fetchStates = async () => {
       try {
         // Fetch manifest
-        const manifestResponse = await fetch('/processed_data/metadata.json');
+        const manifestResponse = await fetch('./processed_data/metadata.json');
         if (!manifestResponse.ok) {
           throw new Error(`Failed to fetch metadata: ${manifestResponse.statusText}`);
         }

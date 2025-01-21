@@ -89,7 +89,7 @@ const ForecastViz = ({ location, onBack }) => {
         setLoading(true);
         
         // Sanitize location code and fetch data
-        const response = await fetch(`processed_data/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json`);
+        const response = await fetch(`./processed_data/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json');
         const jsonData = await response.json();
         setData(jsonData);
         
