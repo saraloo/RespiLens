@@ -257,6 +257,8 @@ def main():
     logging.getLogger().setLevel(args.log_level)
     
     try:
+        logger.info(f"Current working directory: {os.getcwd()}")
+        logger.info(f"Files in current directory: {os.listdir()}")
         logger.info(f"Starting preprocessing with hub path: {args.hub_path}")
         logger.info(f"Output path: {args.output_path}")
         logger.info(f"Demo mode: {args.demo}")
