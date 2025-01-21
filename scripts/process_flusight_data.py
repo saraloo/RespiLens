@@ -197,7 +197,12 @@ class FluSightPreprocessor:
                 for target_data in date_data.values() 
                 for model in target_data.keys()
             )),
-            'locations': locations['location'].tolist(),
+            'locations': locations.apply(lambda x: {
+                'location': x['location'],
+                'abbreviation': x['abbreviation'],
+                'location_name': x['location_name'],
+                'population': x['population']
+            }, axis=1).tolist(),
             'demo_mode': self.demo_mode
         }
         

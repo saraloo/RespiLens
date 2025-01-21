@@ -21,33 +21,11 @@ const StateSelector = ({ onStateSelect }) => {
           throw new Error('Invalid metadata format');
         }
 
-        // Fetch data for each location
-        const statesData = [];
-        for (const loc of metadata.locations) {
-          try {
-            const response = await fetch(`/processed_data/${loc}_flusight.json`);
-            if (!response.ok) {
-              console.error(`Failed to fetch data for location ${loc}`);
-              continue;
-            }
-            const data = await response.json();
-            if (data.metadata) {
-              statesData.push(data.metadata);
-            }
-          } catch (err) {
-            console.error(`Error loading location ${loc}:`, err);
-          }
-        }
-
-        if (statesData.length === 0) {
-          throw new Error('No location data could be loaded');
-        }
-
-        // Sort states by name
-        statesData.sort((a, b) => 
+        // Use the locations data directly from metadata
+        const sortedLocations = metadata.locations.sort((a, b) => 
           (a.location_name || '').localeCompare(b.location_name || ''));
         
-        setStates(statesData);
+        setStates(sortedLocations);
         setLoading(false);
       } catch (err) {
         console.error('Error in data loading:', err);
