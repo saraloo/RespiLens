@@ -106,8 +106,8 @@ const ForecastViz = ({ location, onBack }) => {
         
         setSelectedModels(defaultSelection);
       } catch (err) {
-        setError("Failed to load forecast data");
-        console.error(err);
+        setError(`Failed to load forecast data: ${err.message}`);
+        console.error('Full error:', err);
       } finally {
         setLoading(false);
       }
@@ -145,9 +145,10 @@ const ForecastViz = ({ location, onBack }) => {
     // Generate traces for each selected model and date combination
     const modelTraces = selectedModels.flatMap(model => 
       selectedDates.flatMap((date) => {
+        const forecasts = data.forecasts[date] || {};
         const forecast = 
-          data.forecasts[date]['wk inc flu hosp']?.[model] || 
-          data.forecasts[date]['wk flu hosp rate change']?.[model];
+          forecasts['wk inc flu hosp']?.[model] || 
+          forecasts['wk flu hosp rate change']?.[model];
       
         if (!forecast) return [];
 
