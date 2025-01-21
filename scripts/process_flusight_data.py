@@ -337,11 +337,19 @@ def main():
     logging.getLogger().setLevel(args.log_level)
     
     try:
-        logger.info(f"Starting preprocessing with hub path: {args.hub_path}")
+        # Update these log messages to use the new argument names
+        logger.info(f"Starting preprocessing with FluSight hub path: {args.flu_hub_path}")
+        logger.info(f"Starting preprocessing with RSV hub path: {args.rsv_hub_path}")
         logger.info(f"Output path: {args.output_path}")
         logger.info(f"Demo mode: {args.demo}")
         
-        preprocessor = FluSightPreprocessor(args.hub_path, args.output_path, args.demo)
+        # Update the preprocessor initialization
+        preprocessor = FluSightPreprocessor(
+            args.flu_hub_path, 
+            args.rsv_hub_path,
+            args.output_path, 
+            args.demo
+        )
         preprocessor.create_visualization_payloads()
         
         logger.info("Processing complete!")
