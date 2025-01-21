@@ -50,4 +50,10 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add processed_data/
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Update processed data" && git push)
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update processed data")
+        if [ $? -eq 1 ]; then
+          git remote set-url origin https://x-access-token:${PAT}@github.com/${{ github.repository }}
+          git push
+        fi
+      env:
+        PAT: ${{ secrets.PAT }}
