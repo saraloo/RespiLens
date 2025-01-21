@@ -215,7 +215,8 @@ class FluSightPreprocessor:
             }
             
             # Save location payload with abbreviation in filename
-            location_abbrev = location_info.get('abbreviation', location)
+            # Use FIPS/location code directly
+            location_abbrev = location_info.get('location', location)
             with open(self.output_path / f"{location_abbrev}_flusight.json", 'w') as f:
                 json.dump(payload, f)
 
