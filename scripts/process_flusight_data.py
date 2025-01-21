@@ -155,18 +155,16 @@ class FluSightPreprocessor:
         for model_dir in tqdm(model_dirs, desc="Processing RSV models"):
             model_name = model_dir.name
             
-            # Get all parquet files (RSV hub uses parquet format)
             files = list(model_dir.glob("*.parquet"))
             
             for file_path in files:
                 try:
-                    # Read parquet file
                     df = pd.read_parquet(file_path)
                     
                     # Filter for sample output type only
                     df = df[df['output_type'] == 'sample']
                     
-                    # Process dates
+                    # Process dates 
                     df['origin_date'] = pd.to_datetime(df['origin_date'])
                     
                     # Group by location and organize data
@@ -186,16 +184,16 @@ class FluSightPreprocessor:
                                 if age_group not in rsv_data[location][origin_date_str]:
                                     rsv_data[location][origin_date_str][age_group] = {}
                                 
-                                # Store model predictions
+                                # Store model predictions with age groups
                                 rsv_data[location][origin_date_str][age_group][model_name] = {
                                     'type': 'sample',
                                     'predictions': self._process_rsv_predictions(age_group_data)
                                 }
-                                
+                                    
                 except Exception as e:
                     logger.error(f"Error processing RSV file {file_path}: {str(e)}")
                     continue
-                        
+                    
         return rsv_data
 
     def _process_rsv_predictions(self, group_df: pd.DataFrame) -> Dict:
@@ -313,7 +311,8 @@ class FluSightPreprocessor:
                     'population': float(location_info['population'])
                 },
                 'ground_truth': ground_truth.get(location, {'dates': [], 'values': [], 'rates': []}),
-                'forecasts': rsv_forecast_data.get(location, {})
+                'forecasts': rsv_forecast_data.get(location, {}),
+                'age_groups': ["0-0.99", "1-4", "5-64", "65-130", "0-130"]  # Add available age groups
             }
             
             location_abbrev = str(location_info['abbreviation']).strip()
