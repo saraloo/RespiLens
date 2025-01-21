@@ -34,6 +34,7 @@ Features
 - [ ] change current json payload format to binary format
 - [ ] reorder URL: state then view then date then models
 - [ ] hold model and date on state change
+- [ ] deploy to ghpage using action instead of branch
 
 ### DONE
 
