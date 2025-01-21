@@ -140,6 +140,25 @@ const ForecastViz = ({ location, onBack }) => {
     }
   }, [loading, data, availableDates, models, selectedDates.length, selectedModels.length]);
 
+  // Set default selections after data is loaded
+  useEffect(() => {
+    if (!loading && data && availableDates.length > 0 && models.length > 0) {
+      // Set default selections only when data is fully loaded
+      if (selectedDates.length === 0) {
+        const latestDate = availableDates[availableDates.length - 1];
+        setSelectedDates([latestDate]);
+        setActiveDate(latestDate);
+      }
+      
+      if (selectedModels.length === 0) {
+        const defaultSelection = models.includes('FluSight-ensemble') 
+          ? ['FluSight-ensemble'] 
+          : [models[0]];
+        setSelectedModels(defaultSelection);
+      }
+    }
+  }, [loading, data, availableDates, models, selectedDates.length, selectedModels.length]);
+
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({
