@@ -324,7 +324,7 @@ class FluSightPreprocessor:
             with open(self.output_path / "flu" / f"{location_abbrev}_flusight.json", 'w') as f:
                 json.dump(flu_payload, f)
                 
-            with open(self.output_path / "rsv" / f"{location_abbrev}_rsvsight.json", 'w') as f:
+            with open(self.output_path / "rsv" / f"{location_abbrev}_rsvhub.json", 'w') as f:
                 json.dump(rsv_payload, f)
 
 def main():
