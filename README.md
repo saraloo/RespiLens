@@ -32,8 +32,8 @@ Features
 - [ ] allow to select top scoring model past 8 week or full past for this state
 - [ ] logo as favicon
 - [ ] change current json payload format to binary format
-
-
+- [ ] reorder URL: state then view then date then models
+- [ ] hold model and date on state change
 
 ### DONE
 
