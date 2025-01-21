@@ -31,6 +31,7 @@ Features
 - [ ] Add WIS score and
 - [ ] allow to select top scoring model past 8 week or full past for this state
 - [ ] logo as favicon
+- [ ] change current json payload format to binary format
 
 
 
