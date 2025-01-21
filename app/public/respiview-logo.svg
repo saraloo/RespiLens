@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+  <!-- Goggles -->
+  <g transform="translate(20,15)">
+    <!-- Left lens -->
+    <circle cx="40" cy="30" r="25" fill="none" stroke="#2563eb" stroke-width="6"/>
+    <!-- Right lens -->
+    <circle cx="100" cy="30" r="25" fill="none" stroke="#2563eb" stroke-width="6"/>
+    <!-- Bridge -->
+    <path d="M65 30 C 70 25, 75 25, 75 30" stroke="#2563eb" stroke-width="6" fill="none"/>
+    <!-- Temple pieces -->
+    <path d="M15 30 C 10 30, 5 35, 5 40" stroke="#2563eb" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M125 30 C 130 30, 135 35, 135 40" stroke="#2563eb" stroke-width="6" fill="none" stroke-linecap="round"/>
+    
+    <!-- Left lens curves -->
+    <clipPath id="leftLensClip">
+      <circle cx="40" cy="30" r="24"/>
+    </clipPath>
+    <g clip-path="url(#leftLensClip)">
+      <!-- Lens reflection -->
+      <path d="M25 15 Q 35 10, 45 15 Q 35 12, 25 15" 
+            fill="white" opacity="0.15"/>
+      
+      <!-- Historical data points line -->
+      <path d="M25 33 L 32 30" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+      
+      <!-- Gold series confidence intervals -->
+      <path d="M32 30 C 40 30, 45 15, 52 14 L 52 19 C 45 20, 40 35, 32 35 Z" 
+            fill="#fde68a" opacity="0.5"/>
+      <path d="M32 30 C 40 30, 45 17, 52 16 L 52 17 C 45 18, 40 33, 32 33 Z" 
+            fill="#fcd34d" opacity="0.5"/>
+      <!-- Red series confidence intervals -->
+      <path d="M32 30 C 40 30, 45 45, 52 46 L 52 41 C 45 40, 40 25, 32 25 Z" 
+            fill="#fecaca" opacity="0.5"/>
+      <path d="M32 30 C 40 30, 45 43, 52 44 L 52 43 C 45 42, 40 27, 32 27 Z" 
+            fill="#fca5a5" opacity="0.5"/>
+      <!-- Main curves -->
+      <path d="M32 30 C 40 30, 45 16, 52 15" 
+            fill="none" stroke="#f59e0b" stroke-width="2"/>
+      <path d="M32 30 C 40 30, 45 44, 52 45" 
+            fill="none" stroke="#ef4444" stroke-width="2"/>
+      <!-- Data points -->
+      <circle cx="25" cy="33" r="2.5" fill="#1e293b"/>
+      <circle cx="32" cy="30" r="2.5" fill="#1e293b"/>
+    </g>
+    
+    <!-- Right lens curves -->
+    <clipPath id="rightLensClip">
+      <circle cx="100" cy="30" r="24"/>
+    </clipPath>
+    <g clip-path="url(#rightLensClip)">
+      <!-- Lens reflection -->
+      <path d="M85 15 Q 95 10, 105 15 Q 95 12, 85 15" 
+            fill="white" opacity="0.15"/>
+            
+      <!-- Historical data points line -->
+      <path d="M85 33 L 92 30" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+      
+      <!-- Gold series confidence intervals -->
+      <path d="M92 30 C 100 30, 105 15, 112 14 L 112 19 C 105 20, 100 35, 92 35 Z" 
+            fill="#fde68a" opacity="0.5"/>
+      <path d="M92 30 C 100 30, 105 17, 112 16 L 112 17 C 105 18, 100 33, 92 33 Z" 
+            fill="#fcd34d" opacity="0.5"/>
+      <!-- Red series confidence intervals -->
+      <path d="M92 30 C 100 30, 105 45, 112 46 L 112 41 C 105 40, 100 25, 92 25 Z" 
+            fill="#fecaca" opacity="0.5"/>
+      <path d="M92 30 C 100 30, 105 43, 112 44 L 112 43 C 105 42, 100 27, 92 27 Z" 
+            fill="#fca5a5" opacity="0.5"/>
+      <!-- Main curves -->
+      <path d="M92 30 C 100 30, 105 16, 112 15" 
+            fill="none" stroke="#f59e0b" stroke-width="2"/>
+      <path d="M92 30 C 100 30, 105 44, 112 45" 
+            fill="none" stroke="#ef4444" stroke-width="2"/>
+      <!-- Data points -->
+      <circle cx="85" cy="33" r="2.5" fill="#1e293b"/>
+      <circle cx="92" cy="30" r="2.5" fill="#1e293b"/>
+    </g>
+  </g>
+</svg>
