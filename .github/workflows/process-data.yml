@@ -33,17 +33,21 @@ jobs:
         
     - name: Process FluSight data
       run: |
-        mkdir -p app/public/processed_data     # Change the output directory to be under app/public
+        mkdir -p app/public/processed_data
         python scripts/process_flusight_data.py
+        echo "Checking processed files:"
+        ls -la app/public/processed_data/
       env:
         FLUSIGHT_HUB_PATH: './FluSight-forecast-hub'
-        OUTPUT_PATH: './app/public/processed_data'   # Update the output path
+        OUTPUT_PATH: './app/public/processed_data'
         
     - name: Upload processed data
       uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         name: processed-flusight-data
         path: app/public/processed_data/
+        if-no-files-found: error
         retention-days: 1
         
     - name: Commit and push if changed
