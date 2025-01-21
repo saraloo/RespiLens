@@ -217,8 +217,16 @@ class FluSightPreprocessor:
         for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
             location = location_info['location']
             
+            # Convert pandas Series to dict first
+            metadata_dict = {
+                'location': str(location_info['location']),
+                'abbreviation': str(location_info['abbreviation']),
+                'location_name': str(location_info['location_name']),
+                'population': float(location_info['population'])
+            }
+
             payload = {
-                'metadata': location_info,
+                'metadata': metadata_dict,
                 'ground_truth': ground_truth.get(location, {'dates': [], 'values': [], 'rates': []}),
                 'forecasts': forecast_data.get(location, {})
             }
