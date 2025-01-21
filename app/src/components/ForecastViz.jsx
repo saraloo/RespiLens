@@ -314,10 +314,13 @@ const ForecastViz = ({ location, onBack }) => {
             <span>Back to State Selection</span>
           </button>
 
-
-          <div className="flex items-center gap-2">
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
             <img src="respiview-logo.svg" alt="FluView Logo" className="h-14 w-14" />
-            <h2 className="text-2xl font-bold text-blue-600">{data.metadata.location_name} Flu Forecasts</h2>
+            <h2 className="text-2xl font-bold">FluView</h2>
+          </div>
+
+          <div className="text-2xl font-bold text-blue-600">
+            {data.metadata.location_name} Flu Forecasts
           </div>
         </div>
 
