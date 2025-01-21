@@ -249,9 +249,11 @@ const ForecastViz = ({ location, onBack }) => {
       'large_increase'
     ];
 
-    // Only show rate change data for active date
+    // Only show rate change data for most recent selected date
+    const lastSelectedDate = selectedDates.slice().sort().pop();
+    
     return selectedModels.map(model => {
-      const forecast = data.forecasts[activeDate]?.['wk flu hosp rate change']?.[model];
+      const forecast = data.forecasts[lastSelectedDate]?.['wk flu hosp rate change']?.[model];
       if (!forecast) return null;
 
       const horizon0 = forecast.predictions['0'];
@@ -265,7 +267,7 @@ const ForecastViz = ({ location, onBack }) => {
       }));
       
       return {
-        name: `${model} (${activeDate})`,
+        name: `${model} (${lastSelectedDate})`,
         y: orderedData.map(d => d.category),
         x: orderedData.map(d => d.value),
         type: 'bar',
