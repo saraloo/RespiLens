@@ -32,24 +32,24 @@ jobs:
         
     - name: Process FluSight data
       run: |
-        mkdir -p processed_data
+        mkdir -p app/public/processed_data     # Change the output directory to be under app/public
         python scripts/process_flusight_data.py
       env:
         FLUSIGHT_HUB_PATH: './FluSight-forecast-hub'
-        OUTPUT_PATH: './processed_data'
+        OUTPUT_PATH: './app/public/processed_data'   # Update the output path
         
     - name: Upload processed data
       uses: actions/upload-artifact@v3
       with:
         name: processed-flusight-data
-        path: processed_data/
-        retention-days: 1  # Keep artifact available for the deploy workflow
+        path: app/public/processed_data/
+        retention-days: 1
         
     - name: Commit and push if changed
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add processed_data/
+        git add app/public/processed_data/
         git diff --quiet && git diff --staged --quiet || (git commit -m "Update processed data")
         if [ $? -eq 1 ]; then
           git remote set-url origin https://x-access-token:${PAT}@github.com/${{ github.repository }}
