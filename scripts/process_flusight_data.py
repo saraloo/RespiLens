@@ -12,19 +12,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class FluSightPreprocessor:
-    def __init__(self, base_path: str, rsv_path: str, output_path: str, demo_mode: bool = False):
+    def __init__(self, base_path: str, output_path: str, demo_mode: bool = False):
         """Initialize preprocessor with paths and mode settings"""
         self.base_path = Path(base_path)
-        self.rsv_path = Path(rsv_path)  # Add RSV hub path
         self.output_path = Path(output_path)
         self.demo_mode = demo_mode
         self.demo_models = ['UNC_IDD-influpaint', 'FluSight-ensemble']
         
-        # Define paths for both hubs
+        # Define paths
         self.model_output_path = self.base_path / "model-output"
-        self.rsv_output_path = self.rsv_path / "model-output"  # Add RSV model output path
         self.target_data_path = self.base_path / "target-data/target-hospital-admissions.csv"
-        self.rsv_target_data_path = self.rsv_path / "target-data/target-rsv-admissions.csv"  # Add RSV target path
         self.locations_path = self.base_path / "auxiliary-data/locations.csv"
         
         # Validate paths exist
@@ -143,68 +140,6 @@ class FluSightPreprocessor:
                     
         return self.forecast_data
 
-    def read_rsv_outputs(self) -> Dict:
-        """Read and process RSV model output files"""
-        logger.info("Reading RSV model output files...")
-        rsv_data = {}
-        
-        # Get list of model directories
-        model_dirs = [d for d in self.rsv_output_path.glob("*") if d.is_dir()]
-        
-        # Progress bar for model processing
-        for model_dir in tqdm(model_dirs, desc="Processing RSV models"):
-            model_name = model_dir.name
-            
-            files = list(model_dir.glob("*.parquet"))
-            
-            for file_path in files:
-                try:
-                    df = pd.read_parquet(file_path)
-                    
-                    # Filter for sample output type only
-                    df = df[df['output_type'] == 'sample']
-                    
-                    # Process dates 
-                    df['origin_date'] = pd.to_datetime(df['origin_date'])
-                    
-                    # Group by location and organize data
-                    for location, loc_group in df.groupby('location'):
-                        if location not in rsv_data:
-                            rsv_data[location] = {}
-                            
-                        # Group by origin date
-                        for origin_date, date_group in loc_group.groupby('origin_date'):
-                            origin_date_str = origin_date.strftime('%Y-%m-%d')
-                            
-                            if origin_date_str not in rsv_data[location]:
-                                rsv_data[location][origin_date_str] = {}
-                                
-                            # Group by age group
-                            for age_group, age_group_data in date_group.groupby('age_group'):
-                                if age_group not in rsv_data[location][origin_date_str]:
-                                    rsv_data[location][origin_date_str][age_group] = {}
-                                
-                                # Store model predictions with age groups
-                                rsv_data[location][origin_date_str][age_group][model_name] = {
-                                    'type': 'sample',
-                                    'predictions': self._process_rsv_predictions(age_group_data)
-                                }
-                                    
-                except Exception as e:
-                    logger.error(f"Error processing RSV file {file_path}: {str(e)}")
-                    continue
-                    
-        return rsv_data
-
-    def _process_rsv_predictions(self, group_df: pd.DataFrame) -> Dict:
-        """Process RSV model predictions into optimized format"""
-        predictions = {}
-        for horizon, horizon_df in group_df.groupby('horizon'):
-            predictions[str(int(horizon))] = {
-                'samples': horizon_df['value'].tolist()
-            }
-        return predictions
-
     def _process_model_predictions(self, group_df: pd.DataFrame) -> Dict:
         """Process model predictions into an optimized format for visualization"""
         output_type = group_df['output_type'].iloc[0]
@@ -248,37 +183,29 @@ class FluSightPreprocessor:
         # Load required data
         locations = self.load_locations()
         ground_truth = self.load_ground_truth()
-        flu_forecast_data = self.read_model_outputs()
-        rsv_forecast_data = self.read_rsv_outputs()
+        forecast_data = self.read_model_outputs()
         
-        # Create output directories
-        (self.output_path / "flu").mkdir(parents=True, exist_ok=True)
-        (self.output_path / "rsv").mkdir(parents=True, exist_ok=True)
+        # Create output directory if it doesn't exist
+        self.output_path.mkdir(parents=True, exist_ok=True)
         
         # Save metadata about available models
         metadata = {
             'last_updated': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'flu_models': list(set(model 
-                for loc_data in flu_forecast_data.values() 
+            'models': list(set(model 
+                for loc_data in forecast_data.values() 
                 for date_data in loc_data.values() 
                 for target_data in date_data.values() 
                 for model in target_data.keys()
             )),
-            'rsv_models': list(set(model
-                for loc_data in rsv_forecast_data.values()
-                for date_data in loc_data.values()
-                for age_data in date_data.values()
-                for model in age_data.keys()
-            )),
             'locations': [
                 {
-                    'location': str(loc['location']),
-                    'abbreviation': str(loc['abbreviation']),
-                    'location_name': str(loc['location_name']),
-                    'population': float(loc['population'])
+                    'location': str(loc['location']),  # Convert to string
+                    'abbreviation': str(loc['abbreviation']),  # Convert to string
+                    'location_name': str(loc['location_name']),  # Convert to string
+                    'population': float(loc['population'])  # Convert to float
                 }
                 for _, loc in locations.iterrows()
-                if pd.notna(loc['location_name']) and pd.notna(loc['abbreviation'])
+                if pd.notna(loc['location_name']) and pd.notna(loc['abbreviation'])  # Only include rows with valid data
             ],
             'demo_mode': self.demo_mode
         }
@@ -290,48 +217,24 @@ class FluSightPreprocessor:
         for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
             location = location_info['location']
             
-            # Flu payload
-            flu_payload = {
-                'metadata': {
-                    'location': str(location_info['location']),
-                    'abbreviation': str(location_info['abbreviation']),
-                    'location_name': str(location_info['location_name']),
-                    'population': float(location_info['population'])
-                },
+            payload = {
+                'metadata': location_info,
                 'ground_truth': ground_truth.get(location, {'dates': [], 'values': [], 'rates': []}),
-                'forecasts': flu_forecast_data.get(location, {})
+                'forecasts': forecast_data.get(location, {})
             }
             
-            # RSV payload
-            rsv_payload = {
-                'metadata': {
-                    'location': str(location_info['location']),
-                    'abbreviation': str(location_info['abbreviation']),
-                    'location_name': str(location_info['location_name']),
-                    'population': float(location_info['population'])
-                },
-                'ground_truth': ground_truth.get(location, {'dates': [], 'values': [], 'rates': []}),
-                'forecasts': rsv_forecast_data.get(location, {}),
-                'age_groups': ["0-0.99", "1-4", "5-64", "65-130", "0-130"]  # Add available age groups
-            }
-            
+            # Save location payload with abbreviation in filename
+            # Normalize the location abbreviation and remove any whitespace
             location_abbrev = str(location_info['abbreviation']).strip()
             if not location_abbrev:
-                continue
-                
-            # Save separate files for flu and RSV
-            with open(self.output_path / "flu" / f"{location_abbrev}_flusight.json", 'w') as f:
-                json.dump(flu_payload, f)
-                
-            with open(self.output_path / "rsv" / f"{location_abbrev}_rsvhub.json", 'w') as f:
-                json.dump(rsv_payload, f)
+                continue  # Skip if no valid abbreviation
+            with open(self.output_path / f"{location_abbrev}_flusight.json", 'w') as f:
+                json.dump(payload, f)
 
 def main():
     parser = argparse.ArgumentParser(description='Process FluSight forecast data for visualization')
-    parser.add_argument('--flu-hub-path', type=str, default='./FluSight-forecast-hub',
+    parser.add_argument('--hub-path', type=str, default='./FluSight-forecast-hub',
                       help='Path to FluSight forecast hub repository')
-    parser.add_argument('--rsv-hub-path', type=str, default='./rsv-forecast-hub',
-                      help='Path to RSV forecast hub repository')  
     parser.add_argument('--output-path', type=str, default='./processed_data',
                       help='Path for output files')
     parser.add_argument('--demo', action='store_true',
@@ -346,19 +249,11 @@ def main():
     logging.getLogger().setLevel(args.log_level)
     
     try:
-        # Update these log messages to use the new argument names
-        logger.info(f"Starting preprocessing with FluSight hub path: {args.flu_hub_path}")
-        logger.info(f"Starting preprocessing with RSV hub path: {args.rsv_hub_path}")
+        logger.info(f"Starting preprocessing with hub path: {args.hub_path}")
         logger.info(f"Output path: {args.output_path}")
         logger.info(f"Demo mode: {args.demo}")
         
-        # Update the preprocessor initialization
-        preprocessor = FluSightPreprocessor(
-            args.flu_hub_path, 
-            args.rsv_hub_path,
-            args.output_path, 
-            args.demo
-        )
+        preprocessor = FluSightPreprocessor(args.hub_path, args.output_path, args.demo)
         preprocessor.create_visualization_payloads()
         
         logger.info("Processing complete!")

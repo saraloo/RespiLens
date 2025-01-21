@@ -30,19 +30,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install pandas numpy pyarrow tqdm
         
-    - name: Checkout RSV-forecast-hub
-      uses: actions/checkout@v3
-      with:
-        repository: 'HopkinsIDD/rsv-forecast-hub'
-        path: 'rsv-forecast-hub'
-
-    - name: Process forecast data
+    - name: Process FluSight data
       run: |
-        mkdir -p app/public/processed_data
-        python scripts/process_flusight_data.py \
-          --flu-hub-path='./FluSight-forecast-hub' \
-          --rsv-hub-path='./rsv-forecast-hub' \
-          --output-path='./app/public/processed_data'
+        mkdir -p app/public/processed_data     # Change the output directory to be under app/public
+        python scripts/process_flusight_data.py
+      env:
+        FLUSIGHT_HUB_PATH: './FluSight-forecast-hub'
+        OUTPUT_PATH: './app/public/processed_data'   # Update the output path
         
     - name: Upload processed data
       uses: actions/upload-artifact@v4
