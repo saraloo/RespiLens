@@ -197,12 +197,16 @@ class FluSightPreprocessor:
                 for target_data in date_data.values() 
                 for model in target_data.keys()
             )),
-            'locations': locations.apply(lambda x: {
-                'location': x['location'],
-                'abbreviation': x['abbreviation'],
-                'location_name': x['location_name'],
-                'population': x['population']
-            }, axis=1).tolist(),
+            'locations': [
+                {
+                    'location': loc['location'],
+                    'abbreviation': loc['abbreviation'],
+                    'location_name': loc['location_name'],
+                    'population': float(loc['population'])  # Convert to float to handle scientific notation
+                }
+                for _, loc in locations.iterrows()
+                if pd.notna(loc['location_name']) and pd.notna(loc['abbreviation'])  # Only include rows with valid data
+            ],
             'demo_mode': self.demo_mode
         }
         
