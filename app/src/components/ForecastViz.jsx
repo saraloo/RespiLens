@@ -72,8 +72,8 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use location directly since it's already an abbreviation
-        const response = await fetch(`processed_data/${location}_flusight.json`);
+        // Sanitize location code and fetch data
+        const response = await fetch(`processed_data/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json`);
         const jsonData = await response.json();
         setData(jsonData);
         
