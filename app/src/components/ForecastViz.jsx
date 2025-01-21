@@ -315,8 +315,8 @@ const ForecastViz = ({ location, onBack }) => {
           </button>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
-            <img src="respiview-logo.svg" alt="FluView Logo" className="h-14 w-14" />
-            <h2 className="text-2xl font-bold text-blue-600">FluView</h2>
+            <img src="respiview-logo.svg" alt="RespiView Logo" className="h-14 w-14" />
+            <h2 className="text-2xl font-bold text-blue-600">RespiView</h2>
           </div>
 
           <div className="text-2xl font-bold">
