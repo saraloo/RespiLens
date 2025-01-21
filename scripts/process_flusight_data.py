@@ -214,8 +214,9 @@ class FluSightPreprocessor:
                 'forecasts': forecast_data.get(location, {})
             }
             
-            # Save location payload
-            with open(self.output_path / f"{location}.json", 'w') as f:
+            # Save location payload with abbreviation in filename
+            location_abbrev = location_info.get('abbreviation', location)
+            with open(self.output_path / f"{location_abbrev}_flusight.json", 'w') as f:
                 json.dump(payload, f)
 
 def main():
