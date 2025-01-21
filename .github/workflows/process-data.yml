@@ -39,7 +39,7 @@ jobs:
         OUTPUT_PATH: './app/public/processed_data'   # Update the output path
         
     - name: Upload processed data
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: processed-flusight-data
         path: app/public/processed_data/
