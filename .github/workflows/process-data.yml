@@ -58,3 +58,38 @@ jobs:
         fi
       env:
         PAT: ${{ secrets.PAT }}
+
+  build-and-deploy:
+    needs: process-data
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './app/package-lock.json'
+          
+      - name: Download processed data
+        uses: actions/download-artifact@v4
+        with:
+          name: processed-flusight-data
+          path: app/public/processed_data
+          
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+        
+      - name: Build website
+        working-directory: ./app
+        run: npm run build
+        
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./app/dist
