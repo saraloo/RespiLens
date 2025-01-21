@@ -1,3 +1,54 @@
+# Fluview
+
+## Features
+Features
+### TODO
+- [ ] Add the RSV forecasts
+- [ ] Add the multiview view
+- [ ] Add a multipathogen view
+- [ ] Show on state card which one have rsv data
+- [ ] gray rsv view on state with no rsv
+- [ ] direct link to plot png/pdf ?
+- [ ] Simple view for mobile
+- [ ] add some text to welcome and disclaim
+- [ ] model description when we hover on name
+- [ ] validation plot for rsv
+- [ ] 
+
+
+
+### DONE
+
+- [x] basic forecast visualization component
+- [x] set up github actions workflow for data processing
+- [x] add state/location selector
+- [x] implement model selection
+- [x] add date navigation controls
+- [x] create plotly-based interactive charts
+- [x] add quantile confidence intervals visualization
+- [x] implement rate change histogram
+- [x] add model color coding system
+- [x] enable plot export functionality
+- [x] add responsive layout design
+- [x] implement url parameter handling
+- [x] add select all/none model buttons
+- [x] create multi-date selection feature
+- [x] add reset view functionality
+- [x] implement plot navigation timeline
+- [x] add development proxy configuration
+- [x] set up github pages deployment
+- [x] implement data processing pipeline
+- [x] add progress tracking for data processing
+- [x] create validation plots
+- [x] implement ground truth data filtering
+- [x] add automatic metadata generation
+- [x] choose name  **RespiLense better ??**
+- [x] make logo
+- [x] implement error handling for data loading
+- [x] create mobile-friendly interface
+- [x] add documentation for data formats
+- [x] create consistent file naming system
+
 # FluSight Visualization Data Format
 
 This document describes the data format used for the FluSight visualization payloads. The preprocessed data is organized into multiple JSON files: a metadata file and individual location files.
