@@ -77,11 +77,7 @@ const StateSelector = ({ onStateSelect }) => {
         {states.map((state) => (
           <div
             key={state.location}
-            onClick={() => {
-              const urlParams = new URLSearchParams(window.location.search);
-              urlParams.set('location', state.abbreviation);
-              onStateSelect(state.abbreviation);
-            }}
+            onClick={() => onStateSelect(state.abbreviation)}
             className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
           >
             <h2 className="text-xl font-semibold">{state.location_name || state.location}</h2>
