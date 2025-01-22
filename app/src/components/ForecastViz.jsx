@@ -51,37 +51,6 @@ const ForecastViz = ({ location, onBack }) => {
   }, [selectedDates]);
 
 
-  useEffect(() => {
-    if (!loading && data && availableDates.length > 0 && models.length > 0) {
-      const urlDates = searchParams.get('dates')?.split(',') || [];
-      const urlModels = searchParams.get('models')?.split(',') || [];
-      
-      if (urlDates.length > 0) {
-        const validDates = urlDates.filter(date => availableDates.includes(date));
-        if (validDates.length > 0) {
-          setSelectedDates(validDates);
-          setActiveDate(validDates[0]);
-        } else {
-          setSelectedDates([availableDates[availableDates.length - 1]]);
-          setActiveDate(availableDates[availableDates.length - 1]);
-        }
-      } else if (selectedDates.length === 0) {
-        setSelectedDates([availableDates[availableDates.length - 1]]);
-        setActiveDate(availableDates[availableDates.length - 1]);
-      }
-      
-      if (urlModels.length > 0) {
-        const validModels = urlModels.filter(model => models.includes(model));
-        if (validModels.length > 0) {
-          setSelectedModels(validModels);
-        } else {
-          setSelectedModels(models.includes('FluSight-ensemble') ? ['FluSight-ensemble'] : [models[0]]);
-        }
-      } else if (selectedModels.length === 0) {
-        setSelectedModels(models.includes('FluSight-ensemble') ? ['FluSight-ensemble'] : [models[0]]);
-      }
-    }
-  }, [loading, data, availableDates, models, searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,23 +93,47 @@ const ForecastViz = ({ location, onBack }) => {
   }, [location]);
 
   // Set default selections after data is loaded
+  // Single effect to handle URL parameters and defaults
   useEffect(() => {
     if (!loading && data && availableDates.length > 0 && models.length > 0) {
-      // ONLY set defaults if we don't have any selections yet
-      if (selectedDates.length === 0) {
-        const latestDate = availableDates[availableDates.length - 1];
-        setSelectedDates([latestDate]);
-        setActiveDate(latestDate);
-      }
+      const urlDates = searchParams.get('dates')?.split(',') || [];
+      const urlModels = searchParams.get('models')?.split(',') || [];
       
-      if (selectedModels.length === 0) {
-        const defaultSelection = models.includes('FluSight-ensemble') 
-          ? ['FluSight-ensemble'] 
-          : [models[0]];
-        setSelectedModels(defaultSelection);
+      // Set initial values only once when data is loaded
+      if (selectedDates.length === 0 || selectedModels.length === 0) {
+        // Handle dates
+        const validUrlDates = urlDates.filter(date => availableDates.includes(date));
+        if (validUrlDates.length > 0) {
+          setSelectedDates(validUrlDates);
+          setActiveDate(validUrlDates[0]);
+        } else if (selectedDates.length === 0) {
+          // Only set default if no dates are selected
+          const latestDate = availableDates[availableDates.length - 1];
+          setSelectedDates([latestDate]);
+          setActiveDate(latestDate);
+        }
+        
+        // Handle models
+        const validUrlModels = urlModels.filter(model => models.includes(model));
+        if (validUrlModels.length > 0) {
+          setSelectedModels(validUrlModels);
+        } else if (selectedModels.length === 0) {
+          // Only set default if no models are selected
+          const defaultSelection = models.includes('FluSight-ensemble') 
+            ? ['FluSight-ensemble'] 
+            : [models[0]];
+          setSelectedModels(defaultSelection);
+        }
+      } else {
+        // Otherwise just update the URL with current selections
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('dates', selectedDates.join(','));
+        newParams.set('models', selectedModels.join(','));
+        newParams.set('location', location);
+        setSearchParams(newParams, { replace: true });
       }
     }
-  }, [loading, data, availableDates, models]); // Remove selectedDates.length and selectedModels.length from dependencies
+  }, [loading, data, availableDates, models, searchParams, location, selectedDates, selectedModels]);
 
   useEffect(() => {
     const handleResize = () => {
