@@ -30,7 +30,7 @@ const ForecastViz = ({ location, onBack }) => {
     height: window.innerHeight
   });
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [getURLState, updateURLState] = useURLState();
 
   const getDefaultRange = useCallback((dates) => {
     if (!dates || dates.length === 0) return undefined;
@@ -53,62 +53,38 @@ const ForecastViz = ({ location, onBack }) => {
   // Update URL when selection changes
   useEffect(() => {
     if (!loading && selectedDates.length > 0 && selectedModels.length > 0) {
-      // Preserve existing location parameter if present
-      const newParams = {
-        dates: selectedDates.join(','),
-        models: selectedModels.join(','),
-      };
-      if (location) {
-        newParams.location = location;
-      }
-      setSearchParams(newParams);
+      updateURLState({
+        dates: selectedDates,
+        models: selectedModels,
+        location
+      });
     }
-  }, [selectedDates, selectedModels, location, setSearchParams, loading]);
+  }, [selectedDates, selectedModels, location, updateURLState, loading]);
 
   // Read from URL on initial load
   useEffect(() => {
     if (!loading && data) {
-      const urlDates = searchParams.get('dates')?.split(',');
-      const urlModels = searchParams.get('models')?.split(',');
+      const { dates: urlDates, models: urlModels } = getURLState();
       
-      // Handle dates
       if (urlDates?.length > 0) {
-        // If URL has dates, use valid ones from URL
         const validDates = urlDates.filter(date => availableDates.includes(date));
         if (validDates.length > 0) {
           setSelectedDates(validDates);
           setActiveDate(validDates[0]);
         } else {
-          // If no valid dates in URL, use default (latest date)
           setSelectedDates([availableDates[availableDates.length - 1]]);
           setActiveDate(availableDates[availableDates.length - 1]);
         }
-      } else if (selectedDates.length === 0) {
-        // No URL dates and no selection - set default
-        setSelectedDates([availableDates[availableDates.length - 1]]);
-        setActiveDate(availableDates[availableDates.length - 1]);
       }
-      
-      // Handle models
+
       if (urlModels?.length > 0) {
-        // If URL has models, use valid ones from URL
         const validModels = urlModels.filter(model => models.includes(model));
         if (validModels.length > 0) {
           setSelectedModels(validModels);
-        } else {
-          // If no valid models in URL, use default
-          setSelectedModels(models.includes('FluSight-ensemble') 
-            ? ['FluSight-ensemble'] 
-            : [models[0]]);
         }
-      } else if (selectedModels.length === 0) {
-        // No URL models and no selection - set default
-        setSelectedModels(models.includes('FluSight-ensemble') 
-          ? ['FluSight-ensemble'] 
-          : [models[0]]);
       }
     }
-  }, [searchParams, availableDates, models, loading, data]);
+  }, [loading, data, getURLState]);
 
   useEffect(() => {
     const fetchData = async () => {
