@@ -440,12 +440,14 @@ const ForecastViz = ({ location, onBack }) => {
                   style={{ width: '100%', height: '100%' }}
                   data={[
                   ...timeSeriesData,
-                  ...rateChangeData.map(trace => ({
-                    ...trace,
-                    orientation: 'h',
-                    xaxis: 'x2',
-                    yaxis: 'y2'
-                  }))
+                  ...(viewType === 'detailed' 
+                    ? rateChangeData.map(trace => ({
+                        ...trace,
+                        orientation: 'h',
+                        xaxis: 'x2',
+                        yaxis: 'y2'
+                      }))
+                    : [])
                 ]}
                 layout={{
                   width: Math.min(1200, windowSize.width * 0.8),
