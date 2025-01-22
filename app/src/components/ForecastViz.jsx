@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useView } from '../contexts/ViewContext';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
+import ViewSelector from './ViewSelector';
 import Plot from 'react-plotly.js';
 
 // Color palette for model visualization
@@ -24,7 +25,8 @@ const ForecastViz = ({ location, onBack }) => {
   const {
     selectedModels, setSelectedModels,
     selectedDates, setSelectedDates,
-    activeDate, setActiveDate
+    activeDate, setActiveDate,
+    viewType, setViewType
   } = useView();
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
@@ -429,7 +431,9 @@ const ForecastViz = ({ location, onBack }) => {
 
         <div className="p-4 w-full">
           <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">Forecast Analysis</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              <ViewSelector />
+            </h3>
             {timeSeriesData && rateChangeData && (
               <div className="w-full" style={{ height: Math.min(800, windowSize.height * 0.6) }}>
                 <Plot
@@ -447,18 +451,18 @@ const ForecastViz = ({ location, onBack }) => {
                   width: Math.min(1200, windowSize.width * 0.8),
                   height: Math.min(800, windowSize.height * 0.6),
                   autosize: true,
-                  grid: {
+                  grid: viewType === 'detailed' ? {
                     columns: 1,
                     rows: 1,
                     pattern: 'independent',
                     subplots: [['xy'], ['x2y2']],
                     xgap: 0.15
-                  },
+                  } : undefined,
                   showlegend: false,
                   hovermode: 'x unified',
                   margin: { l: 60, r: 30, t: 30, b: 30 },
                   xaxis: {
-                    domain: [0, 0.8],
+                    domain: viewType === 'detailed' ? [0, 0.8] : [0, 1],
                     rangeslider: {
                       range: getDefaultRange()
                     },
@@ -487,20 +491,20 @@ const ForecastViz = ({ location, onBack }) => {
                   yaxis: {
                     title: 'Hospitalizations'
                   },
-                  xaxis2: {
-                    domain: [0.85, 1],
-                    showgrid: false
-                  },
-                  yaxis2: {
-                    title: '',
-                    showticklabels: true,
-                    type: 'category',
-                    side: 'right',
-                    automargin: true,
-                    tickfont: {
-                      align: 'right'
+                  ...(viewType === 'detailed' ? {
+                    xaxis2: {
+                      domain: [0.85, 1],
+                      showgrid: false
+                    },
+                    yaxis2: {
+                      title: '',
+                      showticklabels: true,
+                      type: 'category',
+                      side: 'right',
+                      automargin: true,
+                      tickfont: { align: 'right' }
                     }
-                  },
+                  } : {}),
                 }}
                 config={{
                   responsive: true,
