@@ -92,48 +92,46 @@ const ForecastViz = ({ location, onBack }) => {
     fetchData();
   }, [location]);
 
-  // Set default selections after data is loaded
-  // Single effect to handle URL parameters and defaults
+  // Initialize selections from URL/defaults when data loads
   useEffect(() => {
-    if (!loading && data && availableDates.length > 0 && models.length > 0) {
+    if (!loading && data && availableDates.length > 0 && models.length > 0 && 
+        (selectedDates.length === 0 || selectedModels.length === 0)) {
+      // Only set from URL/defaults on initial load when selections are empty
       const urlDates = searchParams.get('dates')?.split(',') || [];
       const urlModels = searchParams.get('models')?.split(',') || [];
       
-      // Set initial values only once when data is loaded
-      if (selectedDates.length === 0 || selectedModels.length === 0) {
-        // Handle dates
-        const validUrlDates = urlDates.filter(date => availableDates.includes(date));
-        if (validUrlDates.length > 0) {
-          setSelectedDates(validUrlDates);
-          setActiveDate(validUrlDates[0]);
-        } else if (selectedDates.length === 0) {
-          // Only set default if no dates are selected
-          const latestDate = availableDates[availableDates.length - 1];
-          setSelectedDates([latestDate]);
-          setActiveDate(latestDate);
+      if (selectedDates.length === 0) {
+        const validDates = urlDates.filter(date => availableDates.includes(date));
+        if (validDates.length > 0) {
+          setSelectedDates(validDates);
+          setActiveDate(validDates[0]);
+        } else {
+          setSelectedDates([availableDates[availableDates.length - 1]]);
+          setActiveDate(availableDates[availableDates.length - 1]);
         }
-        
-        // Handle models
-        const validUrlModels = urlModels.filter(model => models.includes(model));
-        if (validUrlModels.length > 0) {
-          setSelectedModels(validUrlModels);
-        } else if (selectedModels.length === 0) {
-          // Only set default if no models are selected
-          const defaultSelection = models.includes('FluSight-ensemble') 
-            ? ['FluSight-ensemble'] 
-            : [models[0]];
-          setSelectedModels(defaultSelection);
+      }
+      
+      if (selectedModels.length === 0) {
+        const validModels = urlModels.filter(model => models.includes(model));
+        if (validModels.length > 0) {
+          setSelectedModels(validModels);
+        } else {
+          setSelectedModels(models.includes('FluSight-ensemble') ? ['FluSight-ensemble'] : [models[0]]);
         }
-      } else {
-        // Otherwise just update the URL with current selections
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('dates', selectedDates.join(','));
-        newParams.set('models', selectedModels.join(','));
-        newParams.set('location', location);
-        setSearchParams(newParams, { replace: true });
       }
     }
-  }, [loading, data, availableDates, models, searchParams, location, selectedDates, selectedModels]);
+  }, [loading, data, availableDates, models]);
+
+  // Update URL when selections change
+  useEffect(() => {
+    if (selectedDates.length > 0 && selectedModels.length > 0) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('dates', selectedDates.join(','));
+      newParams.set('models', selectedModels.join(','));
+      newParams.set('location', location);
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [selectedDates, selectedModels]);
 
   useEffect(() => {
     const handleResize = () => {
