@@ -35,6 +35,47 @@ const ForecastViz = ({ location, onBack }) => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Initialize selections from URL/defaults when data loads
+  useEffect(() => {
+    if (!loading && data && availableDates.length > 0 && models.length > 0 && 
+        (selectedDates.length === 0 || selectedModels.length === 0)) {
+      // Only set from URL/defaults on initial load when selections are empty
+      const urlDates = searchParams.get('dates')?.split(',') || [];
+      const urlModels = searchParams.get('models')?.split(',') || [];
+      
+      if (selectedDates.length === 0) {
+        const validDates = urlDates.filter(date => availableDates.includes(date));
+        if (validDates.length > 0) {
+          setSelectedDates(validDates);
+          setActiveDate(validDates[0]);
+        } else {
+          setSelectedDates([availableDates[availableDates.length - 1]]);
+          setActiveDate(availableDates[availableDates.length - 1]);
+        }
+      }
+      
+      if (selectedModels.length === 0) {
+        const validModels = urlModels.filter(model => models.includes(model));
+        if (validModels.length > 0) {
+          setSelectedModels(validModels);
+        } else {
+          setSelectedModels(models.includes('FluSight-ensemble') ? ['FluSight-ensemble'] : [models[0]]);
+        }
+      }
+    }
+  }, [loading, data, availableDates, models]);
+
+  // Update URL when selections change
+  useEffect(() => {
+    if (selectedDates.length > 0 && selectedModels.length > 0) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('dates', selectedDates.join(','));
+      newParams.set('models', selectedModels.join(','));
+      newParams.set('location', location);
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [selectedDates, selectedModels]);
+
   const getDefaultRange = useCallback(() => {
     if (selectedDates.length === 0) return undefined;
     
