@@ -53,11 +53,15 @@ const ForecastViz = ({ location, onBack }) => {
   // Update URL when selection changes
   useEffect(() => {
     if (!loading && selectedDates.length > 0 && selectedModels.length > 0) {
-      setSearchParams({
+      // Preserve existing location parameter if present
+      const newParams = {
         dates: selectedDates.join(','),
         models: selectedModels.join(','),
-        location
-      });
+      };
+      if (location) {
+        newParams.location = location;
+      }
+      setSearchParams(newParams);
     }
   }, [selectedDates, selectedModels, location, setSearchParams, loading]);
 
