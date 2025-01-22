@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import InfoOverlay from './InfoOverlay';
 import { useView } from '../contexts/ViewContext';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
@@ -345,6 +346,7 @@ const ForecastViz = ({ location, onBack }) => {
             <h2 className="text-2xl font-bold text-blue-600">
               RespiView<sup className="text-red-500 text-xs">α</sup>
             </h2>
+            <InfoOverlay />
           </div>
 
           <div className="text-2xl font-bold">
