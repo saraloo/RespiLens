@@ -8,14 +8,15 @@ const InfoOverlay = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="p-2 rounded-full hover:bg-gray-100"
+        className="p-2 rounded-full hover:bg-gray-100 fixed left-4 top-4"
       >
-        <Info className="w-5 h-5" />
+        <Info className="w-8 h-8" />
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-2xl mx-4 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setIsOpen(false)} />
+          <div className="bg-white p-6 rounded-lg max-w-2xl mx-4 relative z-10">
             <button
               onClick={() => setIsOpen(false)}
               className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100"
