@@ -352,8 +352,6 @@ const ForecastViz = ({ location, onBack }) => {
             {data.metadata.location_name} Flu Forecasts
             <InfoOverlay />
           </div>
-            {data.metadata.location_name} Flu Forecasts
-          </div>
         </div>
 
         <div className="p-4 border-b">
