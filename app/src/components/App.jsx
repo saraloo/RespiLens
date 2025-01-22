@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useURLState } from '../hooks/useURLState';
-import StateSelector from './components/StateSelector';
-import ForecastViz from './components/ForecastViz';
+import StateSelector from './StateSelector';
+import ForecastViz from './ForecastViz';
 
 const App = () => {
   const [getURLState, updateURLState] = useURLState();

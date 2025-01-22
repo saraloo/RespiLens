@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useURLState } from '../hooks/useURLState';
 import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
