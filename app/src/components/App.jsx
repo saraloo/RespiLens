@@ -1,33 +1,18 @@
 import React, { useState } from 'react';
-import { useURLState } from '../hooks/useURLState';
-import StateSelector from './StateSelector';
-import ForecastViz from './ForecastViz';
+import StateSelector from './components/StateSelector';
+import ForecastViz from './components/ForecastViz';
 
 const App = () => {
-  const [getURLState, updateURLState] = useURLState();
-  const { location } = getURLState();
-  const [selectedLocation, setSelectedLocation] = useState(location);
-
-  const handleStateSelect = (newLocation) => {
-    updateURLState({ location: newLocation });
-    setSelectedLocation(newLocation);
-  };
-
-  const handleBack = () => {
-    // Preserve models and dates when going back
-    const { models, dates } = getURLState();
-    updateURLState({ location: null, models, dates });
-    setSelectedLocation(null);
-  };
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   if (!selectedLocation) {
-    return <StateSelector onStateSelect={handleStateSelect} />;
+    return <StateSelector onStateSelect={setSelectedLocation} />;
   }
 
   return (
     <ForecastViz 
       location={selectedLocation} 
-      onBack={handleBack} 
+      onBack={() => setSelectedLocation(null)} 
     />
   );
 };

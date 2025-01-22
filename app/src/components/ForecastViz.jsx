@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
-import { useURLState } from '../hooks/useURLState';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
 
@@ -30,14 +30,14 @@ const ForecastViz = ({ location, onBack }) => {
     height: window.innerHeight
   });
 
-  const [getURLState, updateURLState] = useURLState();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const getDefaultRange = useCallback((dates) => {
-    if (!dates || dates.length === 0) return undefined;
+  const getDefaultRange = useCallback(() => {
+    if (selectedDates.length === 0) return undefined;
     
-    // Find first and last dates from provided dates array
-    const firstDate = new Date(dates[0]); // dates should be sorted
-    const lastDate = new Date(dates[dates.length - 1]);
+    // Find first and last selected dates
+    const firstDate = new Date(selectedDates[0]); // selectedDates is already sorted
+    const lastDate = new Date(selectedDates[selectedDates.length - 1]);
     
     // Create new date objects to avoid modifying the original dates
     const startDate = new Date(firstDate);
@@ -48,43 +48,40 @@ const ForecastViz = ({ location, onBack }) => {
     endDate.setDate(endDate.getDate() + (5 * 7));
     
     return [startDate, endDate];
-  }, []);
+  }, [selectedDates]);
 
   // Update URL when selection changes
   useEffect(() => {
     if (!loading && selectedDates.length > 0 && selectedModels.length > 0) {
-      updateURLState({
-        dates: selectedDates,
-        models: selectedModels,
+      setSearchParams({
+        dates: selectedDates.join(','),
+        models: selectedModels.join(','),
         location
       });
     }
-  }, [selectedDates, selectedModels, location, updateURLState, loading]);
+  }, [selectedDates, selectedModels, location, setSearchParams, loading]);
 
   // Read from URL on initial load
   useEffect(() => {
-    if (!loading && data) {
-      const { dates: urlDates, models: urlModels } = getURLState();
+    if (!loading && data && selectedDates.length === 0) {  // Only set dates if none selected
+      const urlDates = searchParams.get('dates')?.split(',');
+      const urlModels = searchParams.get('models')?.split(',');
       
       if (urlDates?.length > 0) {
         const validDates = urlDates.filter(date => availableDates.includes(date));
-        if (validDates.length > 0) {
-          setSelectedDates(validDates);
-          setActiveDate(validDates[0]);
-        } else {
-          setSelectedDates([availableDates[availableDates.length - 1]]);
-          setActiveDate(availableDates[availableDates.length - 1]);
-        }
+        setSelectedDates(validDates);
+        setActiveDate(validDates[0]);
+      } else {
+        // Only set default if no URL dates and no selected dates
+        setSelectedDates([availableDates[availableDates.length - 1]]);
+        setActiveDate(availableDates[availableDates.length - 1]);
       }
-
+      
       if (urlModels?.length > 0) {
-        const validModels = urlModels.filter(model => models.includes(model));
-        if (validModels.length > 0) {
-          setSelectedModels(validModels);
-        }
+        setSelectedModels(urlModels.filter(model => models.includes(model)));
       }
     }
-  }, [loading, data, getURLState]);
+  }, [searchParams, availableDates, models, loading, data, selectedDates.length]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -468,7 +465,7 @@ const ForecastViz = ({ location, onBack }) => {
                   xaxis: {
                     domain: [0, 0.8],
                     rangeslider: {
-                      range: getDefaultRange(selectedDates)
+                      range: getDefaultRange()
                     },
                     rangeselector: {
                       buttons: [
@@ -477,7 +474,7 @@ const ForecastViz = ({ location, onBack }) => {
                         {step: 'all', label: 'all'}
                       ]
                     },
-                    range: getDefaultRange(selectedDates)
+                    range: getDefaultRange()
                   },
                   shapes: selectedDates.map(date => ({
                     type: 'line',
