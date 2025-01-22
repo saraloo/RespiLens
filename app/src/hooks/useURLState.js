@@ -13,9 +13,9 @@ export function useURLState() {
     const currentState = getURLState();
     const newState = { ...currentState, ...updates };
     
-    // Remove empty/null values
+    // Remove empty/null values but preserve defaults
     Object.keys(newState).forEach(key => {
-      if (!newState[key] || 
+      if (newState[key] === null || 
           (Array.isArray(newState[key]) && newState[key].length === 0)) {
         delete newState[key];
       }
@@ -25,7 +25,8 @@ export function useURLState() {
     if (newState.dates) newState.dates = newState.dates.join(',');
     if (newState.models) newState.models = newState.models.join(',');
 
-    setSearchParams(newState);
+    // Use replace instead of push to avoid building up history
+    setSearchParams(newState, { replace: true });
   };
 
   return [getURLState, updateURLState];
