@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, useSearchParams } from 'react-router-dom';
+import { ViewProvider } from './contexts/ViewContext';
 import StateSelector from './components/StateSelector';
 import ForecastViz from './components/ForecastViz';
 
@@ -38,7 +39,9 @@ const AppContent = () => {
 
 const App = () => (
   <Router>
-    <AppContent />
+    <ViewProvider>
+      <AppContent />
+    </ViewProvider>
   </Router>
 );
 

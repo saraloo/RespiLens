@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useView } from '../contexts/ViewContext';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, Filter } from 'lucide-react';
 import Plot from 'react-plotly.js';
@@ -20,9 +21,11 @@ const ForecastViz = ({ location, onBack }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedModels, setSelectedModels] = useState([]);
-  const [selectedDates, setSelectedDates] = useState([]);
-  const [activeDate, setActiveDate] = useState(null);
+  const {
+    selectedModels, setSelectedModels,
+    selectedDates, setSelectedDates,
+    activeDate, setActiveDate
+  } = useView();
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
   const [windowSize, setWindowSize] = useState({
