@@ -8,7 +8,7 @@ const InfoOverlay = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="p-2 rounded-full hover:bg-red-100/50 fixed top-4 right-12 text-red-400"
+        className="p-2 rounded-full hover:bg-red-100/50 text-red-400 inline-flex items-center"
       >
         <Info className="w-8 h-8" />
       </button>
