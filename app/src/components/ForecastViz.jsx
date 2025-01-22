@@ -50,35 +50,6 @@ const ForecastViz = ({ location, onBack }) => {
     return [startDate, endDate];
   }, [selectedDates]);
 
-  // Update URL when selection changes
-  useEffect(() => {
-    if (!loading && selectedDates.length > 0 && selectedModels.length > 0) {
-      setSearchParams({
-        dates: selectedDates.join(','),
-        models: selectedModels.join(','),
-        location
-      });
-    }
-  }, [selectedDates, selectedModels, location, setSearchParams, loading]);
-
-  // Read from URL on initial load
-  useEffect(() => {
-    if (!loading && data) {
-      const newParams = new URLSearchParams(searchParams);
-      
-      if (selectedDates.length > 0) {
-        newParams.set('dates', selectedDates.join(','));
-      }
-      if (selectedModels.length > 0) {
-        newParams.set('models', selectedModels.join(','));
-      }
-      newParams.set('location', location);
-      
-      setSearchParams(newParams, {
-        replace: true
-      });
-    }
-  }, [selectedDates, selectedModels, location, loading, data]);
 
   useEffect(() => {
     if (!loading && data && availableDates.length > 0 && models.length > 0) {
