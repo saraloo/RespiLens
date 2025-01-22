@@ -358,15 +358,23 @@ const ForecastViz = ({ location, onBack }) => {
               <div key={date} className="flex items-center gap-2">
                 <button 
                   onClick={() => {
-                    const idx = availableDates.indexOf(date);
-                    if (idx > 0 && availableDates[idx - 1]) {  // Add null check
+                    const sortedDates = selectedDates.slice().sort();
+                    const dateIndex = availableDates.indexOf(date);
+                    const currentPosition = sortedDates.indexOf(date);
+                    const prevDate = availableDates[dateIndex - 1];
+                    
+                    // Check if moving left would cross another selected date
+                    if (prevDate && (!sortedDates[currentPosition - 1] || new Date(prevDate) > new Date(sortedDates[currentPosition - 1]))) {
                       const newDates = [...selectedDates];
-                      newDates[index] = availableDates[idx - 1];
-                      setSelectedDates(newDates.filter(Boolean).sort());  // Add filter for null values
-                      setActiveDate(availableDates[idx - 1]);
+                      newDates[selectedDates.indexOf(date)] = prevDate;
+                      setSelectedDates(newDates.sort());
+                      setActiveDate(prevDate);
                     }
                   }}
-                  disabled={availableDates.indexOf(date) === 0}
+                  disabled={
+                    availableDates.indexOf(date) === 0 || // At start of available dates
+                    (selectedDates.includes(availableDates[availableDates.indexOf(date) - 1])) // Would overlap with another date
+                  }
                   className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -388,15 +396,23 @@ const ForecastViz = ({ location, onBack }) => {
 
                 <button 
                   onClick={() => {
-                    const idx = availableDates.indexOf(date);
-                    if (idx < availableDates.length - 1) {
+                    const sortedDates = selectedDates.slice().sort();
+                    const dateIndex = availableDates.indexOf(date);
+                    const currentPosition = sortedDates.indexOf(date);
+                    const nextDate = availableDates[dateIndex + 1];
+                    
+                    // Check if moving right would cross another selected date
+                    if (nextDate && (!sortedDates[currentPosition + 1] || new Date(nextDate) < new Date(sortedDates[currentPosition + 1]))) {
                       const newDates = [...selectedDates];
-                      newDates[index] = availableDates[idx + 1];
+                      newDates[selectedDates.indexOf(date)] = nextDate;
                       setSelectedDates(newDates.sort());
-                      setActiveDate(availableDates[idx + 1]);
+                      setActiveDate(nextDate);
                     }
                   }}
-                  disabled={availableDates.indexOf(date) === availableDates.length - 1}
+                  disabled={
+                    availableDates.indexOf(date) === availableDates.length - 1 || // At end of available dates
+                    (selectedDates.includes(availableDates[availableDates.indexOf(date) + 1])) // Would overlap with another date
+                  }
                   className="p-2 rounded hover:bg-gray-100 disabled:opacity-50"
                 >
                   <ArrowRight className="w-5 h-5" />
