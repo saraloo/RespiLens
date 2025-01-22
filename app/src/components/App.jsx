@@ -14,7 +14,9 @@ const App = () => {
   };
 
   const handleBack = () => {
-    updateURLState({ location: null });
+    // Preserve models and dates when going back
+    const { models, dates } = getURLState();
+    updateURLState({ location: null, models, dates });
     setSelectedLocation(null);
   };
 
