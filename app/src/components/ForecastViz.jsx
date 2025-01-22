@@ -78,23 +78,32 @@ const ForecastViz = ({ location, onBack }) => {
     }
   }, [selectedDates, selectedModels]);
 
-  const getDefaultRange = useCallback(() => {
-    if (selectedDates.length === 0) return undefined;
+  const getDefaultRange = useCallback((forRangeslider = false) => {
+    if (!data || selectedDates.length === 0) return undefined;
     
-    // Find first and last selected dates
-    const firstDate = new Date(selectedDates[0]); // selectedDates is already sorted
+    // Find first and last ground truth dates
+    const firstGroundTruthDate = new Date(data.ground_truth.dates[0]);
+    const lastGroundTruthDate = new Date(data.ground_truth.dates[data.ground_truth.dates.length - 1]);
+    
+    if (forRangeslider) {
+      // For rangeslider: extend from first ground truth to 5 weeks after last ground truth
+      const rangesliderEnd = new Date(lastGroundTruthDate);
+      rangesliderEnd.setDate(rangesliderEnd.getDate() + (5 * 7));
+      return [firstGroundTruthDate, rangesliderEnd];
+    }
+    
+    // Default plot range (existing logic)
+    const firstDate = new Date(selectedDates[0]);
     const lastDate = new Date(selectedDates[selectedDates.length - 1]);
     
-    // Create new date objects to avoid modifying the original dates
     const startDate = new Date(firstDate);
     const endDate = new Date(lastDate);
     
-    // Set range to 8 weeks before first date and 5 weeks after last date
     startDate.setDate(startDate.getDate() - (8 * 7));
     endDate.setDate(endDate.getDate() + (5 * 7));
     
     return [startDate, endDate];
-  }, [selectedDates]);
+  }, [data, selectedDates]);
 
 
 
@@ -466,7 +475,7 @@ const ForecastViz = ({ location, onBack }) => {
                   xaxis: {
                     domain: viewType === 'detailed' ? [0, 0.8] : [0, 1],
                     rangeslider: {
-                      range: getDefaultRange()
+                      range: getDefaultRange(true)  // Pass true to get full range for rangeslider
                     },
                     rangeselector: {
                       buttons: [
@@ -475,7 +484,7 @@ const ForecastViz = ({ location, onBack }) => {
                         {step: 'all', label: 'all'}
                       ]
                     },
-                    range: getDefaultRange()
+                    range: getDefaultRange()  // Keep existing default plot range
                   },
                   shapes: selectedDates.map(date => ({
                     type: 'line',
