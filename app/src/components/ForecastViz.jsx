@@ -63,25 +63,54 @@ const ForecastViz = ({ location, onBack }) => {
 
   // Read from URL on initial load
   useEffect(() => {
-    if (!loading && data && selectedDates.length === 0) {  // Only set dates if none selected
-      const urlDates = searchParams.get('dates')?.split(',');
-      const urlModels = searchParams.get('models')?.split(',');
+    if (!loading && data) {
+      const newParams = new URLSearchParams(searchParams);
       
-      if (urlDates?.length > 0) {
+      if (selectedDates.length > 0) {
+        newParams.set('dates', selectedDates.join(','));
+      }
+      if (selectedModels.length > 0) {
+        newParams.set('models', selectedModels.join(','));
+      }
+      newParams.set('location', location);
+      
+      setSearchParams(newParams, {
+        replace: true
+      });
+    }
+  }, [selectedDates, selectedModels, location, loading, data]);
+
+  useEffect(() => {
+    if (!loading && data && availableDates.length > 0 && models.length > 0) {
+      const urlDates = searchParams.get('dates')?.split(',') || [];
+      const urlModels = searchParams.get('models')?.split(',') || [];
+      
+      if (urlDates.length > 0) {
         const validDates = urlDates.filter(date => availableDates.includes(date));
-        setSelectedDates(validDates);
-        setActiveDate(validDates[0]);
-      } else {
-        // Only set default if no URL dates and no selected dates
+        if (validDates.length > 0) {
+          setSelectedDates(validDates);
+          setActiveDate(validDates[0]);
+        } else {
+          setSelectedDates([availableDates[availableDates.length - 1]]);
+          setActiveDate(availableDates[availableDates.length - 1]);
+        }
+      } else if (selectedDates.length === 0) {
         setSelectedDates([availableDates[availableDates.length - 1]]);
         setActiveDate(availableDates[availableDates.length - 1]);
       }
       
-      if (urlModels?.length > 0) {
-        setSelectedModels(urlModels.filter(model => models.includes(model)));
+      if (urlModels.length > 0) {
+        const validModels = urlModels.filter(model => models.includes(model));
+        if (validModels.length > 0) {
+          setSelectedModels(validModels);
+        } else {
+          setSelectedModels(models.includes('FluSight-ensemble') ? ['FluSight-ensemble'] : [models[0]]);
+        }
+      } else if (selectedModels.length === 0) {
+        setSelectedModels(models.includes('FluSight-ensemble') ? ['FluSight-ensemble'] : [models[0]]);
       }
     }
-  }, [searchParams, availableDates, models, loading, data, selectedDates.length]);
+  }, [loading, data, availableDates, models, searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {

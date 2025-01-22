@@ -7,20 +7,31 @@ const AppContent = () => {
   useEffect(() => {
     document.title = 'RespiView';
   }, []);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedLocation, setSelectedLocation] = useState(() => {
-    // Initialize location from URL if present
     return searchParams.get('location') || null;
   });
 
+  const handleStateSelect = (newLocation) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('location', newLocation);
+    setSearchParams(newParams);
+    setSelectedLocation(newLocation);
+  };
+
   if (!selectedLocation) {
-    return <StateSelector onStateSelect={setSelectedLocation} />;
+    return <StateSelector onStateSelect={handleStateSelect} />;
   }
 
   return (
     <ForecastViz 
       location={selectedLocation} 
-      onBack={() => setSelectedLocation(null)} 
+      onBack={() => {
+        setSelectedLocation(null);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('location');
+        setSearchParams(newParams);
+      }} 
     />
   );
 };
