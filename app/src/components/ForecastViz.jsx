@@ -404,33 +404,41 @@ const ForecastViz = ({ location, onBack }) => {
               </div>
             ))}
             
-            {selectedDates.length < 3 && (
+            {selectedDates.length < 5 && (
               <button
                 onClick={() => {
-                  // Get latest selected date
-                  const latestSelectedDate = selectedDates[selectedDates.length - 1];
+                  if (selectedDates.length >= 5) return;
+                  
+                  const sortedSelectedDates = selectedDates.slice().sort();
+                  const latestSelectedDate = sortedSelectedDates[sortedSelectedDates.length - 1];
+                  const earliestSelectedDate = sortedSelectedDates[0];
                   const latestSelectedIdx = availableDates.indexOf(latestSelectedDate);
+                  const earliestSelectedIdx = availableDates.indexOf(earliestSelectedDate);
                   
                   let dateToAdd;
-                  if (latestSelectedIdx < availableDates.length - 1) {
-                    // If not at the end of available dates, add the next date
-                    dateToAdd = availableDates[latestSelectedIdx + 1];
-                  } else {
-                    // If at the end, add one before the first selected date
-                    const firstSelectedDate = selectedDates[0];
-                    const firstSelectedIdx = availableDates.indexOf(firstSelectedDate);
-                    if (firstSelectedIdx > 0) {
-                      dateToAdd = availableDates[firstSelectedIdx - 1];
-                    }
-                  }
                   
+                  // If latest selected date is the last available date
+                  if (latestSelectedIdx === availableDates.length - 1) {
+                    // Try to add date before earliest selected date
+                    if (earliestSelectedIdx > 0) {
+                      dateToAdd = availableDates[earliestSelectedIdx - 1];
+                    }
+                  } else {
+                    // Otherwise add next available date after latest selected
+                    dateToAdd = availableDates[latestSelectedIdx + 1];
+                  }
+
                   if (dateToAdd && !selectedDates.includes(dateToAdd)) {
-                    const newDates = [...selectedDates, dateToAdd].sort();
-                    setSelectedDates(newDates);
+                    setSelectedDates([...selectedDates, dateToAdd].sort());
                     setActiveDate(dateToAdd);
                   }
                 }}
-                className="px-3 py-1 rounded border hover:bg-gray-100"
+                disabled={selectedDates.length >= 5}
+                className={`px-3 py-1 rounded border ${
+                  selectedDates.length >= 5 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-gray-100'
+                }`}
               >
                 + Add Date
               </button>
