@@ -346,10 +346,12 @@ const ForecastViz = ({ location, onBack }) => {
             <h2 className="text-2xl font-bold text-blue-600">
               RespiView<sup className="text-red-500 text-xs">α</sup>
             </h2>
-            <InfoOverlay />
           </div>
 
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-bold flex items-center gap-2">
+            {data.metadata.location_name} Flu Forecasts
+            <InfoOverlay />
+          </div>
             {data.metadata.location_name} Flu Forecasts
           </div>
         </div>
