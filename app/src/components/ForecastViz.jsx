@@ -338,7 +338,7 @@ const ForecastViz = ({ location, onBack }) => {
             className="flex items-center text-blue-600 hover:text-blue-800"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span>Back to State Selection</span>
+            <span className="hidden sm:inline">Back to State Selection</span>
           </button>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
