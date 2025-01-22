@@ -348,10 +348,7 @@ const ForecastViz = ({ location, onBack }) => {
             </h2>
           </div>
 
-          <div className="text-2xl font-bold flex items-center gap-2">
-            {data.metadata.location_name} Flu Forecasts
-            <InfoOverlay />
-          </div>
+          <InfoOverlay />
         </div>
 
         <div className="p-4 border-b">
@@ -466,7 +463,8 @@ const ForecastViz = ({ location, onBack }) => {
 
         <div className="p-4 w-full">
           <div className="w-full">
-            <h3 className="text-lg font-semibold mb-4">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-4 justify-between">
+              <span className="text-xl text-center flex-grow">{data.metadata.location_name} Flu Forecasts</span>
               <ViewSelector />
             </h3>
             {timeSeriesData && rateChangeData && (
