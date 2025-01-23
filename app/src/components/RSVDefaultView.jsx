@@ -31,7 +31,9 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
     return <div>Loading...</div>;
   }
 
-  if (error || !data || !data.ground_truth || Object.keys(data.ground_truth).length === 0) {
+  if (error || !data || !data.ground_truth || !data.metadata || 
+      !data.ground_truth[data.metadata.location] || 
+      Object.keys(data.ground_truth[data.metadata.location]).length === 0) {
     return (
       <div className="flex items-center justify-center h-full w-full bg-gray-100 bg-opacity-50 rounded-lg">
         <div className="text-gray-500 text-center p-4">
@@ -43,7 +45,8 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
 
   // Create subplot traces for each age group
   const traces = ageGroups.map((age, index) => {
-    const ageData = data.ground_truth[age] || {};
+    // RSV data is nested under location then age group
+    const ageData = data.ground_truth[data.metadata.location]?.[age] || {};
     return {
       x: ageData.dates || [],
       y: ageData.values || [],
