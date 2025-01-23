@@ -1,5 +1,6 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
+import { MODEL_COLORS } from './ForecastViz';
 
 const FluView = ({ data, selectedDates, selectedModels, viewType, windowSize, getDefaultRange }) => {
   const getTimeSeriesData = () => {
