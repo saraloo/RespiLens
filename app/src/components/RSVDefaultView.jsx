@@ -96,10 +96,72 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
     // Get forecast traces for selected models
     const modelTraces = selectedModels.flatMap(model => {
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
+      // Get the most recent date's forecasts
+      const mostRecentDate = Object.keys(data.forecasts || {}).sort().pop();
+      const forecastData = data.forecasts[mostRecentDate]?.[age]?.['inc hosp']?.[model];
       
-      // Add model forecast traces here with proper formatting
-      // This will depend on your data structure
-      return [];
+      if (!forecastData || forecastData.type !== 'quantile') return [];
+
+      const aggregatedPredictions = Object.entries(forecastData.predictions || {})
+        .sort((a, b) => new Date(a[1].date) - new Date(b[1].date));
+
+      const forecastDates = [];
+      const medianValues = [];
+      const ci95Upper = [];
+      const ci95Lower = [];
+      const ci50Upper = [];
+      const ci50Lower = [];
+
+      aggregatedPredictions.forEach(([horizon, pred]) => {
+        forecastDates.push(pred.date);
+        const quantiles = pred.quantiles || [];
+        const values = pred.values || [];
+        
+        ci95Lower.push(values[quantiles.indexOf(0.025)] || 0);
+        ci50Lower.push(values[quantiles.indexOf(0.25)] || 0);
+        medianValues.push(values[quantiles.indexOf(0.5)] || 0);
+        ci50Upper.push(values[quantiles.indexOf(0.75)] || 0);
+        ci95Upper.push(values[quantiles.indexOf(0.975)] || 0);
+      });
+
+      return [
+        {
+          x: [...forecastDates, ...forecastDates.slice().reverse()],
+          y: [...ci95Upper, ...ci95Lower.slice().reverse()],
+          fill: 'toself',
+          fillcolor: `${modelColor}10`,
+          line: { color: 'transparent' },
+          showlegend: false,
+          type: 'scatter',
+          name: `${model} 95% CI`,
+          xaxis: `x${index + 1}`,
+          yaxis: `y${index + 1}`
+        },
+        {
+          x: [...forecastDates, ...forecastDates.slice().reverse()],
+          y: [...ci50Upper, ...ci50Lower.slice().reverse()],
+          fill: 'toself',
+          fillcolor: `${modelColor}30`,
+          line: { color: 'transparent' },
+          showlegend: false,
+          type: 'scatter',
+          name: `${model} 50% CI`,
+          xaxis: `x${index + 1}`,
+          yaxis: `y${index + 1}`
+        },
+        {
+          x: forecastDates,
+          y: medianValues,
+          name: `${model}`,
+          type: 'scatter',
+          mode: 'lines+markers',
+          line: { color: modelColor, width: 2 },
+          marker: { size: 6 },
+          showlegend: true,
+          xaxis: `x${index + 1}`,
+          yaxis: `y${index + 1}`
+        }
+      ];
     });
 
     return [baseTrace, ...modelTraces];
