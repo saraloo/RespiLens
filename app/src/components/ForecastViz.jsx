@@ -488,7 +488,6 @@ const ForecastViz = ({ location, onBack }) => {
                 getDefaultRange={getDefaultRange}
               />
             )}
-            )}
           </div>
           
           <div className="mt-4 border-t pt-4">
