@@ -118,7 +118,7 @@ const ForecastViz = ({ location, onBack }) => {
       try {
         const isRSV = viewType === 'rsv';
         const dataType = isRSV ? 'rsv' : 'flu';
-        const response = await fetch(`./processed_data/${dataType}/${location}_${dataType}.json`);
+        const response = await fetch(`./processed_data/${dataType}/${location}_${dataType === 'rsv' ? 'rsv' : 'flusight'}.json`);
         
         if (!response.ok) {
           throw new Error(`Failed to load ${dataType} data for ${location}`);
