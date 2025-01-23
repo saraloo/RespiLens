@@ -127,45 +127,43 @@ const ForecastViz = ({ location, onBack }) => {
           throw new Error(`Failed to load ${dataType} data for ${location} (status ${response.status})`);
         }
         
-        const text = await response.text(); // Get raw text first
+        const text = await response.text();
         console.log('Raw response text:', text.slice(0, 500) + '...');
         
-        let parsedData;
-        try {
-          parsedData = JSON.parse(text);
-          console.log('Parsed JSON structure:', {
-            hasMetadata: !!parsedData.metadata,
-            hasGroundTruth: !!parsedData.ground_truth,
-            topLevelKeys: Object.keys(parsedData)
-          });
-          
-          if (!parsedData || typeof parsedData !== 'object') {
-            throw new Error('Invalid JSON response: not an object');
-          }
-          if (!parsedData.metadata) {
-            throw new Error('Invalid JSON response: missing metadata');
-          }
-          if (!parsedData.ground_truth) {
-            throw new Error('Invalid JSON response: missing ground_truth');
-          }
-          
-          setData(parsedData);
-          
-          // Initialize dates and models
-          if (isRSV) {
-            const dates = Object.keys(parsedData.forecasts || {}).sort();
+        const parsedData = JSON.parse(text);
+        console.log('Parsed JSON structure:', {
+          hasMetadata: !!parsedData.metadata,
+          hasGroundTruth: !!parsedData.ground_truth,
+          topLevelKeys: Object.keys(parsedData)
+        });
+        
+        if (!parsedData || typeof parsedData !== 'object') {
+          throw new Error('Invalid JSON response: not an object');
+        }
+        if (!parsedData.metadata) {
+          throw new Error('Invalid JSON response: missing metadata');
+        }
+        if (!parsedData.ground_truth) {
+          throw new Error('Invalid JSON response: missing ground_truth');
+        }
+        
+        setData(parsedData);
+        
+        // Initialize dates and models
+        if (isRSV) {
+          const dates = Object.keys(parsedData.forecasts || {}).sort();
           if (dates.length > 0) {
             setSelectedDates([dates[dates.length - 1]]);
             setActiveDate(dates[dates.length - 1]);
           }
         } else {
           // For flu view
-          const dates = Object.keys(jsonData.forecasts || {}).sort();
+          const dates = Object.keys(parsedData.forecasts || {}).sort();
           const extractedModels = new Set();
           
           dates.forEach(date => {
             ['wk inc flu hosp', 'wk flu hosp rate change'].forEach(type => {
-              const typeForecast = jsonData.forecasts[date]?.[type] || {};
+              const typeForecast = parsedData.forecasts[date]?.[type] || {};
               Object.keys(typeForecast).forEach(model => extractedModels.add(model));
             });
           });
@@ -188,6 +186,10 @@ const ForecastViz = ({ location, onBack }) => {
       } finally {
         setLoading(false);
       }
+    };
+
+    fetchData();
+    console.log('ForecastViz useEffect triggered:', { viewType, location });
     };
 
     fetchData();
