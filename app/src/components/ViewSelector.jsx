@@ -10,6 +10,16 @@ const ViewSelector = () => {
     setViewType(newView);
     const newParams = new URLSearchParams(searchParams);
     newParams.set('view', newView);
+    
+    // Clear the non-active view's parameters
+    if (newView === 'rsv') {
+      newParams.delete('flu_dates');
+      newParams.delete('flu_models');
+    } else {
+      newParams.delete('rsv_dates');
+      newParams.delete('rsv_models');
+    }
+    
     setSearchParams(newParams, { replace: true });
   };
 

@@ -49,6 +49,8 @@ const ForecastViz = ({ location, onBack }) => {
       const urlModels = searchParams.get('models')?.split(',') || [];
       
       if (selectedDates.length === 0) {
+        const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+        const urlDates = searchParams.get(`${prefix}_dates`)?.split(',') || [];
         const validDates = urlDates.filter(date => availableDates.includes(date));
         if (validDates.length > 0) {
           setSelectedDates(validDates);
@@ -58,8 +60,10 @@ const ForecastViz = ({ location, onBack }) => {
           setActiveDate(availableDates[availableDates.length - 1]);
         }
       }
-      
+        
       if (selectedModels.length === 0) {
+        const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+        const urlModels = searchParams.get(`${prefix}_models`)?.split(',') || [];
         const validModels = urlModels.filter(model => models.includes(model));
         if (validModels.length > 0) {
           setSelectedModels(validModels);
@@ -74,12 +78,14 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     if (selectedDates.length > 0 && selectedModels.length > 0) {
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('dates', selectedDates.join(','));
-      newParams.set('models', selectedModels.join(','));
+      const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+      newParams.set(`${prefix}_dates`, selectedDates.join(','));
+      newParams.set(`${prefix}_models`, selectedModels.join(','));
       newParams.set('location', location);
+      newParams.set('view', viewType);
       setSearchParams(newParams, { replace: true });
     }
-  }, [selectedDates, selectedModels]);
+  }, [selectedDates, selectedModels, viewType]);
 
   const getDefaultRange = useCallback((forRangeslider = false) => {
     if (!data || selectedDates.length === 0) return undefined;

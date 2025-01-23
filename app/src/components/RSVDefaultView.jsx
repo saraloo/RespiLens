@@ -188,15 +188,6 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
 
   return (
     <div>
-      <ModelSelector 
-        models={models}
-        selectedModels={selectedModels}
-        setSelectedModels={setSelectedModels}
-        getModelColor={(model, selectedModels) => {
-          const index = selectedModels.indexOf(model);
-          return MODEL_COLORS[index % MODEL_COLORS.length];
-        }}
-      />
       <Plot
         data={traces}
         layout={layout}
@@ -206,6 +197,15 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
           displaylogo: false
         }}
         className="w-full"
+      />
+      <ModelSelector 
+        models={models}
+        selectedModels={selectedModels}
+        setSelectedModels={setSelectedModels}
+        getModelColor={(model, selectedModels) => {
+          const index = selectedModels.indexOf(model);
+          return MODEL_COLORS[index % MODEL_COLORS.length];
+        }}
       />
     </div>
   );
