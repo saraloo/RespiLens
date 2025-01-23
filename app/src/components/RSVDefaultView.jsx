@@ -132,17 +132,17 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
       
       // Get all available forecast dates for this model and age group
-      const forecastDates = Object.keys(data.forecasts || {})
+      const availableForecastDates = Object.keys(data.forecasts || {})
         .filter(date => data.forecasts[date]?.[age]?.['inc hosp']?.[model])
         .sort();
       
-      if (forecastDates.length === 0) {
+      if (availableForecastDates.length === 0) {
         console.log(`No forecasts found for model ${model} and age group ${age}`);
         return [];
       }
 
       // Get the most recent forecast
-      const mostRecentDate = forecastDates[forecastDates.length - 1];
+      const mostRecentDate = availableForecastDates[availableForecastDates.length - 1];
       const forecastData = data.forecasts[mostRecentDate][age]['inc hosp'][model];
       
       console.log(`Model: ${model}, Age Group: ${age}, Most Recent Date: ${mostRecentDate}`);
