@@ -57,19 +57,27 @@ class RSVValidator:
                 ax = axes[idx]
                 
                 # Plot ground truth if available and has data
-                if (age_group in payload['ground_truth'] and 
-                    payload['ground_truth'][age_group].get('dates') and
-                    payload['ground_truth'][age_group].get('values')):
+                if age_group in payload['ground_truth']:
+                    logger.info(f"Found ground truth data for {location} age group {age_group}")
+                    gt_data = payload['ground_truth'][age_group]
                     
-                    dates = pd.to_datetime(payload['ground_truth'][age_group]['dates'])
-                    values = payload['ground_truth'][age_group]['values']
-                    
-                    # Only plot if we have valid data
-                    if len(dates) > 0 and len(values) > 0:
-                        ax.plot(dates, values, color=self.colors['groundtruth'], 
-                               label='Ground Truth', linewidth=1)
+                    if gt_data.get('dates') and gt_data.get('values'):
+                        dates = pd.to_datetime(gt_data['dates'])
+                        values = gt_data['values']
+                        
+                        logger.info(f"Ground truth dates range: {min(dates)} to {max(dates)}")
+                        logger.info(f"Ground truth values range: {min(values)} to {max(values)}")
+                        
+                        # Only plot if we have valid data
+                        if len(dates) > 0 and len(values) > 0:
+                            ax.plot(dates, values, color=self.colors['groundtruth'], 
+                                   label='Ground Truth', linewidth=1)
+                        else:
+                            logger.warning(f"No ground truth data for {location} age group {age_group}")
                     else:
-                        logger.warning(f"No ground truth data for {location} age group {age_group}")
+                        logger.warning(f"Missing dates or values in ground truth for {location} age group {age_group}")
+                else:
+                    logger.info(f"No ground truth data found for {location} age group {age_group}")
 
                 # Find available dates for forecasts
                 available_dates = []
