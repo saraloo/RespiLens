@@ -152,6 +152,10 @@ const RSVDefaultView = ({
       // Get the most recent forecast
       const mostRecentDate = selectedDates[selectedDates.length - 1];
       const forecastData = data.forecasts[mostRecentDate]?.[age]?.['inc hosp']?.[model];
+      if (!forecastData?.type || !forecastData?.predictions) {
+        console.log(`No valid forecast data for model ${model}, age group ${age}`);
+        return [];
+      }
       
       console.log(`Model: ${model}, Age Group: ${age}, Most Recent Date: ${mostRecentDate}`);
       console.log('Forecast data structure:', {
@@ -247,18 +251,27 @@ const RSVDefaultView = ({
 
   const layout = {
     grid: {
-      rows: 3,           // Three rows total
-      columns: 2,        // Two columns
+      rows: 3,
+      columns: 2,
       pattern: 'independent',
       roworder: 'top to bottom',
       subplots: [
-        ['xy'],          // First row, full width for 0-130
-        ['x2y2', 'x3y3'], // Second row for 0-0.99 and 1-4
-        ['x4y4', 'x5y5']  // Third row for 5-64 and 65-130
-      ]
+        ['xy'],          // First row spans full width
+        ['x2y2', 'x3y3'], // Second row for first two age groups
+        ['x4y4', 'x5y5']  // Third row for last two age groups
+      ],
+      // Add row heights and column widths
+      rowheights: [0.4, 0.3, 0.3], // First row taller
+      columnwidths: [0.5, 0.5]
     },
-    height: 1000,        // Adjusted for new layout
+    height: 1000,
     margin: { l: 60, r: 30, t: 50, b: 30 },
+    // Update domain ranges for subplots
+    xaxis: { domain: [0, 1] },      // Full width for first plot
+    xaxis2: { domain: [0, 0.48] },  // Left column
+    xaxis3: { domain: [0.52, 1] },  // Right column
+    xaxis4: { domain: [0, 0.48] },  // Left column
+    xaxis5: { domain: [0.52, 1] },  // Right column
     showlegend: true,
     legend: {
       orientation: 'h',
@@ -273,19 +286,19 @@ const RSVDefaultView = ({
           xref: 'paper',
           yref: 'paper',
           x: 0.5,
-          y: 1,
+          y: 0.95,
           showarrow: false,
           font: { size: 16, weight: 'bold' }
         };
       } else {
-        const row = Math.floor((index - 1) / 2) + 1;
-        const col = ((index - 1) % 2);
+        const row = Math.floor((index - 1) / 2) + 1;  // 1 for second row, 2 for third row
+        const col = ((index - 1) % 2);  // 0 for left, 1 for right
         return {
           text: `Age ${age}`,
           xref: 'paper',
           yref: 'paper',
-          x: col === 0 ? 0.25 : 0.75,
-          y: row === 1 ? 0.65 : 0.3,
+          x: col === 0 ? 0.24 : 0.76,   // Adjusted x positions
+          y: row === 1 ? 0.6 : 0.25,    // Adjusted y positions
           showarrow: false,
           font: { size: 14, weight: 'bold' }
         };

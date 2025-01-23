@@ -560,6 +560,9 @@ const ForecastViz = ({ location, onBack }) => {
               <RSVDefaultView 
                 location={location} 
                 selectedDates={selectedDates}
+                availableDates={availableDates}
+                setSelectedDates={setSelectedDates}
+                setActiveDate={setActiveDate}
               />
             ) : (
               <FluView 
