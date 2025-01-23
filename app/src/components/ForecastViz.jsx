@@ -468,7 +468,9 @@ const ForecastViz = ({ location, onBack }) => {
               <span className="text-xl text-center flex-grow">{data.metadata.location_name} Flu Forecasts</span>
               <ViewSelector />
             </h3>
-            {timeSeriesData && rateChangeData && (
+            {viewType === 'rsv' ? (
+              <RSVDefaultView location={location} />
+            ) : timeSeriesData && rateChangeData && (
               <div className="w-full" style={{ height: Math.min(800, windowSize.height * 0.6) }}>
                 <Plot
                   style={{ width: '100%', height: '100%' }}
