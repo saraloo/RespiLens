@@ -56,12 +56,20 @@ class RSVValidator:
             for idx, age_group in enumerate(self.age_groups):
                 ax = axes[idx]
                 
-                # Plot ground truth if available
-                if age_group in payload['ground_truth']:
+                # Plot ground truth if available and has data
+                if (age_group in payload['ground_truth'] and 
+                    payload['ground_truth'][age_group].get('dates') and
+                    payload['ground_truth'][age_group].get('values')):
+                    
                     dates = pd.to_datetime(payload['ground_truth'][age_group]['dates'])
                     values = payload['ground_truth'][age_group]['values']
-                    ax.plot(dates, values, color=self.colors['groundtruth'], 
-                           label='Ground Truth', linewidth=1)
+                    
+                    # Only plot if we have valid data
+                    if len(dates) > 0 and len(values) > 0:
+                        ax.plot(dates, values, color=self.colors['groundtruth'], 
+                               label='Ground Truth', linewidth=1)
+                    else:
+                        logger.warning(f"No ground truth data for {location} age group {age_group}")
 
                 # Find available dates for forecasts
                 available_dates = []
