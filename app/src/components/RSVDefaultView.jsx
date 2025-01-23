@@ -172,7 +172,7 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       ];
     });
 
-    return [baseTrace, ...modelTraces];
+    return [groundTruthTrace, ...modelTraces];
   }).flat();
 
   const layout = {
