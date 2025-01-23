@@ -173,10 +173,23 @@ class RSVValidator:
             # Process each location
             for loc_info in tqdm(metadata['locations'], desc="Creating validation plots"):
                 try:
+                    # Check if payload file exists before attempting to read it
                     location = loc_info['abbreviation']
-                    with open(self.data_dir / f"{location}_rsv.json", 'r') as f:
-                        payload = json.load(f)
+                    payload_path = self.data_dir / f"{location}_rsv.json"
                     
+                    if not payload_path.exists():
+                        logger.info(f"Skipping {location} - no payload file found")
+                        continue
+                        
+                    with open(payload_path, 'r') as f:
+                        payload = json.load(f)
+
+                    # Check if there are any forecasts
+                    if not payload['forecasts']:
+                        logger.info(f"Skipping {location} - no forecast data")
+                        continue
+
+                    # Create validation plots only if we have data
                     self.plot_location_validation(location, payload)
                     
                 except Exception as e:
