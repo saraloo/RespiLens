@@ -119,19 +119,25 @@ const ForecastViz = ({ location, onBack }) => {
       try {
         const isRSV = viewType === 'rsv';
         const dataType = isRSV ? 'rsv' : 'flu';
-        const response = await fetch(`./processed_data/${dataType}/${location}_${dataType === 'rsv' ? 'rsv' : 'flusight'}.json`);
+        const fileUrl = `./processed_data/${dataType}/${location}_${dataType === 'rsv' ? 'rsv' : 'flusight'}.json`;
+        console.log('Attempting to fetch:', fileUrl);
         
+        const response = await fetch(fileUrl);
         if (!response.ok) {
-          throw new Error(`Failed to load ${dataType} data for ${location}`);
+          throw new Error(`Failed to load ${dataType} data for ${location} (status ${response.status})`);
         }
         
         const jsonData = await response.json();
-        console.log('Fetched data:', jsonData);
+        console.log('Raw JSON structure:', JSON.stringify(jsonData, null, 2).slice(0, 500) + '...');
         
-        // Validate required data structure
-        if (!jsonData || !jsonData.metadata || !jsonData.ground_truth) {
-          console.error('Invalid data structure:', jsonData);
-          throw new Error('Invalid data format');
+        if (!jsonData || typeof jsonData !== 'object') {
+          throw new Error('Invalid JSON response: not an object');
+        }
+        if (!jsonData.metadata) {
+          throw new Error('Invalid JSON response: missing metadata');
+        }
+        if (!jsonData.ground_truth) {
+          throw new Error('Invalid JSON response: missing ground_truth');
         }
         
         setData(jsonData);

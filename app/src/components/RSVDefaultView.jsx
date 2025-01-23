@@ -12,10 +12,15 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
         const response = await fetch(`./processed_data/rsv/${location}_rsv.json`);
         console.log('RSV fetch response:', response);
         if (!response.ok) {
-          throw new Error('No RSV data available for this location');
+          throw new Error(`No RSV data available for ${location} (status ${response.status})`);
         }
         const jsonData = await response.json();
-        console.log('RSV data:', jsonData);
+        console.log('RSV data structure:', {
+          metadataPresent: !!jsonData.metadata,
+          groundTruthPresent: !!jsonData.ground_truth,
+          groundTruthKeys: Object.keys(jsonData.ground_truth || {}),
+          ageGroupsProvided: ageGroups
+        });
         setData(jsonData);
       } catch (err) {
         setError(err.message);
