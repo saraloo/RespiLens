@@ -58,15 +58,16 @@ class RSVValidator:
                 
                 # Plot ground truth if available and has data
                 if age_group in payload['ground_truth']:
-                    logger.info(f"Found ground truth data for {location} age group {age_group}")
+                    logger.info(f"Processing ground truth for {age_group}")
                     gt_data = payload['ground_truth'][age_group]
                     
                     if gt_data.get('dates') and gt_data.get('values'):
                         dates = pd.to_datetime(gt_data['dates'])
                         values = gt_data['values']
                         
+                        logger.info(f"Found {len(values)} ground truth points")
+                        logger.info(f"Value range: {min(values) if values else 'empty'} to {max(values) if values else 'empty'}")
                         logger.info(f"Ground truth dates range: {min(dates)} to {max(dates)}")
-                        logger.info(f"Ground truth values range: {min(values)} to {max(values)}")
                         
                         # Only plot if we have valid data
                         if len(dates) > 0 and len(values) > 0:

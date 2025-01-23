@@ -70,6 +70,7 @@ class RSVPreprocessor:
             # Filter only inc hosp rows and remove NA values
             df = df[df['target'] == 'inc hosp']
             df = df[df['value'].notna()]
+            logger.info(f"Available age groups in data: {df['age_group'].unique()}")
             
             df['date'] = pd.to_datetime(df['date'])
             
