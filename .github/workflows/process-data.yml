@@ -2,10 +2,14 @@ name: Process FluSight Data
 
 on:
   schedule:
-    # Run at 11 PM ET Wednesday (3 AM UTC Thursday) and 10 AM ET Thursday (2 PM UTC Thursday)
     - cron: '0 3 * * 4'
     - cron: '0 14 * * 4'
   workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   process-data:
@@ -49,16 +53,13 @@ jobs:
         
     - name: Commit and push if changed
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
         git add app/public/processed_data/
         git diff --quiet && git diff --staged --quiet || (git commit -m "Update processed data")
-        if [ $? -eq 1 ]; then
-          git remote set-url origin https://x-access-token:${PAT}@github.com/${{ github.repository }}
-          git push
-        fi
+        git push
       env:
-        PAT: ${{ secrets.PAT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-and-deploy:
     needs: process-data
@@ -97,10 +98,4 @@ jobs:
         run: npm run build
         
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.PAT }}
-          publish_dir: ./app/dist
-          keep_files: true
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+        uses: actions/deploy-pages@v2
