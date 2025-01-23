@@ -81,7 +81,7 @@ class RSVPreprocessor:
                 self.ground_truth[location] = {
                     age_group: {
                         'dates': age_df['date_str'].tolist(),
-                        'values': age_df['value'].tolist(),
+                        'values': [float(x) if not pd.isna(x) else None for x in age_df['value'].tolist()],
                         'population': age_df['population'].iloc[0]  # Assuming constant population
                     }
                     for age_group in self.age_groups
