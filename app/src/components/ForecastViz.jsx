@@ -115,7 +115,7 @@ const ForecastViz = ({ location, onBack }) => {
         setLoading(true);
         
         // Sanitize location code and fetch data
-        const response = await fetch(`./processed_data/flu/${location.replace(/[^a-zA-Z0-9]/g, '')}_flusight.json`);
+        const response = await fetch(`./processed_data/${viewType === 'rsv' ? 'rsv' : 'flu'}/${location.replace(/[^a-zA-Z0-9]/g, '')}_${viewType === 'rsv' ? 'rsv' : 'flusight'}.json`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
