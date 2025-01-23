@@ -545,7 +545,9 @@ const ForecastViz = ({ location, onBack }) => {
         <div className="p-4 w-full">
           <div className="w-full">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-4 justify-between">
-              <span className="text-xl text-center flex-grow">{data.metadata.location_name} Flu Forecasts</span>
+              <span className="text-xl text-center flex-grow">
+                {data.metadata.location_name} {viewType === 'rsv' ? 'RSV' : 'Flu'} Forecasts
+              </span>
               <ViewSelector />
             </h3>
             {viewType === 'rsv' ? (
