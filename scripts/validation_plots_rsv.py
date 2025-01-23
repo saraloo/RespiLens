@@ -2,6 +2,7 @@ import os
 import json
 from pathlib import Path
 import matplotlib.pyplot as plt
+from matplotlib.dates import AutoDateLocator, DateFormatter
 import numpy as np
 import pandas as pd
 import argparse
@@ -119,8 +120,8 @@ class RSVValidator:
                 ax.legend()
                 
                 # Format x-axis to show dates nicely
-                ax.xaxis.set_major_locator(plt.AutoDateLocator())
-                ax.xaxis.set_major_formatter(plt.DateFormatter('%Y-%m-%d'))
+                ax.xaxis.set_major_locator(AutoDateLocator())
+                ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
                 plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
 
             plt.tight_layout()
