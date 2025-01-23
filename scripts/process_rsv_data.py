@@ -211,7 +211,11 @@ class RSVPreprocessor:
             'demo_mode': self.demo_mode
         }
         
-        with open(self.output_path / 'metadata.json', 'w') as f:
+        # Create rsv subdirectory
+        payload_path = self.output_path / "rsv"
+        payload_path.mkdir(parents=True, exist_ok=True)
+        
+        with open(payload_path / 'metadata.json', 'w') as f:
             json.dump(metadata, f, indent=2)
         
         # Create and save location-specific payloads
@@ -236,7 +240,7 @@ class RSVPreprocessor:
             location_abbrev = str(location_info['abbreviation']).strip()
             if not location_abbrev:
                 continue  # Skip if no valid abbreviation
-            with open(self.output_path / f"{location_abbrev}_rsv.json", 'w') as f:
+            with open(payload_path / f"{location_abbrev}_rsv.json", 'w') as f:
                 json.dump(payload, f)
 
 def main():

@@ -9,7 +9,7 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`./processed_data/${location}_rsv.json`);
+        const response = await fetch(`./processed_data/rsv/${location}_rsv.json`);
         if (!response.ok) {
           throw new Error('No RSV data available for this location');
         }
