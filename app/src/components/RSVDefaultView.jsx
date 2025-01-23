@@ -11,7 +11,7 @@ const MODEL_COLORS = [
 
 const RSVDefaultView = ({ 
   location, 
-  ageGroups = ["0-0.99", "1-4", "5-64", "65-130"],
+  ageGroups = ["0-130", "0-0.99", "1-4", "5-64", "65-130"],  // Changed order
   getModelColor = (model, selectedModels) => {
     const index = selectedModels.indexOf(model);
     return MODEL_COLORS[index % MODEL_COLORS.length];
@@ -246,17 +246,17 @@ const RSVDefaultView = ({
 
   const layout = {
     grid: {
-      rows: 2,
-      columns: 2,
+      rows: 5,           // Changed from 2
+      columns: 1,        // Changed from 2
       pattern: 'independent',
       roworder: 'top to bottom'
     },
-    height: 800, // Increased height for better visibility
-    margin: { l: 60, r: 30, t: 50, b: 30 }, // Increased top margin
+    height: 1200,        // Increased for 5 plots
+    margin: { l: 60, r: 30, t: 50, b: 30 },
     showlegend: true,
     legend: {
       orientation: 'h',
-      y: 1.1,
+      y: 1.05,
       x: 0.5,
       xanchor: 'center'
     },
@@ -264,8 +264,8 @@ const RSVDefaultView = ({
       text: `Age group ${age}`,
       xref: 'paper',
       yref: 'paper',
-      x: index % 2 === 0 ? 0.15 : 0.85,
-      y: index < 2 ? 0.95 : 0.45,
+      x: 0.5,           // Centered horizontally
+      y: 0.95 - (index * 0.2),  // Evenly spaced vertically
       showarrow: false,
       font: { size: 14, weight: 'bold' }
     }))
