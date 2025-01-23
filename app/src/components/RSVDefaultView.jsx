@@ -25,28 +25,59 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
           throw new Error(`No RSV data available for ${location} (status ${response.status})`);
         }
         const jsonData = await response.json();
+        
         console.log('RSV data structure:', {
-          metadataPresent: !!jsonData.metadata,
-          groundTruthPresent: !!jsonData.ground_truth,
-          groundTruthKeys: Object.keys(jsonData.ground_truth || {}),
-          ageGroupsProvided: ageGroups
+          metadata: jsonData.metadata ? 'present' : 'missing',
+          ground_truth: Object.keys(jsonData.ground_truth || {}),
+          forecasts: Object.keys(jsonData.forecasts || {}),
+          ageGroups: ageGroups
         });
+
+        // Validate forecast data structure
+        if (jsonData.forecasts) {
+          for (const [date, dateData] of Object.entries(jsonData.forecasts)) {
+            for (const [age, ageData] of Object.entries(dateData)) {
+              for (const [target, targetData] of Object.entries(ageData)) {
+                for (const [model, modelData] of Object.entries(targetData)) {
+                  console.log(`Model data for ${model} on ${date}:`, {
+                    type: modelData.type,
+                    predictions: Object.keys(modelData.predictions || {}).length
+                  });
+                }
+              }
+            }
+          }
+        }
+
         setData(jsonData);
         
-        // Extract available models
+        // Extract available models with more detailed logging
         const availableModels = new Set();
         Object.values(jsonData.forecasts || {}).forEach(dateData => {
           Object.values(dateData).forEach(ageData => {
             Object.values(ageData).forEach(targetData => {
-              Object.keys(targetData).forEach(model => availableModels.add(model));
+              Object.keys(targetData).forEach(model => {
+                console.log(`Found model ${model} with data:`, {
+                  type: targetData[model].type,
+                  predictions: Object.keys(targetData[model].predictions || {}).length
+                });
+                availableModels.add(model);
+              });
             });
           });
         });
-        setModels(Array.from(availableModels).sort());
+        
+        const sortedModels = Array.from(availableModels).sort();
+        console.log('Available models:', sortedModels);
+        setModels(sortedModels);
         
         // Set default model selection if none selected
-        if (selectedModels.length === 0 && availableModels.size > 0) {
-          setSelectedModels([Array.from(availableModels)[0]]);
+        if (selectedModels.length === 0 && sortedModels.length > 0) {
+          const defaultModel = sortedModels.includes('FluSight-ensemble') ? 
+            'FluSight-ensemble' : 
+            sortedModels[0];
+          console.log(`Setting default model: ${defaultModel}`);
+          setSelectedModels([defaultModel]);
         }
       } catch (err) {
         setError(err.message);
@@ -99,20 +130,35 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
     // Get model traces for this specific age group
     const modelTraces = selectedModels.flatMap(model => {
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
-      // Get the most recent date's forecasts
-      const mostRecentDate = Object.keys(data.forecasts || {}).sort().pop();
-      const forecastData = data.forecasts[mostRecentDate]?.[age]?.['inc hosp']?.[model];
       
-      console.log(`Model: ${model}, Age Group: ${age}, Most Recent Date: ${mostRecentDate}`);
-      console.log('Full forecast data:', JSON.stringify(forecastData, null, 2));
+      // Get all available forecast dates for this model and age group
+      const forecastDates = Object.keys(data.forecasts || {})
+        .filter(date => data.forecasts[date]?.[age]?.['inc hosp']?.[model])
+        .sort();
       
-      if (!forecastData || forecastData.type !== 'quantile') {
-        console.log(`Skipping model ${model} - no valid forecast data`);
+      if (forecastDates.length === 0) {
+        console.log(`No forecasts found for model ${model} and age group ${age}`);
         return [];
       }
 
-      const predictions = forecastData.predictions || {};
-      const horizons = Object.keys(predictions).sort((a, b) => parseInt(a) - parseInt(b));
+      // Get the most recent forecast
+      const mostRecentDate = forecastDates[forecastDates.length - 1];
+      const forecastData = data.forecasts[mostRecentDate][age]['inc hosp'][model];
+      
+      console.log(`Model: ${model}, Age Group: ${age}, Most Recent Date: ${mostRecentDate}`);
+      console.log('Forecast data structure:', {
+        type: forecastData.type,
+        predictions: Object.keys(forecastData.predictions || {}).length
+      });
+
+      if (!forecastData || forecastData.type !== 'quantile') {
+        console.log(`Skipping model ${model} - no valid quantile forecast data`);
+        return [];
+      }
+
+      // Process predictions
+      const predictions = Object.entries(forecastData.predictions || {})
+        .sort((a, b) => parseInt(a[0]) - parseInt(b[0])); // Sort by horizon
 
       const forecastDates = [];
       const medianValues = [];
@@ -121,21 +167,31 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       const ci50Upper = [];
       const ci50Lower = [];
 
-      horizons.forEach(horizon => {
-        const pred = predictions[horizon];
-        // Add target_end_date to forecast dates
+      predictions.forEach(([horizon, pred]) => {
+        // Calculate target date based on forecast date + horizon weeks
         const targetDate = new Date(mostRecentDate);
         targetDate.setDate(targetDate.getDate() + parseInt(horizon) * 7);
         forecastDates.push(targetDate.toISOString().split('T')[0]);
         
+        // Extract quantiles
         const { quantiles, values } = pred;
-        if (!quantiles || !values) return;
+        if (!quantiles || !values) {
+          console.warn(`Missing quantiles/values for model ${model}, horizon ${horizon}`);
+          return;
+        }
 
-        ci95Lower.push(values[quantiles.indexOf(0.025)] || 0);
-        ci50Lower.push(values[quantiles.indexOf(0.25)] || 0);
-        medianValues.push(values[quantiles.indexOf(0.5)] || 0);
-        ci50Upper.push(values[quantiles.indexOf(0.75)] || 0);
-        ci95Upper.push(values[quantiles.indexOf(0.975)] || 0);
+        // Get specific quantile values
+        const q95Lower = values[quantiles.indexOf(0.025)] || 0;
+        const q50Lower = values[quantiles.indexOf(0.25)] || 0;
+        const median = values[quantiles.indexOf(0.5)] || 0;
+        const q50Upper = values[quantiles.indexOf(0.75)] || 0;
+        const q95Upper = values[quantiles.indexOf(0.975)] || 0;
+
+        ci95Lower.push(q95Lower);
+        ci50Lower.push(q50Lower);
+        medianValues.push(median);
+        ci50Upper.push(q50Upper);
+        ci95Upper.push(q95Upper);
       });
 
       return [
