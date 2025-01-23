@@ -9,7 +9,7 @@ export const MODEL_COLORS = [
   '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5'
 ];
 
-const FluView = ({ data, selectedDates, selectedModels, viewType, windowSize, getDefaultRange }) => {
+const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModels, viewType, windowSize, getDefaultRange }) => {
   const getTimeSeriesData = () => {
     if (!data || selectedDates.length === 0) {
       console.log('Early return from getTimeSeriesData:', { data, selectedDates });

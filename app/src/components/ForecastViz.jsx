@@ -557,6 +557,8 @@ const ForecastViz = ({ location, onBack }) => {
                 data={data}
                 selectedDates={selectedDates}
                 selectedModels={selectedModels}
+                models={models}
+                setSelectedModels={setSelectedModels}
                 viewType={viewType}
                 windowSize={windowSize}
                 getDefaultRange={getDefaultRange}
