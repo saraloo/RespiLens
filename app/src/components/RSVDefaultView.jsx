@@ -9,7 +9,14 @@ const MODEL_COLORS = [
   '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5'
 ];
 
-const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-130"] }) => {
+const RSVDefaultView = ({ 
+  location, 
+  ageGroups = ["0-0.99", "1-4", "5-64", "65-130"],
+  getModelColor = (model, selectedModels) => {
+    const index = selectedModels.indexOf(model);
+    return MODEL_COLORS[index % MODEL_COLORS.length];
+  }
+}) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -129,7 +136,7 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
 
     // Get model traces for this specific age group
     const modelTraces = selectedModels.flatMap(model => {
-      const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
+      const modelColor = getModelColor(model, selectedModels); // Use the passed in color function
       
       // Get all available forecast dates for this model and age group
       const availableForecastDates = Object.keys(data.forecasts || {})
@@ -227,7 +234,7 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
           mode: 'lines+markers',
           line: { color: modelColor, width: 2 },
           marker: { size: 6 },
-          showlegend: true,
+          showlegend: index === 0, // Only show in legend for first age group to avoid duplicates
           xaxis: `x${index + 1}`,
           yaxis: `y${index + 1}`
         }
