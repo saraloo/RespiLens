@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import json
+import pyarrow  # Ensure this is installed with: pip install pyarrow
 from pathlib import Path
 import logging
 from typing import Optional, Dict, List
@@ -112,9 +113,30 @@ class RSVPreprocessor:
             
             for file_path in files:
                 try:
-                    df = pd.read_parquet(file_path)
+                    # Use engine='pyarrow' to ensure compatibility
+                    df = pd.read_parquet(file_path, engine='pyarrow')
                     
-                    # Process dates
+                    # Log columns for diagnostic purposes
+                    logger.info(f"Processing file: {file_path}")
+                    logger.info(f"DataFrame columns: {list(df.columns)}")
+                    
+                    # Add default model name if not present
+                    if 'model' not in df.columns:
+                        df['model'] = model_name
+                    
+                    # Add origin_date if not present
+                    if 'origin_date' not in df.columns and 'forecast_date' in df.columns:
+                        df['origin_date'] = pd.to_datetime(df['forecast_date'])
+                    
+                    # Ensure expected columns exist
+                    required_columns = ['location', 'origin_date', 'age_group', 'target', 'output_type', 'output_type_id', 'value']
+                    missing_columns = [col for col in required_columns if col not in df.columns]
+                    
+                    if missing_columns:
+                        logger.warning(f"Missing columns in {file_path}: {missing_columns}")
+                        continue
+                    
+                    # Process dates and filter
                     df = df[~df['output_type'].str.contains('sample')]
                     df['origin_date'] = pd.to_datetime(df['origin_date'])
                     
