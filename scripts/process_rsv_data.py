@@ -21,7 +21,7 @@ class RSVPreprocessor:
         # Define paths
         self.model_output_path = self.base_path / "model-output"
         self.target_data_path = self.base_path / "target-data/2025-01-17_rsvnet_hospitalization.csv"
-        self.locations_path = self.base_path / "auxiliary-data/locations.csv"
+        self.locations_path = self.base_path / "auxiliary-data/location_census/locations.csv"
         
         # Validate paths exist
         self._validate_paths()
