@@ -118,16 +118,18 @@ const ForecastViz = ({ location, onBack }) => {
       try {
         const isRSV = viewType === 'rsv';
         const dataType = isRSV ? 'rsv' : 'flu';
-        const response = await fetch(`./processed_data/${dataType}/${location}_${dataType === 'rsv' ? 'rsv' : 'flusight'}.json`);
+        const response = await fetch(`./processed_data/${dataType}/${location}_${dataType}.json`);
         
         if (!response.ok) {
           throw new Error(`Failed to load ${dataType} data for ${location}`);
         }
         
         const jsonData = await response.json();
+        console.log('Fetched data:', jsonData);
         
         // Validate required data structure
         if (!jsonData || !jsonData.metadata || !jsonData.ground_truth) {
+          console.error('Invalid data structure:', jsonData);
           throw new Error('Invalid data format');
         }
         

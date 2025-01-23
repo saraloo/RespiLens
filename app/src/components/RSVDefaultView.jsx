@@ -10,10 +10,12 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
     const fetchData = async () => {
       try {
         const response = await fetch(`./processed_data/rsv/${location}_rsv.json`);
+        console.log('RSV fetch response:', response);
         if (!response.ok) {
           throw new Error('No RSV data available for this location');
         }
         const jsonData = await response.json();
+        console.log('RSV data:', jsonData);
         setData(jsonData);
       } catch (err) {
         setError(err.message);
