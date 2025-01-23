@@ -82,7 +82,8 @@ class RSVPreprocessor:
                     age_group: {
                         'dates': age_df['date_str'].tolist(),
                         'values': [float(x) if not pd.isna(x) else None for x in age_df['value'].tolist()],
-                        'population': float(age_df['population'].iloc[0]) if not pd.isna(age_df['population'].iloc[0]) else None  # Handle NaN population
+                        'population': float(age_df['population'].iloc[0]) if not pd.isna(age_df['population'].iloc[0]) else None,  # Handle NaN population
+                        'age_group': age_group  # Add age group to metadata
                     }
                     for age_group in self.age_groups
                     for age_df in [loc_data[loc_data['age_group'] == age_group]]
