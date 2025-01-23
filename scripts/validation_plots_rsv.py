@@ -38,8 +38,14 @@ class RSVValidator:
             # Add debug logging
             logger.info(f"Payload structure for {location}:")
             logger.info(f"Ground truth keys: {list(payload['ground_truth'].keys())}")
-            logger.info(f"First age group data: {payload['ground_truth'].get(self.age_groups[0], {})}")
             logger.info(f"Forecast dates: {list(payload['forecasts'].keys())}")
+            
+            # Add ground truth data logging
+            if payload['ground_truth']:
+                for age_group in self.age_groups:
+                    if age_group in payload['ground_truth']:
+                        logger.info(f"Age group {age_group} has {len(payload['ground_truth'][age_group]['values'])} data points")
+                        logger.info(f"Sample values: {payload['ground_truth'][age_group]['values'][:5]}")
             
             # Create figure with subplots for each age group - 2x2 grid
             fig, axes = plt.subplots(2, 2, figsize=(15, 12))
