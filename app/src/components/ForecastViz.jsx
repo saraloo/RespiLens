@@ -557,7 +557,10 @@ const ForecastViz = ({ location, onBack }) => {
               <ViewSelector />
             </h3>
             {viewType === 'rsv' ? (
-              <RSVDefaultView location={location} />
+              <RSVDefaultView 
+                location={location} 
+                selectedDates={selectedDates}
+              />
             ) : (
               <FluView 
                 data={data}

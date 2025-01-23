@@ -11,7 +11,8 @@ const MODEL_COLORS = [
 
 const RSVDefaultView = ({ 
   location, 
-  ageGroups = ["0-130", "0-0.99", "1-4", "5-64", "65-130"],  // Changed order
+  selectedDates,
+  ageGroups = ["0-130", "0-0.99", "1-4", "5-64", "65-130"],
   getModelColor = (model, selectedModels) => {
     const index = selectedModels.indexOf(model);
     return MODEL_COLORS[index % MODEL_COLORS.length];
@@ -149,8 +150,8 @@ const RSVDefaultView = ({
       }
 
       // Get the most recent forecast
-      const mostRecentDate = availableForecastDates[availableForecastDates.length - 1];
-      const forecastData = data.forecasts[mostRecentDate][age]['inc hosp'][model];
+      const mostRecentDate = selectedDates[selectedDates.length - 1];
+      const forecastData = data.forecasts[mostRecentDate]?.[age]?.['inc hosp']?.[model];
       
       console.log(`Model: ${model}, Age Group: ${age}, Most Recent Date: ${mostRecentDate}`);
       console.log('Forecast data structure:', {
@@ -246,10 +247,15 @@ const RSVDefaultView = ({
 
   const layout = {
     grid: {
-      rows: 3,           // One row for 0-130, two rows for 2x2 grid
-      columns: 2,        // Two columns for the 2x2 grid
+      rows: 3,           // Three rows total
+      columns: 2,        // Two columns
       pattern: 'independent',
-      roworder: 'top to bottom'
+      roworder: 'top to bottom',
+      subplots: [
+        ['xy'],          // First row, full width for 0-130
+        ['x2y2', 'x3y3'], // Second row for 0-0.99 and 1-4
+        ['x4y4', 'x5y5']  // Third row for 5-64 and 65-130
+      ]
     },
     height: 1000,        // Adjusted for new layout
     margin: { l: 60, r: 30, t: 50, b: 30 },
@@ -267,20 +273,19 @@ const RSVDefaultView = ({
           xref: 'paper',
           yref: 'paper',
           x: 0.5,
-          y: 0.95,
+          y: 1,
           showarrow: false,
           font: { size: 16, weight: 'bold' }
         };
       } else {
-        const gridIndex = index - 1;
-        const row = Math.floor(gridIndex / 2) + 2;
-        const col = (gridIndex % 2) + 1;
+        const row = Math.floor((index - 1) / 2) + 1;
+        const col = ((index - 1) % 2);
         return {
           text: `Age ${age}`,
           xref: 'paper',
           yref: 'paper',
-          x: col === 1 ? 0.25 : 0.75,
-          y: 0.6 - (Math.floor((gridIndex) / 2) * 0.3),
+          x: col === 0 ? 0.25 : 0.75,
+          y: row === 1 ? 0.65 : 0.3,
           showarrow: false,
           font: { size: 14, weight: 'bold' }
         };
