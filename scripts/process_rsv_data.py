@@ -80,6 +80,13 @@ class RSVPreprocessor:
             # Filter to include only target="inc hosp"
             df = df[df['target'] == 'inc hosp']
             
+            # Add debug logging
+            logger.info(f"Loading ground truth for hospital admissions")
+            logger.info(f"Read {len(df)} rows from ground truth file")
+            logger.info(f"Found {len(df['location'].unique())} locations")
+            logger.info(f"Sample ground truth data:")
+            logger.info(df.head())
+            
             # Create optimized structure for visualization
             self.ground_truth = {}
             for location in df['location'].unique():
