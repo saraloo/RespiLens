@@ -110,44 +110,52 @@ const ForecastViz = ({ location, onBack }) => {
 
 
   useEffect(() => {
+    // Reset data when view changes 
+    setData(null);
+    setLoading(true);
+    
     const fetchData = async () => {
       try {
-        setLoading(true);
-        
-        // Sanitize location code and fetch data
-        const response = await fetch(`./processed_data/${viewType === 'rsv' ? 'rsv' : 'flu'}/${location.replace(/[^a-zA-Z0-9]/g, '')}_${viewType === 'rsv' ? 'rsv' : 'flusight'}.json`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const isRSV = viewType === 'rsv';
+        const response = await fetch(`./processed_data/${isRSV ? 'rsv' : 'flu'}/${location}_${isRSV ? 'rsv' : 'flusight'}.json`);
+        if (!response.ok) throw new Error('No data available');
         const jsonData = await response.json();
+        
+        // Set latest available date for RSV view
+        if (isRSV) {
+          const dates = Object.keys(jsonData.forecasts || {}).sort();
+          if (dates.length > 0) {
+            setSelectedDates([dates[dates.length - 1]]);
+            setActiveDate(dates[dates.length - 1]);
+          }
+        }
+        
         setData(jsonData);
         
-        const dates = Object.keys(jsonData.forecasts || {}).sort();
-        
-        // Comprehensive model extraction
-        const extractedModels = new Set();
-        dates.forEach(date => {
-          const forecastTypes = ['wk inc flu hosp', 'wk flu hosp rate change'];
-          forecastTypes.forEach(type => {
-            const typeForecast = jsonData.forecasts[date]?.[type] || {};
-            Object.keys(typeForecast).forEach(model => extractedModels.add(model));
+        // Extract models for flu view
+        if (!isRSV) {
+          const dates = Object.keys(jsonData.forecasts || {}).sort();
+          const extractedModels = new Set();
+          dates.forEach(date => {
+            const forecastTypes = ['wk inc flu hosp', 'wk flu hosp rate change'];
+            forecastTypes.forEach(type => {
+              const typeForecast = jsonData.forecasts[date]?.[type] || {};
+              Object.keys(typeForecast).forEach(model => extractedModels.add(model));
+            });
           });
-        });
-
-        const modelList = Array.from(extractedModels).sort((a, b) => a.localeCompare(b));
-        
-        setAvailableDates(dates);
-        setModels(modelList);
+          const modelList = Array.from(extractedModels).sort((a, b) => a.localeCompare(b));
+          setModels(modelList);
+          setAvailableDates(dates);
+        }
       } catch (err) {
-        setError(`Failed to load forecast data: ${err.message}`);
-        console.error('Full error:', err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [location]);
+  }, [viewType, location]);
 
 
   useEffect(() => {
@@ -470,21 +478,16 @@ const ForecastViz = ({ location, onBack }) => {
             </h3>
             {viewType === 'rsv' ? (
               <RSVDefaultView location={location} />
-            ) : timeSeriesData && rateChangeData && (
-              <div className="w-full" style={{ height: Math.min(800, windowSize.height * 0.6) }}>
-                <Plot
-                  style={{ width: '100%', height: '100%' }}
-                  data={[
-                  ...timeSeriesData,
-                  ...(viewType === 'detailed' 
-                    ? rateChangeData.map(trace => ({
-                        ...trace,
-                        orientation: 'h',
-                        xaxis: 'x2',
-                        yaxis: 'y2'
-                      }))
-                    : [])
-                ]}
+            ) : (
+              <FluView 
+                data={data}
+                selectedDates={selectedDates}
+                selectedModels={selectedModels}
+                viewType={viewType}
+                windowSize={windowSize}
+                getDefaultRange={getDefaultRange}
+              />
+            )}
                 layout={{
                   width: Math.min(1200, windowSize.width * 0.8),
                   height: Math.min(800, windowSize.height * 0.6),
