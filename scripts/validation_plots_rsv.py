@@ -35,6 +35,12 @@ class RSVValidator:
     def plot_location_validation(self, location: str, payload: Dict):
         """Create validation plots for a single location"""
         try:
+            # Add debug logging
+            logger.info(f"Payload structure for {location}:")
+            logger.info(f"Ground truth keys: {list(payload['ground_truth'].keys())}")
+            logger.info(f"First age group data: {payload['ground_truth'].get(self.age_groups[0], {})}")
+            logger.info(f"Forecast dates: {list(payload['forecasts'].keys())}")
+            
             # Create figure with subplots for each age group - 2x2 grid
             fig, axes = plt.subplots(2, 2, figsize=(15, 12))
             fig.suptitle(f"RSV Validation Plot - {payload['metadata']['location_name']} ({location})")
