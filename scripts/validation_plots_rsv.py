@@ -58,23 +58,27 @@ class RSVValidator:
                 
                 # Plot ground truth if available and has data
                 if age_group in payload['ground_truth']:
-                    logger.info(f"Processing ground truth for {age_group}")
                     gt_data = payload['ground_truth'][age_group]
-                    
-                    if gt_data.get('dates') and gt_data.get('values'):
+                    if gt_data and 'dates' in gt_data and 'values' in gt_data:
                         dates = pd.to_datetime(gt_data['dates'])
-                        values = gt_data['values']
+                        values = np.array(gt_data['values'])
                         
-                        logger.info(f"Found {len(values)} ground truth points")
-                        logger.info(f"Value range: {min(values) if values else 'empty'} to {max(values) if values else 'empty'}")
-                        logger.info(f"Ground truth dates range: {min(dates)} to {max(dates)}")
+                        # Sort data by date to ensure proper line plotting
+                        sort_idx = np.argsort(dates)
+                        dates = dates[sort_idx]
+                        values = values[sort_idx]
                         
-                        # Only plot if we have valid data
-                        if len(dates) > 0 and len(values) > 0:
+                        # Plot only if we have valid data
+                        if len(dates) > 0 and len(values) > 0 and not np.all(np.isnan(values)):
                             ax.plot(dates, values, color=self.colors['groundtruth'], 
                                    label='Ground Truth', linewidth=1)
+                            
+                            # Add debug info
+                            logger.info(f"Plotted ground truth for {age_group}: {len(dates)} points")
+                            logger.info(f"Date range: {min(dates)} to {max(dates)}")
+                            logger.info(f"Value range: {min(values)} to {max(values)}")
                         else:
-                            logger.warning(f"No ground truth data for {location} age group {age_group}")
+                            logger.warning(f"No valid ground truth data for {location} age group {age_group}")
                     else:
                         logger.warning(f"Missing dates or values in ground truth for {location} age group {age_group}")
                 else:
@@ -101,6 +105,11 @@ class RSVValidator:
                 ax.set_ylabel('Hospitalizations')
                 ax.grid(True, alpha=0.3)
                 ax.legend()
+                
+                # Format x-axis to show dates nicely
+                ax.xaxis.set_major_locator(plt.AutoDateLocator())
+                ax.xaxis.set_major_formatter(plt.DateFormatter('%Y-%m-%d'))
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
 
             plt.tight_layout()
             
