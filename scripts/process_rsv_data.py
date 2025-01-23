@@ -158,7 +158,7 @@ class RSVPreprocessor:
         output_type = group_df['output_type'].iloc[0]
         
         if output_type == 'quantile':
-            # For quantiles, create a structure optimized for plotting
+            # For quantiles, group by horizon first
             predictions = {}
             for horizon, horizon_df in group_df.groupby('horizon'):
                 horizon_df = horizon_df.sort_values('output_type_id')

@@ -102,8 +102,8 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       
       if (!forecastData || forecastData.type !== 'quantile') return [];
 
-      const aggregatedPredictions = Object.entries(forecastData.predictions || {})
-        .sort((a, b) => new Date(a[1].date) - new Date(b[1].date));
+      const predictions = forecastData.predictions || {};
+      const horizons = Object.keys(predictions).sort((a, b) => parseInt(a) - parseInt(b));
 
       const forecastDates = [];
       const medianValues = [];
@@ -112,11 +112,16 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       const ci50Upper = [];
       const ci50Lower = [];
 
-      aggregatedPredictions.forEach(([horizon, pred]) => {
-        forecastDates.push(pred.date);
-        const quantiles = pred.quantiles || [];
-        const values = pred.values || [];
+      horizons.forEach(horizon => {
+        const pred = predictions[horizon];
+        // Add target_end_date to forecast dates
+        const targetDate = new Date(mostRecentDate);
+        targetDate.setDate(targetDate.getDate() + parseInt(horizon) * 7);
+        forecastDates.push(targetDate.toISOString().split('T')[0]);
         
+        const { quantiles, values } = pred;
+        if (!quantiles || !values) return;
+
         ci95Lower.push(values[quantiles.indexOf(0.025)] || 0);
         ci50Lower.push(values[quantiles.indexOf(0.25)] || 0);
         medianValues.push(values[quantiles.indexOf(0.5)] || 0);
