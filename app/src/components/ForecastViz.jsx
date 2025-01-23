@@ -110,44 +110,62 @@ const ForecastViz = ({ location, onBack }) => {
 
 
   useEffect(() => {
-    // Reset data when view changes 
-    setData(null);
-    setLoading(true);
-    
     const fetchData = async () => {
+      setData(null);
+      setError(null);
+      setLoading(true);
+      
       try {
         const isRSV = viewType === 'rsv';
-        const response = await fetch(`./processed_data/${isRSV ? 'rsv' : 'flu'}/${location}_${isRSV ? 'rsv' : 'flusight'}.json`);
-        if (!response.ok) throw new Error('No data available');
+        const dataType = isRSV ? 'rsv' : 'flu';
+        const response = await fetch(`./processed_data/${dataType}/${location}_${dataType === 'rsv' ? 'rsv' : 'flusight'}.json`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to load ${dataType} data for ${location}`);
+        }
+        
         const jsonData = await response.json();
         
-        // Set latest available date for RSV view
+        // Validate required data structure
+        if (!jsonData || !jsonData.metadata || !jsonData.ground_truth) {
+          throw new Error('Invalid data format');
+        }
+        
+        setData(jsonData);
+        
+        // Initialize dates and models
         if (isRSV) {
           const dates = Object.keys(jsonData.forecasts || {}).sort();
           if (dates.length > 0) {
             setSelectedDates([dates[dates.length - 1]]);
             setActiveDate(dates[dates.length - 1]);
           }
-        }
-        
-        setData(jsonData);
-        
-        // Extract models for flu view
-        if (!isRSV) {
+        } else {
+          // For flu view
           const dates = Object.keys(jsonData.forecasts || {}).sort();
           const extractedModels = new Set();
+          
           dates.forEach(date => {
-            const forecastTypes = ['wk inc flu hosp', 'wk flu hosp rate change'];
-            forecastTypes.forEach(type => {
+            ['wk inc flu hosp', 'wk flu hosp rate change'].forEach(type => {
               const typeForecast = jsonData.forecasts[date]?.[type] || {};
               Object.keys(typeForecast).forEach(model => extractedModels.add(model));
             });
           });
+          
           const modelList = Array.from(extractedModels).sort((a, b) => a.localeCompare(b));
           setModels(modelList);
           setAvailableDates(dates);
+          
+          // Set default models if none selected
+          if (selectedModels.length === 0) {
+            setSelectedModels(modelList.includes('FluSight-ensemble') ? 
+              ['FluSight-ensemble'] : 
+              modelList.slice(0, 1)
+            );
+          }
         }
       } catch (err) {
+        console.error('Data loading error:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -324,15 +342,43 @@ const ForecastViz = ({ location, onBack }) => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="animate-pulse text-lg">Loading...</div>
-    </div>;
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-pulse text-lg">Loading forecast data...</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="text-red-500">{error}</div>
-    </div>;
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex flex-col items-center justify-center h-96">
+          <div className="text-red-500 text-center mb-4">
+            Error loading forecast data: {error}
+          </div>
+          <div className="text-sm text-gray-600 max-w-lg text-center">
+            Please ensure that:
+            <ul className="list-disc text-left mt-2 space-y-1">
+              <li>The data processing scripts have been run</li>
+              <li>Data files are present in processed_data/</li>
+              <li>The selected location has forecast data</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex justify-center items-center h-96">
+          <div className="text-gray-500">No forecast data available</div>
+        </div>
+      </div>
+    );
   }
 
   const timeSeriesData = getTimeSeriesData();
