@@ -21,6 +21,7 @@ const ViewSelector = () => {
     >
       <option value="detailed">Flu - detailed</option>
       <option value="timeseries">Flu - timeseries</option>
+      <option value="rsv">RSV View</option>
     </select>
   );
 };
