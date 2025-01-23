@@ -7,6 +7,7 @@ import pandas as pd
 import argparse
 import logging
 from tqdm import tqdm
+from typing import Dict
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
