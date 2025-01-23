@@ -66,6 +66,11 @@ class RSVPreprocessor:
         if self.ground_truth is None:
             logger.info("Loading ground truth data...")
             df = pd.read_csv(self.target_data_path)
+            
+            # Filter only inc hosp rows and remove NA values
+            df = df[df['target'] == 'inc hosp']
+            df = df[df['value'].notna()]
+            
             df['date'] = pd.to_datetime(df['date'])
             
             # Filter to relevant dates and sort
