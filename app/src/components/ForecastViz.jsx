@@ -342,9 +342,9 @@ const ForecastViz = ({ location, onBack }) => {
           </button>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
-            <img src="respiview-logo.svg" alt="RespiView Logo" className="h-14 w-14" />
+            <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-14 w-14" />
             <h2 className="text-2xl font-bold text-blue-600">
-              RespiView<sup className="text-red-500 text-xs">α</sup>
+              RespiLens<sup className="text-red-500 text-xs">α</sup>
             </h2>
           </div>
 

@@ -22,8 +22,8 @@ const InfoOverlay = () => {
             </button>
             
             <div className="flex items-center gap-4 mb-6">
-              <img src="respiview-logo.svg" alt="RespiView Logo" className="h-12 w-12" />
-              <h2 className="text-2xl font-bold">About RespiView</h2>
+              <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-12 w-12" />
+              <h2 className="text-2xl font-bold">About RespiLens</h2>
             </div>
 
             <p className="mb-4">

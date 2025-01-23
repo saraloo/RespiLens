@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/RespiView/',
+  base: '/RespiLens/',
   build: {
     outDir: 'dist'  // Ensure consistent output directory
   },
@@ -14,7 +14,7 @@ export default defineConfig({
     },
     proxy: {
       '/processed_data': {
-        target: 'http://localhost:5173/RespiView',
+        target: 'http://localhost:5173/RespiLens',
         rewrite: (path) => path
       }
     }

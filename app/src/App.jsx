@@ -6,7 +6,7 @@ import ForecastViz from './components/ForecastViz';
 
 const AppContent = () => {
   useEffect(() => {
-    document.title = 'RespiView';
+    document.title = 'RespiLens';
   }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedLocation, setSelectedLocation] = useState(() => {
