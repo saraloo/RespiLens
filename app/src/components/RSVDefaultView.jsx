@@ -80,8 +80,11 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
 
   // Create subplot traces for each age group
   const traces = ageGroups.map((age, index) => {
+    // Get the age-specific ground truth data
     const ageData = data.ground_truth[age] || {};
-    const baseTrace = {
+    
+    // Create base ground truth trace for this age group
+    const groundTruthTrace = {
       x: ageData.dates || [],
       y: ageData.values || [],
       type: 'scatter',
@@ -89,11 +92,11 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       name: `Age ${age} - Observed`,
       xaxis: `x${index + 1}`,
       yaxis: `y${index + 1}`,
-      showlegend: true,
+      showlegend: index === 0, // Only show legend for first age group
       line: { color: '#8884d8', width: 2 }
     };
 
-    // Get forecast traces for selected models
+    // Get model traces for this specific age group
     const modelTraces = selectedModels.flatMap(model => {
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
       // Get the most recent date's forecasts
@@ -176,10 +179,18 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
     grid: {
       rows: 2,
       columns: 2,
-      pattern: 'independent'
+      pattern: 'independent',
+      roworder: 'top to bottom'
     },
-    height: 600,
-    margin: { l: 60, r: 30, t: 30, b: 30 },
+    height: 800, // Increased height for better visibility
+    margin: { l: 60, r: 30, t: 50, b: 30 }, // Increased top margin
+    showlegend: true,
+    legend: {
+      orientation: 'h',
+      y: 1.1,
+      x: 0.5,
+      xanchor: 'center'
+    },
     annotations: ageGroups.map((age, index) => ({
       text: `Age group ${age}`,
       xref: 'paper',
@@ -187,7 +198,7 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       x: index % 2 === 0 ? 0.15 : 0.85,
       y: index < 2 ? 0.95 : 0.45,
       showarrow: false,
-      font: { size: 12 }
+      font: { size: 14, weight: 'bold' }
     }))
   };
 
