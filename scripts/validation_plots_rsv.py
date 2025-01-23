@@ -36,8 +36,9 @@ class RSVValidator:
         """Create validation plots for a single location"""
         try:
             # Add debug logging
-            logger.info(f"Payload structure for {location}:")
-            logger.info(f"Ground truth keys: {list(payload['ground_truth'].keys())}")
+            logger.info(f"\nPayload structure for {location}:")
+            logger.info(f"Full payload keys: {list(payload.keys())}")
+            logger.info(f"Ground truth structure: {json.dumps(payload['ground_truth'], indent=2)}")
             logger.info(f"Forecast dates: {list(payload['forecasts'].keys())}")
             
             # Add ground truth data logging
@@ -58,27 +59,38 @@ class RSVValidator:
                 
                 # Plot ground truth if available and has data
                 if age_group in payload['ground_truth']:
+                    logger.info(f"\nProcessing {age_group} ground truth:")
                     gt_data = payload['ground_truth'][age_group]
+                    logger.info(f"Ground truth data: {json.dumps(gt_data, indent=2)}")
+                    
                     if gt_data and 'dates' in gt_data and 'values' in gt_data:
                         dates = pd.to_datetime(gt_data['dates'])
                         values = np.array(gt_data['values'])
+                        
+                        logger.info(f"Raw dates: {dates}")
+                        logger.info(f"Raw values: {values}")
+                        
+                        # Ensure we don't have any string 'null' or None values
+                        valid_mask = pd.notna(values) & (values != 'null')
+                        dates = dates[valid_mask]
+                        values = values[valid_mask].astype(float)
+                        
+                        logger.info(f"After cleaning - dates: {dates}")
+                        logger.info(f"After cleaning - values: {values}")
                         
                         # Sort data by date to ensure proper line plotting
                         sort_idx = np.argsort(dates)
                         dates = dates[sort_idx]
                         values = values[sort_idx]
                         
-                        # Plot only if we have valid data
-                        if len(dates) > 0 and len(values) > 0 and not np.all(np.isnan(values)):
+                        if len(dates) > 0 and len(values) > 0:
                             ax.plot(dates, values, color=self.colors['groundtruth'], 
                                    label='Ground Truth', linewidth=1)
-                            
-                            # Add debug info
-                            logger.info(f"Plotted ground truth for {age_group}: {len(dates)} points")
+                            logger.info("Successfully plotted ground truth")
                             logger.info(f"Date range: {min(dates)} to {max(dates)}")
                             logger.info(f"Value range: {min(values)} to {max(values)}")
                         else:
-                            logger.warning(f"No valid ground truth data for {location} age group {age_group}")
+                            logger.warning(f"No valid data points after cleaning for {age_group}")
                     else:
                         logger.warning(f"Missing dates or values in ground truth for {location} age group {age_group}")
                 else:
