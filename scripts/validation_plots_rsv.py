@@ -20,7 +20,7 @@ class RSVValidator:
         
         # Target dates for visualization 
         self.target_dates = ['2024-01-15', '2024-12-15']
-        self.model_name = 'FluSight-ensemble'  # Change this to match your RSV model name
+        self.model_name = 'hub-ensemble'  # Change this to match your RSV model name
         
         # Age groups to show
         self.age_groups = ["0-0.99", "1-4", "5-64", "65-130"]
