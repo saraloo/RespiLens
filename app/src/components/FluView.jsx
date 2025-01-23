@@ -169,6 +169,91 @@ const FluView = ({ data, selectedDates, selectedModels, viewType, windowSize, ge
     data: data?.ground_truth
   });
 
+  const layout = {
+    width: Math.min(1200, windowSize.width * 0.8),
+    height: Math.min(800, windowSize.height * 0.6),
+    autosize: true,
+    grid: viewType === 'detailed' ? {
+      columns: 1,
+      rows: 1,
+      pattern: 'independent',
+      subplots: [['xy'], ['x2y2']],
+      xgap: 0.15
+    } : undefined,
+    showlegend: false,
+    hovermode: 'x unified',
+    margin: { l: 60, r: 30, t: 30, b: 30 },
+    xaxis: {
+      domain: viewType === 'detailed' ? [0, 0.8] : [0, 1],
+      rangeslider: {
+        range: getDefaultRange(true)
+      },
+      rangeselector: {
+        buttons: [
+          {count: 1, label: '1m', step: 'month', stepmode: 'backward'},
+          {count: 6, label: '6m', step: 'month', stepmode: 'backward'},
+          {step: 'all', label: 'all'}
+        ]
+      },
+      range: getDefaultRange()
+    },
+    shapes: selectedDates.map(date => ({
+      type: 'line',
+      x0: date,
+      x1: date,
+      y0: 0,
+      y1: 1,
+      yref: 'paper',
+      line: {
+        color: 'red',
+        width: 1,
+        dash: 'dash'
+      }
+    })),
+    yaxis: {
+      title: 'Hospitalizations'
+    },
+    ...(viewType === 'detailed' ? {
+      xaxis2: {
+        domain: [0.85, 1],
+        showgrid: false
+      },
+      yaxis2: {
+        title: '',
+        showticklabels: true,
+        type: 'category',
+        side: 'right',
+        automargin: true,
+        tickfont: { align: 'right' }
+      }
+    } : {}),
+  };
+
+  const config = {
+    responsive: true,
+    displayModeBar: true,
+    displaylogo: false,
+    modeBarPosition: 'left',
+    showSendToCloud: false,
+    plotlyServerURL: "",
+    toImageButtonOptions: {
+      format: 'png',
+      filename: 'forecast_plot'
+    },
+    modeBarButtonsToAdd: [{
+      name: 'Reset view',
+      click: function(gd) {
+        const range = getDefaultRange();
+        if (range) {
+          Plotly.relayout(gd, {
+            'xaxis.range': range,
+            'xaxis.rangeslider.range': range
+          });
+        }
+      }
+    }]
+  };
+
   return (
     <div>
       <ModelSelector 
@@ -278,6 +363,7 @@ const FluView = ({ data, selectedDates, selectedModels, viewType, windowSize, ge
           }]
         }}
       />
+      </div>
     </div>
   );
 };
