@@ -130,34 +130,30 @@ const ForecastViz = ({ location, onBack }) => {
         const text = await response.text(); // Get raw text first
         console.log('Raw response text:', text.slice(0, 500) + '...');
         
+        let parsedData;
         try {
-          const jsonData = JSON.parse(text);
+          parsedData = JSON.parse(text);
           console.log('Parsed JSON structure:', {
-            hasMetadata: !!jsonData.metadata,
-            hasGroundTruth: !!jsonData.ground_truth,
-            topLevelKeys: Object.keys(jsonData)
+            hasMetadata: !!parsedData.metadata,
+            hasGroundTruth: !!parsedData.ground_truth,
+            topLevelKeys: Object.keys(parsedData)
           });
           
-          if (!jsonData || typeof jsonData !== 'object') {
+          if (!parsedData || typeof parsedData !== 'object') {
             throw new Error('Invalid JSON response: not an object');
           }
-          if (!jsonData.metadata) {
+          if (!parsedData.metadata) {
             throw new Error('Invalid JSON response: missing metadata');
           }
-          if (!jsonData.ground_truth) {
+          if (!parsedData.ground_truth) {
             throw new Error('Invalid JSON response: missing ground_truth');
           }
           
-          setData(jsonData);
-        } catch (parseError) {
-          throw new Error(`JSON parse error: ${parseError.message}\nResponse text: ${text.slice(0, 200)}...`);
-        }
-        
-        setData(jsonData);
-        
-        // Initialize dates and models
-        if (isRSV) {
-          const dates = Object.keys(jsonData.forecasts || {}).sort();
+          setData(parsedData);
+          
+          // Initialize dates and models
+          if (isRSV) {
+            const dates = Object.keys(parsedData.forecasts || {}).sort();
           if (dates.length > 0) {
             setSelectedDates([dates[dates.length - 1]]);
             setActiveDate(dates[dates.length - 1]);
