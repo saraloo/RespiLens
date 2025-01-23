@@ -127,17 +127,30 @@ const ForecastViz = ({ location, onBack }) => {
           throw new Error(`Failed to load ${dataType} data for ${location} (status ${response.status})`);
         }
         
-        const jsonData = await response.json();
-        console.log('Raw JSON structure:', JSON.stringify(jsonData, null, 2).slice(0, 500) + '...');
+        const text = await response.text(); // Get raw text first
+        console.log('Raw response text:', text.slice(0, 500) + '...');
         
-        if (!jsonData || typeof jsonData !== 'object') {
-          throw new Error('Invalid JSON response: not an object');
-        }
-        if (!jsonData.metadata) {
-          throw new Error('Invalid JSON response: missing metadata');
-        }
-        if (!jsonData.ground_truth) {
-          throw new Error('Invalid JSON response: missing ground_truth');
+        try {
+          const jsonData = JSON.parse(text);
+          console.log('Parsed JSON structure:', {
+            hasMetadata: !!jsonData.metadata,
+            hasGroundTruth: !!jsonData.ground_truth,
+            topLevelKeys: Object.keys(jsonData)
+          });
+          
+          if (!jsonData || typeof jsonData !== 'object') {
+            throw new Error('Invalid JSON response: not an object');
+          }
+          if (!jsonData.metadata) {
+            throw new Error('Invalid JSON response: missing metadata');
+          }
+          if (!jsonData.ground_truth) {
+            throw new Error('Invalid JSON response: missing ground_truth');
+          }
+          
+          setData(jsonData);
+        } catch (parseError) {
+          throw new Error(`JSON parse error: ${parseError.message}\nResponse text: ${text.slice(0, 200)}...`);
         }
         
         setData(jsonData);
