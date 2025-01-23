@@ -10,7 +10,12 @@ export const MODEL_COLORS = [
 
 const FluView = ({ data, selectedDates, selectedModels, viewType, windowSize, getDefaultRange }) => {
   const getTimeSeriesData = () => {
-    if (!data || selectedDates.length === 0) return null;
+    if (!data || selectedDates.length === 0) {
+      console.log('Early return from getTimeSeriesData:', { data, selectedDates });
+      return null;
+    }
+    
+    console.log('Ground truth data:', data.ground_truth);
 
     const groundTruthTrace = {
       x: data.ground_truth.dates,
@@ -149,8 +154,19 @@ const FluView = ({ data, selectedDates, selectedModels, viewType, windowSize, ge
     }).filter(Boolean);
   };
 
-  const timeSeriesData = getTimeSeriesData();
-  const rateChangeData = getRateChangeData();
+  const timeSeriesData = getTimeSeriesData() || [];
+  const rateChangeData = getRateChangeData() || [];
+
+  console.log('FluView plotting data:', {
+    traces: [...timeSeriesData, ...(viewType === 'detailed' ? rateChangeData.map(trace => ({
+      ...trace,
+      orientation: 'h',
+      xaxis: 'x2',
+      yaxis: 'y2'
+    })) : [])],
+    selectedDates,
+    data: data?.ground_truth
+  });
 
   return (
     <div className="w-full" style={{ height: Math.min(800, windowSize.height * 0.6) }}>

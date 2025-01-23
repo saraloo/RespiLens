@@ -175,7 +175,8 @@ const ForecastViz = ({ location, onBack }) => {
     };
 
     fetchData();
-  }, [viewType, location]);
+    console.log('ForecastViz useEffect triggered:', { viewType, location });
+  }, [viewType, location, setSelectedDates, setSelectedModels, setActiveDate]);
 
 
   useEffect(() => {
@@ -385,6 +386,15 @@ const ForecastViz = ({ location, onBack }) => {
 
   const timeSeriesData = getTimeSeriesData();
   const rateChangeData = getRateChangeData();
+
+  console.log('ForecastViz render state:', {
+    viewType,
+    data,
+    selectedDates,
+    selectedModels,
+    timeSeriesData,
+    rateChangeData
+  });
 
   return (
     <div className="container mx-auto p-4">
