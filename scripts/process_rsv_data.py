@@ -36,10 +36,7 @@ class RSVPreprocessor:
         self.forecast_data = None
         
         # Define accepted age groups
-        self.age_groups = [
-            "0-0.99", "1-4", "5-64", "65-130", "0-130",
-            "0-0.49", "0.5-0.99", "1-1.99", "2-4", "18-130"
-        ]
+        self.age_groups = ["0-0.99", "1-4", "5-64", "65-130", "0-130"]
 
     def _validate_paths(self):
         """Validate all required paths exist"""
@@ -70,37 +67,42 @@ class RSVPreprocessor:
             # Filter only inc hosp rows and remove NA values
             df = df[df['target'] == 'inc hosp']
             df = df[df['value'].notna()]
-            logger.info(f"Available age groups in data: {df['age_group'].unique()}")
             
+            # Create mapping for age group aggregation
+            age_group_mapping = {
+                # 0-0.99 combines 0-0.49 and 0.5-0.99
+                "0-0.99": ["0-0.49", "0.5-0.99"],
+                # 1-4 combines 1-1.99 and 2-4
+                "1-4": ["1-1.99", "2-4"],
+                # 5-64 combines 5-17, 18-49, and 50-64
+                "5-64": ["5-17", "18-49", "50-64"],
+                # 65-130 is already correct (65+)
+                "65-130": ["65-130"],
+                # 0-130 is already correct (overall)
+                "0-130": ["0-130"]
+            }
+
             df['date'] = pd.to_datetime(df['date'])
-            
-            # Filter to relevant dates and sort
             df = df[df['date'] >= pd.Timestamp('2023-10-01')].sort_values('date')
             df['date_str'] = df['date'].dt.strftime('%Y-%m-%d')
             
-            # Filter to include only target="inc hosp"
-            df = df[df['target'] == 'inc hosp']
-            
-            # Add debug logging
-            logger.info(f"Loading ground truth for hospital admissions")
-            logger.info(f"Read {len(df)} rows from ground truth file")
-            logger.info(f"Found {len(df['location'].unique())} locations")
-            logger.info(f"Sample ground truth data:")
-            logger.info(df.head())
-            
-            # Create optimized structure for visualization
+            # Create optimized structure for visualization with aggregated age groups
             self.ground_truth = {}
             for location in df['location'].unique():
                 loc_data = df[df['location'] == location]
-                self.ground_truth[location] = {
-                    str(age_group): {
-                        'dates': age_df['date_str'].tolist(),
-                        'values': age_df['value'].tolist()
-                    }
-                    for age_group in self.age_groups
-                    for age_df in [loc_data[loc_data['age_group'] == age_group]]
-                    if not age_df.empty
-                }
+                self.ground_truth[location] = {}
+                
+                # Process each target age group
+                for target_group, source_groups in age_group_mapping.items():
+                    # Filter data for the source age groups and aggregate
+                    age_data = loc_data[loc_data['age_group'].isin(source_groups)]
+                    if not age_data.empty:
+                        # Sum values for the same date across source age groups
+                        agg_data = age_data.groupby('date_str')['value'].sum().reset_index()
+                        self.ground_truth[location][target_group] = {
+                            'dates': agg_data['date_str'].tolist(),
+                            'values': agg_data['value'].tolist()
+                        }
                 
         return self.ground_truth
 

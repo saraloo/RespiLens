@@ -24,7 +24,7 @@ class RSVValidator:
         self.model_name = 'hub-ensemble'  # This matches actual model name in data
         
         # Age groups to show
-        self.age_groups = ["0-0.49", "0.5-0.99", "1-1.99", "2-4"]
+        self.age_groups = ["0-0.99", "1-4", "5-64", "65-130"]  # Don't include 0-130 in plots
         
         # Colors for different forecasts
         self.colors = {
