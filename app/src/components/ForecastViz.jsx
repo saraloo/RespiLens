@@ -190,10 +190,6 @@ const ForecastViz = ({ location, onBack }) => {
 
     fetchData();
     console.log('ForecastViz useEffect triggered:', { viewType, location });
-    };
-
-    fetchData();
-    console.log('ForecastViz useEffect triggered:', { viewType, location });
   }, [viewType, location, setSelectedDates, setSelectedModels, setActiveDate]);
 
 
