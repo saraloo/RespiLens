@@ -151,6 +151,20 @@ class RSVPreprocessor:
                     logger.error(f"Error processing {file_path}: {str(e)}")
                     continue
                     
+        # Add model diversity logging
+        logger.info("Available locations: %s", list(self.forecast_data.keys()))
+        for location, location_data in self.forecast_data.items():
+            models_per_date = {}
+            for date, date_data in location_data.items():
+                models_per_date[date] = set()
+                for age_group, age_data in date_data.items():
+                    for target, target_data in age_data.items():
+                        models_per_date[date].update(target_data.keys())
+            
+            logger.info(f"Location {location} models per date:")
+            for date, models in models_per_date.items():
+                logger.info(f"  {date}: {list(models)}")
+        
         return self.forecast_data
 
     def _process_model_predictions(self, group_df: pd.DataFrame) -> Dict:
@@ -161,10 +175,19 @@ class RSVPreprocessor:
             # For quantiles, group by horizon first
             predictions = {}
             for horizon, horizon_df in group_df.groupby('horizon'):
+                # Sort by quantile to ensure correct order
                 horizon_df = horizon_df.sort_values('output_type_id')
+                
+                # Log some additional diagnostic information
+                logger.info(f"Horizon {horizon} for model {group_df['model'].iloc[0]}:")
+                logger.info(f"Quantiles: {horizon_df['output_type_id'].tolist()}")
+                logger.info(f"Values: {horizon_df['value'].tolist()}")
+                
                 predictions[str(int(horizon))] = {
                     'quantiles': horizon_df['output_type_id'].astype(float).tolist(),
-                    'values': horizon_df['value'].tolist()
+                    'values': horizon_df['value'].tolist(),
+                    # Optional: include model name for additional context
+                    'model': group_df['model'].iloc[0]  
                 }
             return {'type': 'quantile', 'predictions': predictions}
             

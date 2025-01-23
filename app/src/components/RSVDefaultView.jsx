@@ -103,7 +103,13 @@ const RSVDefaultView = ({ location, ageGroups = ["0-0.99", "1-4", "5-64", "65-13
       const mostRecentDate = Object.keys(data.forecasts || {}).sort().pop();
       const forecastData = data.forecasts[mostRecentDate]?.[age]?.['inc hosp']?.[model];
       
-      if (!forecastData || forecastData.type !== 'quantile') return [];
+      console.log(`Model: ${model}, Age Group: ${age}, Most Recent Date: ${mostRecentDate}`);
+      console.log('Full forecast data:', JSON.stringify(forecastData, null, 2));
+      
+      if (!forecastData || forecastData.type !== 'quantile') {
+        console.log(`Skipping model ${model} - no valid forecast data`);
+        return [];
+      }
 
       const predictions = forecastData.predictions || {};
       const horizons = Object.keys(predictions).sort((a, b) => parseInt(a) - parseInt(b));
