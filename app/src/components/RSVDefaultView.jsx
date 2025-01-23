@@ -128,8 +128,8 @@ const RSVDefaultView = ({
       type: 'scatter',
       mode: 'lines+markers',
       name: `Age ${age} - Observed`,
-      xaxis: `x${index + 1}`,
-      yaxis: `y${index + 1}`,
+      xaxis: index === 0 ? 'x1' : `x${index}`, // First plot uses x1, others use x2-x5
+      yaxis: index === 0 ? 'y1' : `y${index}`, // First plot uses y1, others use y2-y5
       showlegend: index === 0, // Only show legend for first age group
       line: { color: '#8884d8', width: 2 }
     };
@@ -246,12 +246,12 @@ const RSVDefaultView = ({
 
   const layout = {
     grid: {
-      rows: 5,           // Changed from 2
-      columns: 1,        // Changed from 2
+      rows: 3,           // One row for 0-130, two rows for 2x2 grid
+      columns: 2,        // Two columns for the 2x2 grid
       pattern: 'independent',
       roworder: 'top to bottom'
     },
-    height: 1200,        // Increased for 5 plots
+    height: 1000,        // Adjusted for new layout
     margin: { l: 60, r: 30, t: 50, b: 30 },
     showlegend: true,
     legend: {
@@ -260,15 +260,32 @@ const RSVDefaultView = ({
       x: 0.5,
       xanchor: 'center'
     },
-    annotations: ageGroups.map((age, index) => ({
-      text: `Age group ${age}`,
-      xref: 'paper',
-      yref: 'paper',
-      x: 0.5,           // Centered horizontally
-      y: 0.95 - (index * 0.2),  // Evenly spaced vertically
-      showarrow: false,
-      font: { size: 14, weight: 'bold' }
-    }))
+    annotations: ageGroups.map((age, index) => {
+      if (index === 0) {
+        return {
+          text: `Overall (Age ${age})`,
+          xref: 'paper',
+          yref: 'paper',
+          x: 0.5,
+          y: 0.95,
+          showarrow: false,
+          font: { size: 16, weight: 'bold' }
+        };
+      } else {
+        const gridIndex = index - 1;
+        const row = Math.floor(gridIndex / 2) + 2;
+        const col = (gridIndex % 2) + 1;
+        return {
+          text: `Age ${age}`,
+          xref: 'paper',
+          yref: 'paper',
+          x: col === 1 ? 0.25 : 0.75,
+          y: 0.6 - (Math.floor((gridIndex) / 2) * 0.3),
+          showarrow: false,
+          font: { size: 14, weight: 'bold' }
+        };
+      }
+    })
   };
 
   return (
