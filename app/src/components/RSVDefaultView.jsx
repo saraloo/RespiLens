@@ -79,15 +79,44 @@ const RSVDefaultView = ({
         });
         
         const sortedModels = Array.from(availableModels).sort();
-        console.log('Available models:', sortedModels);
+        console.log('RSV - Available models:', {
+          sortedModels,
+          byDate: Object.entries(jsonData.forecasts || {}).map(([date, dateData]) => ({
+            date,
+            models: Object.keys(dateData['0-130']?.['inc hosp'] || {})
+          }))
+        });
         setModels(sortedModels);
         
         // Set default model selection if none selected
         if (selectedModels.length === 0 && sortedModels.length > 0) {
+          // Try to get models from URL
+          const urlModels = new URLSearchParams(window.location.search).get('rsv_models')?.split(',') || [];
+          const requestedModels = urlModels.filter(Boolean);
+          
+          console.log('RSV - Initializing models:', {
+            requestedModels,
+            availableModels: sortedModels,
+            currentSelection: selectedModels
+          });
+
+          if (requestedModels.length > 0) {
+            // Try to match each requested model exactly
+            const validModels = requestedModels.filter(model => sortedModels.includes(model));
+            console.log('RSV - Found valid models:', validModels);
+            
+            if (validModels.length > 0) {
+              setSelectedModels(validModels);
+              console.log('RSV - Setting models from URL:', validModels);
+              return;  // Exit early if we found valid models
+            }
+          }
+
+          // If no valid models found, set default
           const defaultModel = sortedModels.includes('hub-ensemble') ? 
             'hub-ensemble' : 
             sortedModels[0];
-          console.log(`Setting default model: ${defaultModel}`);
+          console.log('RSV - Setting default model:', defaultModel);
           setSelectedModels([defaultModel]);
         }
       } catch (err) {
