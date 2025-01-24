@@ -44,35 +44,38 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     if (!loading && data && availableDates.length > 0 && models.length > 0 && 
         (selectedDates.length === 0 || selectedModels.length === 0)) {
-      // Only set from URL/defaults on initial load when selections are empty
-      const urlDates = searchParams.get('dates')?.split(',') || [];
-      const urlModels = searchParams.get('models')?.split(',') || [];
+        
+      const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+      const urlDates = searchParams.get(`${prefix}_dates`)?.split(',') || [];
+      const urlModels = searchParams.get(`${prefix}_models`)?.split(',') || [];
       
+      // Only set dates if none are selected for current view type
       if (selectedDates.length === 0) {
-        const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
-        const urlDates = searchParams.get(`${prefix}_dates`)?.split(',') || [];
         const validDates = urlDates.filter(date => availableDates.includes(date));
         if (validDates.length > 0) {
           setSelectedDates(validDates);
           setActiveDate(validDates[0]);
         } else {
-          setSelectedDates([availableDates[availableDates.length - 1]]);
-          setActiveDate(availableDates[availableDates.length - 1]);
+          const latestDate = availableDates[availableDates.length - 1];
+          setSelectedDates([latestDate]);
+          setActiveDate(latestDate);
         }
       }
-        
+      
+      // Only set models if none are selected for current view type
       if (selectedModels.length === 0) {
-        const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
-        const urlModels = searchParams.get(`${prefix}_models`)?.split(',') || [];
         const validModels = urlModels.filter(model => models.includes(model));
         if (validModels.length > 0) {
           setSelectedModels(validModels);
         } else {
-          setSelectedModels(models.includes('FluSight-ensemble') ? ['FluSight-ensemble'] : [models[0]]);
+          const defaultModel = viewType === 'rsv' ? 
+            (models.includes('hub-ensemble') ? 'hub-ensemble' : models[0]) :
+            (models.includes('FluSight-ensemble') ? 'FluSight-ensemble' : models[0]);
+          setSelectedModels([defaultModel]);
         }
       }
     }
-  }, [loading, data, availableDates, models]);
+  }, [loading, data, availableDates, models, viewType]);
 
   // Update URL when selections change
   useEffect(() => {
