@@ -28,12 +28,15 @@ const InfoOverlay = () => {
               <p className="text-yellow-800 flex items-center gap-2">
                 This is an alpha version that may break unexpectedly. URL schemas and features may change. 
                 Everyone is welcome to use it, and if you notice something that can be improved, 
-                please raise an issue on GitHub
+                please <a href="https://github.com/ACCIDDA/RespiLens/issues" 
+                          target="_blank" 
+                          rel="noopener"
+                          className="text-yellow-700 hover:text-yellow-900 underline">raise an issue</a> on GitHub
                 <a href="https://github.com/ACCIDDA/RespiLens" 
                    target="_blank" 
                    rel="noopener"
                    className="text-yellow-700 hover:text-yellow-900 inline-flex items-center">
-                  <Github className="w-6 h-6" />
+                  <Github className="w-8 h-8" />
                 </a>
               </p>
             </div>
@@ -62,13 +65,13 @@ const InfoOverlay = () => {
             </div>
 
             <p className="mb-6">
-              Made by Joseph Lemaitre (UNC Chapel Hill) and ACCIDDA, the Atlantic Coast Center 
+              Made by <a href="https://josephlemaitre.me" target="_blank" rel="noopener" className="text-blue-600 hover:underline">Joseph Lemaitre</a> (UNC Chapel Hill) and ACCIDDA, the Atlantic Coast Center 
               for Infectious Disease Dynamics and Analytics.
             </p>
 
             <div className="mb-6">
               <h3 className="text-xl font-bold mb-2">About FluSight</h3>
-              <p className="mb-2">
+              <p className="mb-4">
                 CDC's flu forecasting initiative helps predict future influenza activity to support 
                 public health planning.
                 <a href="https://github.com/cdcepi/FluSight-forecast-hub" 
@@ -78,6 +81,10 @@ const InfoOverlay = () => {
                   Flusight Forecast Hub
                 </a>
               </p>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-xl font-bold mb-2">About RSV forecasting</h3>
               <p>
                 <a href="https://rsvforecasthub.org" 
                    target="_blank" 
