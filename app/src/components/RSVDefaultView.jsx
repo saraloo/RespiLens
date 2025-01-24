@@ -152,15 +152,15 @@ const RSVDefaultView = ({
         return [];
       }
 
-      // Get the most recent forecast
-      const mostRecentDate = selectedDates[selectedDates.length - 1];
-      const forecastData = data.forecasts[mostRecentDate]?.[age]?.['inc hosp']?.[model];
-      if (!forecastData?.type || !forecastData?.predictions) {
-        console.log(`No valid forecast data for model ${model}, age group ${age}`);
-        return [];
-      }
-      
-      console.log(`Model: ${model}, Age Group: ${age}, Most Recent Date: ${mostRecentDate}`);
+      // Map over all selected dates to get forecasts for each
+      return selectedDates.flatMap(forecastDate => {
+        const forecastData = data.forecasts[forecastDate]?.[age]?.['inc hosp']?.[model];
+        if (!forecastData?.type || !forecastData?.predictions) {
+          console.log(`No valid forecast data for model ${model}, age group ${age}, date ${forecastDate}`);
+          return [];
+        }
+        
+        console.log(`Model: ${model}, Age Group: ${age}, Date: ${forecastDate}`);
       console.log('Forecast data structure:', {
         type: forecastData.type,
         predictions: Object.keys(forecastData.predictions || {}).length
@@ -245,8 +245,8 @@ const RSVDefaultView = ({
           showlegend: index === 0, // Only show in legend for first age group to avoid duplicates
           xaxis: `x${index + 1}`,
           yaxis: `y${index + 1}`
-        }
-      ];
+        }];
+      }); // Close the selectedDates.flatMap
     });
 
     return [groundTruthTrace, ...modelTraces];
