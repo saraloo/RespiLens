@@ -65,7 +65,7 @@ const InfoOverlay = () => {
             </div>
 
             <p className="mb-6">
-              Made by <a href="https://josephlemaitre.me" target="_blank" rel="noopener" className="text-blue-600 hover:underline">Joseph Lemaitre</a> (UNC Chapel Hill) and ACCIDDA, the Atlantic Coast Center 
+              Made by <a href="https://josephlemaitre.com" target="_blank" rel="noopener" className="text-blue-600 hover:underline">Joseph Lemaitre</a> (UNC Chapel Hill) and ACCIDDA, the Atlantic Coast Center 
               for Infectious Disease Dynamics and Analytics.
             </p>
 

@@ -21,7 +21,13 @@ class RSVPreprocessor:
         
         # Define paths
         self.model_output_path = self.base_path / "model-output"
-        self.target_data_path = self.base_path / "target-data/2025-01-17_rsvnet_hospitalization.csv"
+        # find the target data path: sort all *_rsnet_hospitalization.csv files by date and take the last one
+        target_data_files = sorted(self.base_path.glob("target-data/*_rsvnet_hospitalization.csv"))
+        if not target_data_files:
+            raise ValueError("No target data files found")
+        self.target_data_path = target_data_files[-1]
+
+        #self.target_data_path = self.base_path / "target-data/2025-01-17_rsvnet_hospitalization.csv"
         self.locations_path = self.base_path / "auxiliary-data/location_census/locations.csv"
         
         # Validate paths exist
