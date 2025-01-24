@@ -18,24 +18,24 @@ Most other viz I am aware off are made by the amazing Reichlab:
 ## Features
 Features
 ### TODO
-- [ ] Add the RSV forecasts
-- [ ] Add the multiview view
+- [x] Add the RSV forecasts
+- [x] Add the multiview view
 - [ ] Add a multipathogen view
 - [ ] Show on state card which one have rsv data
-- [ ] gray rsv view on state with no rsv
+- [x] gray rsv view on state with no rsv
 - [ ] direct link to plot png/pdf ?
-- [ ] Simple view for mobile
-- [ ] add some text to welcome and disclaim
+- [x] Simple view for mobile
+- [x] add some text to welcome and disclaim
 - [ ] model description when we hover on name
-- [ ] validation plot for rsv
+- [x] validation plot for rsv
 - [ ] Add WIS score and
 - [ ] allow to select top scoring model past 8 week or full past for this state
 - [ ] logo as favicon
 - [ ] change current json payload format to binary format
 - [ ] reorder URL: state then view then date then models
-- [ ] hold model and date on state change
-- [ ] deploy to ghpage using action instead of branch
-- [ ] view without histogram for mobile viewing
+- [x] hold model and date on state change
+- [x] deploy to ghpage using action instead of branch
+- [x] view without histogram for mobile viewing
 - [ ] remove histogram on multidate view cause confusing
 - [ ] add peak timing and size targets
 
