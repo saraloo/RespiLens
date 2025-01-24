@@ -81,8 +81,8 @@ const RSVDefaultView = ({
         
         // Set default model selection if none selected
         if (selectedModels.length === 0 && sortedModels.length > 0) {
-          const defaultModel = sortedModels.includes('FluSight-ensemble') ? 
-            'FluSight-ensemble' : 
+          const defaultModel = sortedModels.includes('hub-ensemble') ? 
+            'hub-ensemble' : 
             sortedModels[0];
           console.log(`Setting default model: ${defaultModel}`);
           setSelectedModels([defaultModel]);
@@ -261,7 +261,7 @@ const RSVDefaultView = ({
         ['x4y4', 'x5y5']  // Third row for last two age groups
       ],
       // Add row heights and column widths
-      rowheights: [0.4, 0.3, 0.3], // First row taller
+      rowheights: [0.5, 0.3, 0.3], // First row taller
       columnwidths: [0.5, 0.5]
     },
     height: 1000,
