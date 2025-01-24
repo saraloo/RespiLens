@@ -59,10 +59,15 @@ const ForecastViz = ({ location, onBack }) => {
       
       // Only set dates if none are selected for current view type
       if (selectedDates.length === 0) {
-        const validDates = urlDates.filter(date => availableDates.includes(date));
+        const validDates = urlDates
+          .filter(date => availableDates.includes(date))
+          .sort();  // Sort the dates chronologically
+        
         if (validDates.length > 0) {
+          // Set all valid dates from URL instead of just the first one
           setSelectedDates(validDates);
-          setActiveDate(validDates[0]);
+          // Set active date to the most recent one
+          setActiveDate(validDates[validDates.length - 1]);
         } else {
           const latestDate = availableDates[availableDates.length - 1];
           setSelectedDates([latestDate]);
