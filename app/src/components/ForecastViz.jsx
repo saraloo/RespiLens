@@ -64,15 +64,27 @@ const ForecastViz = ({ location, onBack }) => {
       
       // Only set models if none are selected for current view type
       if (selectedModels.length === 0) {
-        const validModels = urlModels.filter(model => models.includes(model));
-        if (validModels.length > 0) {
-          setSelectedModels(validModels);
-        } else {
+        let modelsToSet = [];
+        if (urlModels.length > 0) {
+          // Filter out any invalid models from URL
+          modelsToSet = urlModels.filter(model => models.includes(model));
+        }
+        
+        // If no valid models from URL, set default
+        if (modelsToSet.length === 0) {
           const defaultModel = viewType === 'rsvdetailed' ? 
             (models.includes('hub-ensemble') ? 'hub-ensemble' : models[0]) :
             (models.includes('FluSight-ensemble') ? 'FluSight-ensemble' : models[0]);
-          setSelectedModels([defaultModel]);
+          modelsToSet = [defaultModel];
         }
+        
+        console.log('Setting models from URL:', {
+          urlModels,
+          validModels: modelsToSet,
+          availableModels: models
+        });
+        
+        setSelectedModels(modelsToSet);
       }
     }
   }, [loading, data, availableDates, models, viewType]);
