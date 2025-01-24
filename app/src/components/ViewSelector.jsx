@@ -7,9 +7,16 @@ const ViewSelector = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleViewChange = (newView) => {
+    // Clear parameters only if switching between RSV and Flu, not when switching between Flu views
+    const isRSVSwitch = (viewType === 'rsv' && newView.includes('flu')) || 
+                        (viewType.includes('flu') && newView === 'rsv');
+    
     setViewType(newView);
-    resetViews();
-    const newParams = new URLSearchParams();
+    if (isRSVSwitch) {
+      resetViews();
+    }
+    
+    const newParams = new URLSearchParams(searchParams);
     newParams.set('view', newView);
     newParams.set('location', searchParams.get('location'));
     setSearchParams(newParams, { replace: true });

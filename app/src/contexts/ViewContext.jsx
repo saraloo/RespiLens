@@ -9,7 +9,7 @@ export const ViewProvider = ({ children }) => {
   const [viewType, setViewType] = useState('detailed');
 
   const resetViews = () => {
-    // Clear all selections
+    // Clear model selection
     setSelectedModels([]);
     
     // Keep current view type but reset URL params
@@ -22,6 +22,10 @@ export const ViewProvider = ({ children }) => {
     // Set default model based on view type
     const defaultModel = viewType === 'rsv' ? 'hub-ensemble' : 'FluSight-ensemble';
     setSelectedModels([defaultModel]);
+    
+    // Clear date selection to trigger default date setting
+    setSelectedDates([]);
+    setActiveDate(null);
   };
 
   return (
