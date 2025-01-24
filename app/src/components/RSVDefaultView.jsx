@@ -184,7 +184,7 @@ const RSVDefaultView = ({
 
       predictions.forEach(([horizon, pred]) => {
         // Calculate target date based on forecast date + horizon weeks
-        const targetDate = new Date(mostRecentDate);
+        const targetDate = new Date(forecastDate);  // Use forecastDate from the outer scope
         targetDate.setDate(targetDate.getDate() + parseInt(horizon) * 7);
         forecastDates.push(targetDate.toISOString().split('T')[0]);
         
