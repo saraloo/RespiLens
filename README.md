@@ -94,11 +94,10 @@ Parameter Logic:
   * URL params are pathogen-specific (flu_ or rsv_ prefix)
   * Switching between flu views preserves flu_* params
   * Switching between RSV/flu clears old view's params
-
 Reset clears current view's params and sets defaults:
-
-Most recent date
-Default ensemble model (FluSight/hub based on view)
+  * Most recent date
+  *  Default ensemble model plotted (FluSight/hub based on view)
+  *  Default axis (8 week before, 5 week after the last date.)
 
 
 Location and view params always preserved
