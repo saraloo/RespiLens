@@ -20,7 +20,8 @@ const ViewSelector = () => {
       <select
         value={viewType}
         onChange={(e) => handleViewChange(e.target.value)}
-        className="border rounded px-2 py-1 text-lg bg-white"
+        className="border rounded px-2 py-1 text-lg bg-white appearance-none"
+        style={{ WebkitAppearance: 'none' }}
       >
         <option value="detailed">Flu - detailed</option>
         <option value="timeseries">Flu - timeseries</option>

@@ -11,16 +11,16 @@ export const ViewProvider = ({ children }) => {
   const resetViews = () => {
     // Clear all selections
     setSelectedModels([]);
-    setSelectedDates([]);
-    setActiveDate(null);
     
     // Keep current view type but reset URL params
     const params = new URLSearchParams(window.location.search);
-    params.delete('flu_dates');
-    params.delete('flu_models');
-    params.delete('rsv_dates');
-    params.delete('rsv_models');
+    const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+    params.delete(`${prefix}_dates`);
+    params.delete(`${prefix}_models`);
     window.history.replaceState({}, '', `?${params.toString()}`);
+    
+    // Note: The actual date setting will happen in the ForecastViz useEffect
+    // when it detects empty selections
   };
 
   return (
