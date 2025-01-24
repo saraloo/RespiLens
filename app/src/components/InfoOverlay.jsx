@@ -20,26 +20,21 @@ const InfoOverlay = () => {
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100">
               <X className="w-5 h-5" />
             </button>
-            
-            <div className="flex items-center gap-4 mb-6">
-              <img src="/respilens-logo.svg" alt="RespiLens Logo" className="h-12 w-12" />
-              <h2 className="text-2xl font-bold">RespiLens</h2>
-            </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <h3 className="font-bold text-yellow-800 flex items-center gap-2 mb-2">
-                Alpha Version
-                <a href="https://github.com/ACCIDDA/RespiLens" 
-                   target="_blank" 
-                   rel="noopener" 
-                   className="text-yellow-700 hover:text-yellow-900">
-                  <Github className="w-5 h-5" />
-                </a>
-              </h3>
-              <p className="text-yellow-800">
+            <h2 className="text-2xl font-bold mb-6">RespiLens</h2>
+
+            <div className="mb-6">
+              <h3 className="font-bold text-lg mb-2">Alpha Version</h3>
+              <p className="mb-2 flex items-center gap-2">
                 This is an alpha version that may break unexpectedly. URL schemas and features may change. 
                 Everyone is welcome to use it, and if you notice something that can be improved, 
-                please raise an issue on GitHub.
+                please raise an issue on GitHub 
+                <a href="https://github.com/ACCIDDA/RespiLens" 
+                   target="_blank" 
+                   rel="noopener"
+                   className="text-gray-700 hover:text-gray-900">
+                  <Github className="w-5 h-5" />
+                </a>
               </p>
             </div>
 
@@ -51,26 +46,47 @@ const InfoOverlay = () => {
             <ul className="list-disc pl-6 mb-6 space-y-1">
               <li>URL-shareable views for specific forecasts</li>
               <li>Weekly automatic updates</li>
-              <li>Multiple view types: categorical forecasts, scores, and time series</li>
+              <li>Multi-pathogen and multi-view</li>
               <li>Multi-date comparison capability</li>
               <li>Flexible model comparison</li>
+              <li>Responsive and mobile friendly (for some views)</li>
             </ul>
 
+            <div className="mb-6">
+              <h3 className="font-bold mb-2">On the roadmap</h3>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Scoring visualization and ability to select best models</li>
+                <li>Multi-pathogen views</li>
+                <li>Model description on hover</li>
+              </ul>
+            </div>
+
             <p className="mb-6">
-              Made by <a href="https://josephlemaitre.com" target="_blank" rel="noopener" 
-              className="text-blue-600 hover:underline">Joseph Lemaitre</a> and UNC Chapel Hill 
-              and ACCIDDA, the Atlantic Coast Center for Infectious Disease Dynamics and Analytics
+              Made by Joseph Lemaitre (UNC Chapel Hill) and ACCIDDA, the Atlantic Coast Center 
+              for Infectious Disease Dynamics and Analytics.
             </p>
 
-            <h3 className="text-xl font-bold mb-2">About FluSight</h3>
-            <p className="mb-4">
-              CDC's flu forecasting initiative helps predict future influenza activity to support 
-              public health planning.
-              <a href="https://github.com/cdcepi/FluSight-forecast-hub" target="_blank" 
-                 rel="noopener" className="text-blue-600 hover:underline ml-2">
-                Flusight Forecast Hub
-              </a>
-            </p>
+            <div className="mb-6">
+              <h3 className="text-xl font-bold mb-2">About FluSight</h3>
+              <p className="mb-2">
+                CDC's flu forecasting initiative helps predict future influenza activity to support 
+                public health planning.
+                <a href="https://github.com/cdcepi/FluSight-forecast-hub" 
+                   target="_blank" 
+                   rel="noopener" 
+                   className="text-blue-600 hover:underline ml-2">
+                  Flusight Forecast Hub
+                </a>
+              </p>
+              <p>
+                <a href="https://rsvforecasthub.org" 
+                   target="_blank" 
+                   rel="noopener" 
+                   className="text-blue-600 hover:underline">
+                  About RSV forecast hub
+                </a>
+              </p>
+            </div>
 
             <div className="mt-4">
               <p className="font-medium mb-2">Other Flusight viz by reichlab:</p>
