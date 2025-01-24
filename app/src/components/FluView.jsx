@@ -256,18 +256,9 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
 
   return (
     <div>
-      <ModelSelector 
-        models={models}
-        selectedModels={selectedModels}
-        setSelectedModels={setSelectedModels}
-        getModelColor={(model, selectedModels) => {
-          const index = selectedModels.indexOf(model);
-          return MODEL_COLORS[index % MODEL_COLORS.length];
-        }}
-      />
       <div className="w-full" style={{ height: Math.min(800, windowSize.height * 0.6) }}>
-      <Plot
-        style={{ width: '100%', height: '100%' }}
+        <Plot
+          style={{ width: '100%', height: '100%' }}
         data={[
           ...timeSeriesData,
           ...(viewType === 'detailed' 
@@ -364,6 +355,15 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
         }}
       />
       </div>
+      <ModelSelector 
+        models={models}
+        selectedModels={selectedModels}
+        setSelectedModels={setSelectedModels}
+        getModelColor={(model, selectedModels) => {
+          const index = selectedModels.indexOf(model);
+          return MODEL_COLORS[index % MODEL_COLORS.length];
+        }}
+      />
     </div>
   );
 };
