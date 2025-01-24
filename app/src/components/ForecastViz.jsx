@@ -74,13 +74,21 @@ const ForecastViz = ({ location, onBack }) => {
       if (selectedModels.length === 0) {
         let modelsToSet = [];
         if (urlModels.length > 0) {
-          // Case-insensitive model matching
-          modelsToSet = urlModels.filter(urlModel => 
-            models.find(m => m.toLowerCase() === urlModel.toLowerCase())
-          ).map(urlModel => 
-            models.find(m => m.toLowerCase() === urlModel.toLowerCase())
-          );
+          // Case-sensitive model matching with better logging
+          console.log('URL Models before processing:', urlModels);
+          console.log('Available models:', models);
+          
+          modelsToSet = urlModels.filter(urlModel => {
+            const matchingModel = models.find(m => m === urlModel);
+            console.log(`Checking model ${urlModel}:`, {
+              found: !!matchingModel,
+              exactMatch: matchingModel
+            });
+            return matchingModel;
+          });
         }
+        
+        console.log('Models to set:', modelsToSet);
         
         // If no valid models from URL, set default
         if (modelsToSet.length === 0) {
@@ -88,13 +96,8 @@ const ForecastViz = ({ location, onBack }) => {
             (models.includes('hub-ensemble') ? 'hub-ensemble' : models[0]) :
             (models.includes('FluSight-ensemble') ? 'FluSight-ensemble' : models[0]);
           modelsToSet = [defaultModel];
+          console.log('Setting default model:', defaultModel);
         }
-        
-        console.log('Setting models from URL:', {
-          urlModels,
-          validModels: modelsToSet,
-          availableModels: models
-        });
         
         setSelectedModels(modelsToSet);
       }
