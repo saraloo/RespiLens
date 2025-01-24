@@ -8,8 +8,8 @@ const ViewSelector = () => {
 
   const handleViewChange = (newView) => {
     // Determine if switching between RSV and Flu
-    const isRSVSwitch = (viewType === 'rsv' && newView.includes('flu')) || 
-                        (viewType.includes('flu') && newView === 'rsv');
+    const isRSVSwitch = (viewType === 'rsvdetailed' && newView.includes('flu')) || 
+                        (viewType.includes('flu') && newView === 'rsvdetailed');
     
     setViewType(newView);
     if (isRSVSwitch) {
@@ -22,7 +22,7 @@ const ViewSelector = () => {
     
     // Preserve params based on view type
     if (!isRSVSwitch) {
-      const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+      const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
       const dates = searchParams.get(`${prefix}_dates`);
       const models = searchParams.get(`${prefix}_models`);
       if (dates) newParams.set(`${prefix}_dates`, dates);
@@ -41,7 +41,7 @@ const ViewSelector = () => {
       >
         <option value="fludetailed">Flu - detailed</option>
         <option value="flutimeseries">Flu - timeseries</option>
-        <option value="rsv">RSV View</option>
+        <option value="rsvdetailed">RSV View</option>
       </select>
       <button 
         onClick={() => {
