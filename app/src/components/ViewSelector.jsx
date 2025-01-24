@@ -3,7 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import { useView } from '../contexts/ViewContext';
 
 const ViewSelector = () => {
-  const { viewType, setViewType, resetViews } = useView();
+  const { 
+    viewType, 
+    setViewType,
+    setSelectedDates,
+    setSelectedModels,
+    resetViews 
+  } = useView();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleViewChange = (newView) => {
@@ -11,11 +17,11 @@ const ViewSelector = () => {
                         (viewType.includes('flu') && newView === 'rsvdetailed');
     
     if (isRSVSwitch) {
-      // Clear everything first
+      // First clear state
       setSelectedDates([]);
       setSelectedModels([]);
       
-      // Update view type and params
+      // Then update view and params
       setViewType(newView);
       
       const newParams = new URLSearchParams(searchParams);
