@@ -323,7 +323,7 @@ const RSVDefaultView = ({
     xaxis5: { 
       domain: [0.52, 1],
       range: getDefaultRange()
-    }
+    },
     showlegend: true,
     legend: {
       orientation: 'h',
