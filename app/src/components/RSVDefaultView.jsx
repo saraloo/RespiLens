@@ -260,12 +260,12 @@ const RSVDefaultView = ({
         ['x2y2', 'x3y3'], // Second row for first two age groups
         ['x4y4', 'x5y5']  // Third row for last two age groups
       ],
-      // Add row heights and column widths
-      rowheights: [0.5, 0.3, 0.3], // First row taller
+      rowheights: [0.6, 0.2, 0.2], // Adjusted to make first row significantly taller
       columnwidths: [0.5, 0.5]
     },
     height: 1000,
     margin: { l: 60, r: 30, t: 50, b: 30 },
+    showlegend: false, // Remove legend
     // Update domain ranges for subplots
     xaxis: { domain: [0, 1] },      // Full width for first plot
     xaxis2: { domain: [0, 0.48] },  // Left column
