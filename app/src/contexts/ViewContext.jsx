@@ -13,8 +13,8 @@ export const ViewProvider = ({ children }) => {
     setSelectedModels([]);
     
     // Keep current view type but reset URL params
-    const params = new URLSearchParams(window.location.search);
     const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
+    const params = new URLSearchParams(window.location.search);
     params.delete(`${prefix}_dates`);
     params.delete(`${prefix}_models`);
     window.history.replaceState({}, '', `?${params.toString()}`);
@@ -23,9 +23,15 @@ export const ViewProvider = ({ children }) => {
     const defaultModel = viewType === 'rsvdetailed' ? 'hub-ensemble' : 'FluSight-ensemble';
     setSelectedModels([defaultModel]);
     
-    // Clear date selection to trigger default date setting
-    setSelectedDates([]);
-    setActiveDate(null);
+    // Set most recent date
+    if (window.availableDates?.length > 0) {
+      const latestDate = window.availableDates[window.availableDates.length - 1];
+      setSelectedDates([latestDate]);
+      setActiveDate(latestDate);
+    } else {
+      setSelectedDates([]);
+      setActiveDate(null);
+    }
   };
 
   return (

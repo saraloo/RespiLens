@@ -12,21 +12,23 @@ const ViewSelector = () => {
                         (viewType.includes('flu') && newView === 'rsvdetailed');
     
     setViewType(newView);
-    if (isRSVSwitch) {
-      resetViews();
-    }
     
     const newParams = new URLSearchParams(searchParams);
     newParams.set('view', newView);
     newParams.set('location', searchParams.get('location'));
     
-    // Preserve params based on view type
-    if (!isRSVSwitch) {
-      const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
-      const dates = searchParams.get(`${prefix}_dates`);
-      const models = searchParams.get(`${prefix}_models`);
-      if (dates) newParams.set(`${prefix}_dates`, dates);
-      if (models) newParams.set(`${prefix}_models`, models);
+    // Clear old pathogen's params when switching between RSV/Flu
+    if (isRSVSwitch) {
+      const oldPrefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
+      newParams.delete(`${oldPrefix}_dates`);
+      newParams.delete(`${oldPrefix}_models`);
+      resetViews();
+    } else {
+      // Preserve params when switching between flu views
+      const dates = searchParams.get('flu_dates');
+      const models = searchParams.get('flu_models');
+      if (dates) newParams.set('flu_dates', dates);
+      if (models) newParams.set('flu_models', models);
     }
     
     setSearchParams(newParams, { replace: true });
