@@ -23,17 +23,17 @@ const InfoOverlay = () => {
 
             <h2 className="text-2xl font-bold mb-6">RespiLens</h2>
 
-            <div className="mb-6">
-              <h3 className="font-bold text-lg mb-2">Alpha Version</h3>
-              <p className="mb-2 flex items-center gap-2">
+            <div className="mb-6 bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+              <h3 className="font-bold text-lg mb-2 text-yellow-800">Alpha Version</h3>
+              <p className="text-yellow-800 flex items-center gap-2">
                 This is an alpha version that may break unexpectedly. URL schemas and features may change. 
                 Everyone is welcome to use it, and if you notice something that can be improved, 
-                please raise an issue on GitHub 
+                please raise an issue on GitHub
                 <a href="https://github.com/ACCIDDA/RespiLens" 
                    target="_blank" 
                    rel="noopener"
-                   className="text-gray-700 hover:text-gray-900">
-                  <Github className="w-5 h-5" />
+                   className="text-yellow-700 hover:text-yellow-900 inline-flex items-center">
+                  <Github className="w-6 h-6" />
                 </a>
               </p>
             </div>
