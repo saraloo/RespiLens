@@ -8,12 +8,19 @@ export const ViewProvider = ({ children }) => {
   const [activeDate, setActiveDate] = useState(null);
   const [viewType, setViewType] = useState('detailed');
 
+  const resetViews = () => {
+    setSelectedModels([]);
+    setSelectedDates([]);
+    setActiveDate(null);
+  };
+
   return (
     <ViewContext.Provider value={{
       selectedModels, setSelectedModels,
       selectedDates, setSelectedDates,
       activeDate, setActiveDate,
-      viewType, setViewType
+      viewType, setViewType,
+      resetViews
     }}>
       {children}
     </ViewContext.Provider>
