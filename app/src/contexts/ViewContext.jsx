@@ -9,9 +9,18 @@ export const ViewProvider = ({ children }) => {
   const [viewType, setViewType] = useState('detailed');
 
   const resetViews = () => {
+    // Clear all selections
     setSelectedModels([]);
     setSelectedDates([]);
     setActiveDate(null);
+    
+    // Keep current view type but reset URL params
+    const params = new URLSearchParams(window.location.search);
+    params.delete('flu_dates');
+    params.delete('flu_models');
+    params.delete('rsv_dates');
+    params.delete('rsv_models');
+    window.history.replaceState({}, '', `?${params.toString()}`);
   };
 
   return (

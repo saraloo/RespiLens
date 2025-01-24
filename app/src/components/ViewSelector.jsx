@@ -36,7 +36,7 @@ const ViewSelector = () => {
         }}
         className="px-2 py-1 border rounded hover:bg-gray-100"
       >
-        Reset View
+        Reset Views
       </button>
     </div>
   );
