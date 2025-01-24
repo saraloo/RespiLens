@@ -19,8 +19,9 @@ export const ViewProvider = ({ children }) => {
     params.delete(`${prefix}_models`);
     window.history.replaceState({}, '', `?${params.toString()}`);
     
-    // Note: The actual date setting will happen in the ForecastViz useEffect
-    // when it detects empty selections
+    // Set default model based on view type
+    const defaultModel = viewType === 'rsv' ? 'hub-ensemble' : 'FluSight-ensemble';
+    setSelectedModels([defaultModel]);
   };
 
   return (
