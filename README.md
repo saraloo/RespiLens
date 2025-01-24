@@ -84,16 +84,17 @@ Features
 
 * URL Parameters Format:
   * location: State abbreviation (e.g. "MA")
-  * view: "detailed", "timeseries", or "rsv"
+  * view: "fludetailed", "flutimeseries", or "rsvdetailed"
   * flu_dates: Comma-separated dates for flu views
   * flu_models: Comma-separated model names for flu views
   * rsv_dates: Comma-separated dates for RSV view
   * rsv_models: Comma-separated model names for RSV view
-Parameter Logic:
 
-URL params are view-specific (flu_ or rsv_ prefix)
-Switching between flu views preserves flu_* params
-Switching between RSV/flu clears old view's params
+Parameter Logic:
+  * URL params are pathogen-specific (flu_ or rsv_ prefix)
+  * Switching between flu views preserves flu_* params
+  * Switching between RSV/flu clears old view's params
+
 Reset clears current view's params and sets defaults:
 
 Most recent date
