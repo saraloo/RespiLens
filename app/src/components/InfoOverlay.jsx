@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Info, X } from 'lucide-react';
+import { Info, X, Github } from 'lucide-react';
 
 const InfoOverlay = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,12 +22,30 @@ const InfoOverlay = () => {
             </button>
             
             <div className="flex items-center gap-4 mb-6">
-              <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-12 w-12" />
-              <h2 className="text-2xl font-bold">About RespiLens</h2>
+              <img src="/respilens-logo.svg" alt="RespiLens Logo" className="h-12 w-12" />
+              <h2 className="text-2xl font-bold">RespiLens</h2>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h3 className="font-bold text-yellow-800 flex items-center gap-2 mb-2">
+                Alpha Version
+                <a href="https://github.com/ACCIDDA/RespiLens" 
+                   target="_blank" 
+                   rel="noopener" 
+                   className="text-yellow-700 hover:text-yellow-900">
+                  <Github className="w-5 h-5" />
+                </a>
+              </h3>
+              <p className="text-yellow-800">
+                This is an alpha version that may break unexpectedly. URL schemas and features may change. 
+                Everyone is welcome to use it, and if you notice something that can be improved, 
+                please raise an issue on GitHub.
+              </p>
             </div>
 
             <p className="mb-4">
-              A visualization tool for respiratory disease forecasts hub in the US, focused on accessibility for state health departments and public users. Key features include:
+              A responsive web app to visualize respiratory disease forecasts in the US, focused on 
+              accessibility for state health departments and general public. Key features include:
             </p>
 
             <ul className="list-disc pl-6 mb-6 space-y-1">
@@ -39,24 +57,30 @@ const InfoOverlay = () => {
             </ul>
 
             <p className="mb-6">
-              Made by <a href="https://josephlemaitre.com" target="_blank" rel="noopener" className="text-blue-600 hover:underline">Joseph Lemaitre</a> and UNC Chapel Hill and ACCIDDA, the Atlantic Coast Center for Infectious Disease Dynamics and Analytics
+              Made by <a href="https://josephlemaitre.com" target="_blank" rel="noopener" 
+              className="text-blue-600 hover:underline">Joseph Lemaitre</a> and UNC Chapel Hill 
+              and ACCIDDA, the Atlantic Coast Center for Infectious Disease Dynamics and Analytics
             </p>
 
             <h3 className="text-xl font-bold mb-2">About FluSight</h3>
             <p className="mb-4">
-              <a href="https://www.cdc.gov/flu-forecasting/about/index.html" target="_blank" rel="noopener" className="text-blue-600 hover:underline">CDC's flu forecasting initiative</a> helps predict future influenza activity to support public health planning.
-            </p>
-
-            <p className="mb-2">
-              <a href="https://github.com/cdcepi/FluSight-forecast-hub" target="_blank" rel="noopener" className="text-blue-600 hover:underline">Flusight Forecast Hub github link</a>
+              CDC's flu forecasting initiative helps predict future influenza activity to support 
+              public health planning.
+              <a href="https://github.com/cdcepi/FluSight-forecast-hub" target="_blank" 
+                 rel="noopener" className="text-blue-600 hover:underline ml-2">
+                Flusight Forecast Hub
+              </a>
             </p>
 
             <div className="mt-4">
-              <p className="font-medium mb-2">Other Flusight viz by <a href="https://reichlab.io" target="_blank" rel="noopener" className="text-blue-600 hover:underline">reichlab</a>:</p>
+              <p className="font-medium mb-2">Other Flusight viz by reichlab:</p>
               <ul className="list-disc pl-6 space-y-1">
-                <li><a href="http://flusightnetwork.io" target="_blank" rel="noopener" className="text-blue-600 hover:underline">flusightnetwork.io</a> (historical)</li>
-                <li><a href="https://zoltardata.com/project/360/viz" target="_blank" rel="noopener" className="text-blue-600 hover:underline">Zoltar visualization</a> (last year season)</li>
-                <li><a href="https://reichlab.io/flusight-dashboard/" target="_blank" rel="noopener" className="text-blue-600 hover:underline">Current flusight dashboard</a></li>
+                <li><a href="http://flusightnetwork.io" target="_blank" rel="noopener" 
+                       className="text-blue-600 hover:underline">flusightnetwork.io</a> (historical)</li>
+                <li><a href="https://zoltardata.com/project/360/viz" target="_blank" rel="noopener" 
+                       className="text-blue-600 hover:underline">Zoltar visualization</a> (last year season)</li>
+                <li><a href="https://reichlab.io/flusight-dashboard/" target="_blank" rel="noopener" 
+                       className="text-blue-600 hover:underline">Current flusight dashboard</a></li>
               </ul>
             </div>
           </div>
