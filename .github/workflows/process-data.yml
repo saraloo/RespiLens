@@ -62,16 +62,6 @@ jobs:
        path: app/public/processed_data/
        if-no-files-found: error
        retention-days: 1
-       
-   - name: Commit and push if changed
-     run: |
-       git config --local user.email "github-actions[bot]@users.noreply.github.com"
-       git config --local user.name "github-actions[bot]"
-       git add app/public/processed_data/
-       git diff --quiet && git diff --staged --quiet || (git commit -m "Update processed data")
-       git push
-     env:
-       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
  build-and-deploy:
    needs: process-data
