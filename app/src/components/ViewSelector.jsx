@@ -39,8 +39,8 @@ const ViewSelector = () => {
         onChange={(e) => handleViewChange(e.target.value)}
         className="border rounded px-2 py-1 text-lg bg-white"
       >
-        <option value="detailed">Flu - detailed</option>
-        <option value="timeseries">Flu - timeseries</option>
+        <option value="fludetailed">Flu - detailed</option>
+        <option value="flutimeseries">Flu - timeseries</option>
         <option value="rsv">RSV View</option>
       </select>
       <button 

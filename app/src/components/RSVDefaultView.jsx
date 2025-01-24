@@ -62,7 +62,7 @@ const RSVDefaultView = ({
 
         setData(jsonData);
         
-        // Extract available models with more detailed logging
+        // Extract available models with more fludetailed logging
         const availableModels = new Set();
         Object.values(jsonData.forecasts || {}).forEach(dateData => {
           Object.values(dateData).forEach(ageData => {

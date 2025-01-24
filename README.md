@@ -71,6 +71,39 @@ Features
 - [x] add documentation for data formats
 - [x] create consistent file naming system
 
+
+
+## Desired Behaviors
+* Reset Views button should:
+  * Set the date to the most recent available date
+  * Set the model to the right ensemble for this pathogen (FluSight-ensemble for flu, hub-ensemble for RSV)
+
+* View switching should:
+  * Maintain flu parameters (date, model) when switching between flu detailed/timeseries views
+  * Only reset parameters when switching between RSV and flu views
+
+* URL Parameters Format:
+  * location: State abbreviation (e.g. "MA")
+  * view: "detailed", "timeseries", or "rsv"
+  * flu_dates: Comma-separated dates for flu views
+  * flu_models: Comma-separated model names for flu views
+  * rsv_dates: Comma-separated dates for RSV view
+  * rsv_models: Comma-separated model names for RSV view
+Parameter Logic:
+
+URL params are view-specific (flu_ or rsv_ prefix)
+Switching between flu views preserves flu_* params
+Switching between RSV/flu clears old view's params
+Reset clears current view's params and sets defaults:
+
+Most recent date
+Default ensemble model (FluSight/hub based on view)
+
+
+Location and view params always preserved
+
+
+
 # FluSight Visualization Data Format
 
 This document describes the data format used for the FluSight visualization payloads. The preprocessed data is organized into multiple JSON files: a metadata file and individual location files.

@@ -159,7 +159,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
   const rateChangeData = getRateChangeData() || [];
 
   console.log('FluView plotting data:', {
-    traces: [...timeSeriesData, ...(viewType === 'detailed' ? rateChangeData.map(trace => ({
+    traces: [...timeSeriesData, ...(viewType === 'fludetailed' ? rateChangeData.map(trace => ({
       ...trace,
       orientation: 'h',
       xaxis: 'x2',
@@ -173,7 +173,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
     width: Math.min(1200, windowSize.width * 0.8),
     height: Math.min(800, windowSize.height * 0.6),
     autosize: true,
-    grid: viewType === 'detailed' ? {
+    grid: viewType === 'fludetailed' ? {
       columns: 1,
       rows: 1,
       pattern: 'independent',
@@ -184,7 +184,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
     hovermode: 'x unified',
     margin: { l: 60, r: 30, t: 30, b: 30 },
     xaxis: {
-      domain: viewType === 'detailed' ? [0, 0.8] : [0, 1],
+      domain: viewType === 'fludetailed' ? [0, 0.8] : [0, 1],
       rangeslider: {
         range: getDefaultRange(true)
       },
@@ -213,7 +213,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
     yaxis: {
       title: 'Hospitalizations'
     },
-    ...(viewType === 'detailed' ? {
+    ...(viewType === 'fludetailed' ? {
       xaxis2: {
         domain: [0.85, 1],
         showgrid: false
@@ -261,7 +261,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
           style={{ width: '100%', height: '100%' }}
         data={[
           ...timeSeriesData,
-          ...(viewType === 'detailed' 
+          ...(viewType === 'fludetailed' 
             ? rateChangeData.map(trace => ({
                 ...trace,
                 orientation: 'h',
@@ -274,7 +274,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
           width: Math.min(1200, windowSize.width * 0.8),
           height: Math.min(800, windowSize.height * 0.6),
           autosize: true,
-          grid: viewType === 'detailed' ? {
+          grid: viewType === 'fludetailed' ? {
             columns: 1,
             rows: 1,
             pattern: 'independent',
@@ -285,7 +285,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
           hovermode: 'x unified',
           margin: { l: 60, r: 30, t: 30, b: 30 },
           xaxis: {
-            domain: viewType === 'detailed' ? [0, 0.8] : [0, 1],
+            domain: viewType === 'fludetailed' ? [0, 0.8] : [0, 1],
             rangeslider: {
               range: getDefaultRange(true)
             },
@@ -314,7 +314,7 @@ const FluView = ({ data, selectedDates, selectedModels, models, setSelectedModel
           yaxis: {
             title: 'Hospitalizations'
           },
-          ...(viewType === 'detailed' ? {
+          ...(viewType === 'fludetailed' ? {
             xaxis2: {
               domain: [0.85, 1],
               showgrid: false

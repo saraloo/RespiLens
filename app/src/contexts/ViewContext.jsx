@@ -6,7 +6,7 @@ export const ViewProvider = ({ children }) => {
   const [selectedModels, setSelectedModels] = useState([]);
   const [selectedDates, setSelectedDates] = useState([]);
   const [activeDate, setActiveDate] = useState(null);
-  const [viewType, setViewType] = useState('detailed');
+  const [viewType, setViewType] = useState('fludetailed');
 
   const resetViews = () => {
     // Clear model selection
