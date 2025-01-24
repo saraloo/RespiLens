@@ -158,7 +158,6 @@ const RSVDefaultView = ({
       name: 'Observed',  // Remove age group from name since it's in subplot title
       xaxis: `x${index + 1}`,  // Use consistent indexing
       yaxis: `y${index + 1}`,  // Use consistent indexing
-      showlegend: index === 0,  // Only show in legend for first subplot
       line: { color: '#8884d8', width: 2 }
     };
 
@@ -266,7 +265,6 @@ const RSVDefaultView = ({
           mode: 'lines+markers',
           line: { color: modelColor, width: 2 },
           marker: { size: 6 },
-          showlegend: index === 0, // Only show in legend for first age group to avoid duplicates
           xaxis: `x${index + 1}`,
           yaxis: `y${index + 1}`
         }];
@@ -303,11 +301,13 @@ const RSVDefaultView = ({
       domain: [0, 1],
       rangeslider: {
         range: getDefaultRange(true),
-        thickness: 0.05,  // Make it thinner
+        thickness: 0.05,
         yaxis: {
           rangemode: 'match'
         },
-        bgcolor: '#f8f9fa'  // Light gray background
+        bgcolor: '#f8f9fa',
+        y: -0.2,  // Move it below all graphs
+        yanchor: 'top'
       },
       range: getDefaultRange(),
       rangeselector: {
@@ -318,6 +318,19 @@ const RSVDefaultView = ({
         ]
       }
     },
+    shapes: selectedDates.map(date => ({
+      type: 'line',
+      x0: date,
+      x1: date,
+      y0: 0,
+      y1: 1,
+      yref: 'paper',
+      line: {
+        color: 'red',
+        width: 1,
+        dash: 'dash'
+      }
+    })),
     xaxis2: { 
       domain: [0, 0.48],
       range: getDefaultRange()
@@ -334,13 +347,6 @@ const RSVDefaultView = ({
       domain: [0.52, 1],
       range: getDefaultRange()
     },
-    showlegend: true,
-    legend: {
-      orientation: 'h',
-      y: 1.05,
-      x: 0.5,
-      xanchor: 'center'
-    },
     annotations: ageGroups.map((age, index) => {
       if (index === 0) {
         return {
@@ -348,7 +354,7 @@ const RSVDefaultView = ({
           xref: 'paper',
           yref: 'paper',
           x: 0.5,
-          y: 0.95,
+          y: 1.1,  // Move title up above the graph
           showarrow: false,
           font: { size: 16, weight: 'bold' }
         };
