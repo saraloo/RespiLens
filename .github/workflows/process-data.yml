@@ -25,6 +25,12 @@ jobs:
        repository: 'cdcepi/FluSight-forecast-hub'
        path: 'FluSight-forecast-hub'
        
+   - name: Checkout RSV-forecast-hub
+     uses: actions/checkout@v3
+     with:
+       repository: 'RSVForecastHubORG/rsv-forecast-hub'
+       path: 'rsv-forecast-hub'
+       
    - name: Set up Python
      uses: actions/setup-python@v4
      with:
@@ -33,7 +39,7 @@ jobs:
    - name: Install dependencies
      run: |
        python -m pip install --upgrade pip
-       pip install pandas numpy pyarrow tqdm
+       pip install pandas numpy pyarrow tqdm logging typing
        
    - name: Process FluSight data
      run: |
@@ -41,6 +47,12 @@ jobs:
        python scripts/process_flusight_data.py --hub-path ./FluSight-forecast-hub --output-path ./app/public/processed_data
        echo "Checking processed files:"
        ls -la app/public/processed_data/
+       
+   - name: Process RSV data
+     run: |
+       python scripts/process_rsv_data.py --hub-path ./rsv-forecast-hub --output-path ./app/public/processed_data
+       echo "Checking processed RSV files:"
+       ls -la app/public/processed_data/rsv/
        
    - name: Upload processed data
      uses: actions/upload-artifact@v4
