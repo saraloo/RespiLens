@@ -118,9 +118,14 @@ const ForecastViz = ({ location, onBack }) => {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Clear existing state when switching views
       setData(null);
       setError(null);
       setLoading(true);
+      setSelectedDates([]); // Clear dates
+      setSelectedModels([]); // Clear models
+      setAvailableDates([]); // Clear available dates
+      setModels([]); // Clear models list
       
       try {
         const isRSV = viewType === 'rsvdetailed';
