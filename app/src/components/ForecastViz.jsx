@@ -40,6 +40,14 @@ const ForecastViz = ({ location, onBack }) => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Initialize view type from URL
+  useEffect(() => {
+    const urlView = searchParams.get('view');
+    if (urlView && ['fludetailed', 'flutimeseries', 'rsvdetailed'].includes(urlView)) {
+      setViewType(urlView);
+    }
+  }, []);  // Empty dependency array to only run on mount
+
   // Initialize selections from URL/defaults when data loads
   useEffect(() => {
     if (!loading && data && availableDates.length > 0 && models.length > 0 && 
@@ -66,8 +74,12 @@ const ForecastViz = ({ location, onBack }) => {
       if (selectedModels.length === 0) {
         let modelsToSet = [];
         if (urlModels.length > 0) {
-          // Filter out any invalid models from URL
-          modelsToSet = urlModels.filter(model => models.includes(model));
+          // Case-insensitive model matching
+          modelsToSet = urlModels.filter(urlModel => 
+            models.find(m => m.toLowerCase() === urlModel.toLowerCase())
+          ).map(urlModel => 
+            models.find(m => m.toLowerCase() === urlModel.toLowerCase())
+          );
         }
         
         // If no valid models from URL, set default
