@@ -128,10 +128,10 @@ const RSVDefaultView = ({
       y: ageData.values || [],
       type: 'scatter',
       mode: 'lines+markers',
-      name: `Age ${age} - Observed`,
-      xaxis: index === 0 ? 'x1' : `x${index}`, // First plot uses x1, others use x2-x5
-      yaxis: index === 0 ? 'y1' : `y${index}`, // First plot uses y1, others use y2-y5
-      showlegend: index === 0, // Only show legend for first age group
+      name: 'Observed',  // Remove age group from name since it's in subplot title
+      xaxis: `x${index + 1}`,  // Use consistent indexing
+      yaxis: `y${index + 1}`,  // Use consistent indexing
+      showlegend: index === 0,  // Only show in legend for first subplot
       line: { color: '#8884d8', width: 2 }
     };
 
