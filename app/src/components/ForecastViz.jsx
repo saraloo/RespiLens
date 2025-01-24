@@ -45,7 +45,7 @@ const ForecastViz = ({ location, onBack }) => {
     if (!loading && data && availableDates.length > 0 && models.length > 0 && 
         (selectedDates.length === 0 || selectedModels.length === 0)) {
         
-      const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+      const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
       const urlDates = searchParams.get(`${prefix}_dates`)?.split(',') || [];
       const urlModels = searchParams.get(`${prefix}_models`)?.split(',') || [];
       
@@ -68,7 +68,7 @@ const ForecastViz = ({ location, onBack }) => {
         if (validModels.length > 0) {
           setSelectedModels(validModels);
         } else {
-          const defaultModel = viewType === 'rsv' ? 
+          const defaultModel = viewType === 'rsvdetailed' ? 
             (models.includes('hub-ensemble') ? 'hub-ensemble' : models[0]) :
             (models.includes('FluSight-ensemble') ? 'FluSight-ensemble' : models[0]);
           setSelectedModels([defaultModel]);
@@ -81,7 +81,7 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     if (selectedDates.length > 0 && selectedModels.length > 0) {
       const newParams = new URLSearchParams(searchParams);
-      const prefix = viewType === 'rsv' ? 'rsv' : 'flu';
+      const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
       newParams.set(`${prefix}_dates`, selectedDates.join(','));
       newParams.set(`${prefix}_models`, selectedModels.join(','));
       newParams.set('location', location);
@@ -123,7 +123,7 @@ const ForecastViz = ({ location, onBack }) => {
       setLoading(true);
       
       try {
-        const isRSV = viewType === 'rsv';
+        const isRSV = viewType === 'rsvdetailed';
         const dataType = isRSV ? 'rsv' : 'flu';
         const fileUrl = `./processed_data/${dataType}/${location}_${dataType === 'rsv' ? 'rsv' : 'flusight'}.json`;
         console.log('Attempting to fetch:', fileUrl);
@@ -553,11 +553,11 @@ const ForecastViz = ({ location, onBack }) => {
           <div className="w-full">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-4 justify-between">
               <span className="text-xl text-center flex-grow">
-                {data.metadata.location_name} {viewType === 'rsv' ? 'RSV' : 'Flu'} Forecasts
+                {data.metadata.location_name} {viewType === 'rsvdetailed' ? 'RSV' : 'Flu'} Forecasts
               </span>
               <ViewSelector />
             </h3>
-            {viewType === 'rsv' ? (
+            {viewType === 'rsvdetailed' ? (
               <RSVDefaultView 
                 location={location} 
                 selectedDates={selectedDates}
