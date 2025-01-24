@@ -15,6 +15,9 @@ const RSVDefaultView = ({
   availableDates,
   setSelectedDates,
   setActiveDate,
+  selectedModels,
+  setSelectedModels,
+  searchParams,
   ageGroups = ["0-130", "0-0.99", "1-4", "5-64", "65-130"],
   getModelColor = (model, selectedModels) => {
     const index = selectedModels.indexOf(model);
@@ -25,7 +28,6 @@ const RSVDefaultView = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [models, setModels] = useState([]);
-  const [selectedModels, setSelectedModels] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -435,10 +437,7 @@ const RSVDefaultView = ({
         models={models}
         selectedModels={selectedModels}
         setSelectedModels={setSelectedModels}
-        getModelColor={(model, selectedModels) => {
-          const index = selectedModels.indexOf(model);
-          return MODEL_COLORS[index % MODEL_COLORS.length];
-        }}
+        getModelColor={getModelColor}
       />
     </div>
   );

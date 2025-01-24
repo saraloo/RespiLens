@@ -587,11 +587,14 @@ const ForecastViz = ({ location, onBack }) => {
             </h3>
             {viewType === 'rsvdetailed' ? (
               <RSVDefaultView 
-                location={location} 
+                location={location}
                 selectedDates={selectedDates}
                 availableDates={availableDates}
                 setSelectedDates={setSelectedDates}
                 setActiveDate={setActiveDate}
+                selectedModels={selectedModels}
+                setSelectedModels={setSelectedModels}
+                searchParams={searchParams}
               />
             ) : (
               <FluView 
