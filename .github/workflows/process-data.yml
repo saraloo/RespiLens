@@ -28,7 +28,7 @@ jobs:
    - name: Checkout RSV-forecast-hub
      uses: actions/checkout@v3
      with:
-       repository: 'RSVForecastHubORG/rsv-forecast-hub'
+       repository: 'HopkinsIDD/rsv-forecast-hub'
        path: 'rsv-forecast-hub'
        
    - name: Set up Python
