@@ -291,13 +291,23 @@ const RSVDefaultView = ({
       columnwidths: [0.5, 0.5]
     },
     height: 1000,
-    margin: { l: 60, r: 30, t: 50, b: 30 },
+    margin: { 
+      l: 60, 
+      r: 30, 
+      t: 50, 
+      b: 80  // Increase bottom margin to accommodate range slider
+    },
     showlegend: false, // Remove legend
     // Update domain ranges for subplots
     xaxis: { 
       domain: [0, 1],
       rangeslider: {
-        range: getDefaultRange(true)
+        range: getDefaultRange(true),
+        thickness: 0.05,  // Make it thinner
+        yaxis: {
+          rangemode: 'match'
+        },
+        bgcolor: '#f8f9fa'  // Light gray background
       },
       range: getDefaultRange(),
       rangeselector: {
