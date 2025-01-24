@@ -114,6 +114,30 @@ const RSVDefaultView = ({
     );
   }
 
+  const getDefaultRange = (forRangeslider = false) => {
+    if (!data?.ground_truth || !selectedDates.length) return undefined;
+    
+    const firstGroundTruthDate = new Date(data.ground_truth[ageGroups[0]].dates[0]);
+    const lastGroundTruthDate = new Date(data.ground_truth[ageGroups[0]].dates.slice(-1)[0]);
+    
+    if (forRangeslider) {
+      const rangesliderEnd = new Date(lastGroundTruthDate);
+      rangesliderEnd.setDate(rangesliderEnd.getDate() + (5 * 7));
+      return [firstGroundTruthDate, rangesliderEnd];
+    }
+    
+    const firstDate = new Date(selectedDates[0]);
+    const lastDate = new Date(selectedDates[selectedDates.length - 1]);
+    
+    const startDate = new Date(firstDate);
+    const endDate = new Date(lastDate);
+    
+    startDate.setDate(startDate.getDate() - (8 * 7));
+    endDate.setDate(endDate.getDate() + (5 * 7));
+    
+    return [startDate, endDate];
+  };
+
   console.log('Creating RSV traces:', {
     ageGroups,
     groundTruth: data.ground_truth,
@@ -270,11 +294,36 @@ const RSVDefaultView = ({
     margin: { l: 60, r: 30, t: 50, b: 30 },
     showlegend: false, // Remove legend
     // Update domain ranges for subplots
-    xaxis: { domain: [0, 1] },      // Full width for first plot
-    xaxis2: { domain: [0, 0.48] },  // Left column
-    xaxis3: { domain: [0.52, 1] },  // Right column
-    xaxis4: { domain: [0, 0.48] },  // Left column
-    xaxis5: { domain: [0.52, 1] },  // Right column
+    xaxis: { 
+      domain: [0, 1],
+      rangeslider: {
+        range: getDefaultRange(true)
+      },
+      range: getDefaultRange(),
+      rangeselector: {
+        buttons: [
+          {count: 1, label: '1m', step: 'month', stepmode: 'backward'},
+          {count: 6, label: '6m', step: 'month', stepmode: 'backward'},
+          {step: 'all', label: 'all'}
+        ]
+      }
+    },
+    xaxis2: { 
+      domain: [0, 0.48],
+      range: getDefaultRange()
+    },
+    xaxis3: { 
+      domain: [0.52, 1],
+      range: getDefaultRange()
+    },
+    xaxis4: { 
+      domain: [0, 0.48],
+      range: getDefaultRange()
+    },
+    xaxis5: { 
+      domain: [0.52, 1],
+      range: getDefaultRange()
+    }
     showlegend: true,
     legend: {
       orientation: 'h',
@@ -317,7 +366,23 @@ const RSVDefaultView = ({
         config={{
           responsive: true,
           displayModeBar: true,
-          displaylogo: false
+          displaylogo: false,
+          modeBarButtonsToAdd: [{
+            name: 'Reset view',
+            click: function(gd) {
+              const range = getDefaultRange();
+              if (range) {
+                Plotly.relayout(gd, {
+                  'xaxis.range': range,
+                  'xaxis2.range': range,
+                  'xaxis3.range': range,
+                  'xaxis4.range': range,
+                  'xaxis5.range': range,
+                  'xaxis.rangeslider.range': getDefaultRange(true)
+                });
+              }
+            }
+          }]
         }}
         className="w-full"
       />
