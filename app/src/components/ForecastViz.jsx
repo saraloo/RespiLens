@@ -88,20 +88,17 @@ const ForecastViz = ({ location, onBack }) => {
   }, [selectedDates, selectedModels, viewType]);
 
   const getDefaultRange = useCallback((forRangeslider = false) => {
-    if (!data || selectedDates.length === 0) return undefined;
+    if (!data?.ground_truth?.dates?.length || selectedDates.length === 0) return undefined;
     
-    // Find first and last ground truth dates
     const firstGroundTruthDate = new Date(data.ground_truth.dates[0]);
     const lastGroundTruthDate = new Date(data.ground_truth.dates[data.ground_truth.dates.length - 1]);
     
     if (forRangeslider) {
-      // For rangeslider: extend from first ground truth to 5 weeks after last ground truth
       const rangesliderEnd = new Date(lastGroundTruthDate);
       rangesliderEnd.setDate(rangesliderEnd.getDate() + (5 * 7));
       return [firstGroundTruthDate, rangesliderEnd];
     }
     
-    // Default plot range (existing logic)
     const firstDate = new Date(selectedDates[0]);
     const lastDate = new Date(selectedDates[selectedDates.length - 1]);
     
