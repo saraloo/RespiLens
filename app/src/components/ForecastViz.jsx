@@ -72,34 +72,31 @@ const ForecastViz = ({ location, onBack }) => {
       
       // Only set models if none are selected for current view type
       if (selectedModels.length === 0) {
-        let modelsToSet = [];
-        if (urlModels.length > 0) {
-          // Case-sensitive model matching with better logging
-          console.log('URL Models before processing:', urlModels);
-          console.log('Available models:', models);
+        const requestedModels = urlModels.filter(Boolean); // Filter out any empty strings
+        console.log('Initializing models:', {
+          requestedModels,
+          availableModels: models,
+          currentSelection: selectedModels
+        });
+
+        if (requestedModels.length > 0) {
+          // Try to match each requested model exactly
+          const validModels = requestedModels.filter(model => models.includes(model));
+          console.log('Found valid models:', validModels);
           
-          modelsToSet = urlModels.filter(urlModel => {
-            const matchingModel = models.find(m => m === urlModel);
-            console.log(`Checking model ${urlModel}:`, {
-              found: !!matchingModel,
-              exactMatch: matchingModel
-            });
-            return matchingModel;
-          });
+          if (validModels.length > 0) {
+            setSelectedModels(validModels);
+            console.log('Setting models from URL:', validModels);
+            return;  // Exit early if we found valid models
+          }
         }
-        
-        console.log('Models to set:', modelsToSet);
-        
-        // If no valid models from URL, set default
-        if (modelsToSet.length === 0) {
-          const defaultModel = viewType === 'rsvdetailed' ? 
-            (models.includes('hub-ensemble') ? 'hub-ensemble' : models[0]) :
-            (models.includes('FluSight-ensemble') ? 'FluSight-ensemble' : models[0]);
-          modelsToSet = [defaultModel];
-          console.log('Setting default model:', defaultModel);
-        }
-        
-        setSelectedModels(modelsToSet);
+
+        // If no valid models found, set default
+        const defaultModel = viewType === 'rsvdetailed' ? 
+          (models.includes('hub-ensemble') ? 'hub-ensemble' : models[0]) :
+          (models.includes('FluSight-ensemble') ? 'FluSight-ensemble' : models[0]);
+        console.log('Setting default model:', defaultModel);
+        setSelectedModels([defaultModel]);
       }
     }
   }, [loading, data, availableDates, models, viewType]);
@@ -208,16 +205,15 @@ const ForecastViz = ({ location, onBack }) => {
           });
           
           const modelList = Array.from(extractedModels).sort((a, b) => a.localeCompare(b));
+          console.log('Extracted models from data:', {
+            modelList,
+            dates: dates.map(date => ({
+              date,
+              models: Object.keys(parsedData.forecasts[date]?.['wk inc flu hosp'] || {})
+            }))
+          });
           setModels(modelList);
           setAvailableDates(dates);
-          
-          // Set default models if none selected
-          if (selectedModels.length === 0) {
-            setSelectedModels(modelList.includes('FluSight-ensemble') ? 
-              ['FluSight-ensemble'] : 
-              modelList.slice(0, 1)
-            );
-          }
         }
       } catch (err) {
         console.error('Data loading error:', err);
