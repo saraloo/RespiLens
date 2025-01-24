@@ -158,6 +158,7 @@ const ForecastViz = ({ location, onBack }) => {
         // Initialize dates and models
         if (isRSV) {
           const dates = Object.keys(parsedData.forecasts || {}).sort();
+          setAvailableDates(dates);
           if (dates.length > 0) {
             setSelectedDates([dates[dates.length - 1]]);
             setActiveDate(dates[dates.length - 1]);

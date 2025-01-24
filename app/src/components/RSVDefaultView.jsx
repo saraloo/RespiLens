@@ -12,6 +12,9 @@ const MODEL_COLORS = [
 const RSVDefaultView = ({ 
   location, 
   selectedDates,
+  availableDates,
+  setSelectedDates,
+  setActiveDate,
   ageGroups = ["0-130", "0-0.99", "1-4", "5-64", "65-130"],
   getModelColor = (model, selectedModels) => {
     const index = selectedModels.indexOf(model);
