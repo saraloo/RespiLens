@@ -593,7 +593,6 @@ const ForecastViz = ({ location, onBack }) => {
               <span className="text-xl text-center flex-grow">
                 {data.metadata.location_name} {viewType === 'rsvdetailed' ? 'RSV' : viewType === 'nhsnraw' ? 'NHSN' : 'Flu'} Forecasts
               </span>
-              <ViewSelector />
             </h3>
             {viewType === 'rsvdetailed' ? (
               <RSVDefaultView 
