@@ -8,7 +8,9 @@ import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
 import ViewSelector from './ViewSelector';
 import Plot from 'react-plotly.js';
 import NHSNRawView from './NHSNRawView';
+import DateSelector from './DateSelector';
 import { getDataPath } from '../utils/paths';
+import { DATASETS } from '../config/datasets';
 
 // Color palette for model visualization
 const MODEL_COLORS = [
@@ -32,7 +34,7 @@ const ForecastViz = ({ location, onBack }) => {
     selectedModels, setSelectedModels,
     selectedDates, setSelectedDates,
     activeDate, setActiveDate,
-    viewType, setViewType
+    viewType, currentDataset
   } = useView();
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
@@ -396,10 +398,39 @@ const ForecastViz = ({ location, onBack }) => {
     }).filter(Boolean);
   }, [data, selectedDates, selectedModels]);
 
-  // 4. Now we can do the NHSN check after all hooks are declared
-  if (viewType === 'nhsnall') {
-    return <NHSNRawView location={location} />;
-  }
+  // Get dataset-specific view component
+  const getDatasetView = useCallback(() => {
+    switch(currentDataset?.shortName) {
+      case 'rsv':
+        return (
+          <RSVDefaultView 
+            location={location}
+            selectedDates={selectedDates}
+            availableDates={availableDates}
+            setSelectedDates={setSelectedDates}
+            setActiveDate={setActiveDate}
+            selectedModels={selectedModels}
+            setSelectedModels={setSelectedModels}
+          />
+        );
+      case 'nhsn':
+        return <NHSNRawView location={location} />;
+      case 'flu':
+      default:
+        return (
+          <FluView 
+            data={data}
+            selectedDates={selectedDates}
+            selectedModels={selectedModels}
+            models={models}
+            setSelectedModels={setSelectedModels}
+            viewType={viewType}
+            windowSize={windowSize}
+            getDefaultRange={getDefaultRange}
+          />
+        );
+    }
+  }, [currentDataset, location, data, selectedDates, availableDates, selectedModels, viewType, windowSize, getDefaultRange]);
 
   // 5. Rest of the component logic
   if (loading) {
@@ -477,9 +508,17 @@ const ForecastViz = ({ location, onBack }) => {
           <InfoOverlay />
         </div>
 
-        <div className="p-4 border-b">
-          <div className="flex flex-wrap gap-4 items-center justify-center">
-            {selectedDates.map((date, index) => (
+        {currentDataset?.hasDateSelector && (
+          <div className="p-4 border-b">
+            <DateSelector 
+              availableDates={availableDates}
+              selectedDates={selectedDates}
+              setSelectedDates={setSelectedDates}
+              activeDate={activeDate}
+              setActiveDate={setActiveDate}
+            />
+          </div>
+        )}
               <div key={date} className="flex items-center gap-2">
                 <button 
                   onClick={() => {

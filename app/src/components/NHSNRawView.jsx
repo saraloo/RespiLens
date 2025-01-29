@@ -18,7 +18,11 @@ const NHSNRawView = ({ location, onBack }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedColumns, setSelectedColumns] = useState([]);
+  const { currentDataset } = useView();
+  const [selectedColumns, setSelectedColumns] = useState(() => {
+    // Initialize from URL
+    return searchParams.get('nhsn_columns')?.split(',') || ['totalconfflunewadm'];
+  });
   const [availableColumns, setAvailableColumns] = useState({
     official: [],
     preliminary: []
@@ -185,43 +189,11 @@ const NHSNRawView = ({ location, onBack }) => {
             className="w-full"
           />
           
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-bold mb-2">Official Data Columns</h3>
-              <ModelSelector
-                models={availableColumns.official}
-                selectedModels={selectedColumns.filter(c => !c.includes('_prelim'))}
-                setSelectedModels={(newSelection) => {
-                  setSelectedColumns([
-                    ...newSelection,
-                    ...selectedColumns.filter(c => c.includes('_prelim'))
-                  ]);
-                }}
-                getModelColor={(model, selected) => {
-                  const index = availableColumns.official.indexOf(model);
-                  return COLUMN_COLORS[index % COLUMN_COLORS.length];
-                }}
-              />
-            </div>
-            
-            <div>
-              <h3 className="font-bold mb-2">Preliminary Data Columns</h3>
-              <ModelSelector
-                models={availableColumns.preliminary}
-                selectedModels={selectedColumns.filter(c => c.includes('_prelim'))}
-                setSelectedModels={(newSelection) => {
-                  setSelectedColumns([
-                    ...selectedColumns.filter(c => !c.includes('_prelim')),
-                    ...newSelection
-                  ]);
-                }}
-                getModelColor={(model, selected) => {
-                  const index = availableColumns.preliminary.indexOf(model);
-                  return COLUMN_COLORS[(index + availableColumns.official.length) % COLUMN_COLORS.length];
-                }}
-              />
-            </div>
-          </div>
+          <NHSNColumnSelector 
+            availableColumns={availableColumns}
+            selectedColumns={selectedColumns}
+            setSelectedColumns={setSelectedColumns}
+          />
         </div>
       </div>
     </div>
