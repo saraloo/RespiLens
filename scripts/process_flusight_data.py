@@ -210,8 +210,8 @@ class FluSightPreprocessor:
             'demo_mode': self.demo_mode
         }
         
-        # Create flu subdirectory
-        payload_path = self.output_path / "flu"
+        # Create flusight subdirectory
+        payload_path = self.output_path / "flusight"
         payload_path.mkdir(parents=True, exist_ok=True)
         
         with open(payload_path / 'metadata.json', 'w') as f:

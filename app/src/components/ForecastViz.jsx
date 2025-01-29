@@ -7,6 +7,8 @@ import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
 import ViewSelector from './ViewSelector';
 import Plot from 'react-plotly.js';
+import NHSNRawView from './NHSNRawView';
+import { getDataPath } from '../utils/paths';
 
 // Color palette for model visualization
 const MODEL_COLORS = [
@@ -22,6 +24,7 @@ const getModelColor = (model, selectedModels) => {
 };
 
 const ForecastViz = ({ location, onBack }) => {
+  // 1. First declare all hooks
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,23 +40,33 @@ const ForecastViz = ({ location, onBack }) => {
     width: window.innerWidth,
     height: window.innerHeight
   });
-
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Initialize view type from URL
+  // 2. Define all useEffects
   useEffect(() => {
     const urlView = searchParams.get('view');
-    if (urlView && ['fludetailed', 'flutimeseries', 'rsvdetailed'].includes(urlView)) {
+    if (urlView && ['fludetailed', 'flutimeseries', 'rsvdetailed', 'nhsnraw'].includes(urlView)) {
       setViewType(urlView);
     }
-  }, []);  // Empty dependency array to only run on mount
+  }, []);
 
-  // Initialize selections from URL/defaults when data loads
+  useEffect(() => {
+    if (selectedDates.length > 0 && selectedModels.length > 0) {
+      const newParams = new URLSearchParams(searchParams);
+      const prefix = viewType === 'rsvdetailed' ? 'rsv' : viewType === 'nhsnraw' ? 'nhsn' : 'flu';
+      newParams.set(`${prefix}_dates`, selectedDates.join(','));
+      newParams.set(`${prefix}_models`, selectedModels.join(','));
+      newParams.set('location', location);
+      newParams.set('view', viewType);
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [selectedDates, selectedModels, viewType, location, searchParams, setSearchParams]);
+
   useEffect(() => {
     if (!loading && data && availableDates.length > 0 && models.length > 0 && 
         (selectedDates.length === 0 || selectedModels.length === 0)) {
         
-      const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
+      const prefix = viewType === 'rsvdetailed' ? 'rsv' : viewType === 'nhsnraw' ? 'nhsn' : 'flu';
       const urlDates = searchParams.get(`${prefix}_dates`)?.split(',') || [];
       const urlModels = searchParams.get(`${prefix}_models`)?.split(',') || [];
       
@@ -106,46 +119,26 @@ const ForecastViz = ({ location, onBack }) => {
     }
   }, [loading, data, availableDates, models, viewType]);
 
-  // Update URL when selections change
   useEffect(() => {
-    if (selectedDates.length > 0 && selectedModels.length > 0) {
-      const newParams = new URLSearchParams(searchParams);
-      const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
-      newParams.set(`${prefix}_dates`, selectedDates.join(','));
-      newParams.set(`${prefix}_models`, selectedModels.join(','));
-      newParams.set('location', location);
-      newParams.set('view', viewType);
-      setSearchParams(newParams, { replace: true });
-    }
-  }, [selectedDates, selectedModels, viewType]);
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
 
-  const getDefaultRange = useCallback((forRangeslider = false) => {
-    if (!data?.ground_truth?.dates?.length || selectedDates.length === 0) return undefined;
-    
-    const firstGroundTruthDate = new Date(data.ground_truth.dates[0]);
-    const lastGroundTruthDate = new Date(data.ground_truth.dates[data.ground_truth.dates.length - 1]);
-    
-    if (forRangeslider) {
-      const rangesliderEnd = new Date(lastGroundTruthDate);
-      rangesliderEnd.setDate(rangesliderEnd.getDate() + (5 * 7));
-      return [firstGroundTruthDate, rangesliderEnd];
-    }
-    
-    const firstDate = new Date(selectedDates[0]);
-    const lastDate = new Date(selectedDates[selectedDates.length - 1]);
-    
-    const startDate = new Date(firstDate);
-    const endDate = new Date(lastDate);
-    
-    startDate.setDate(startDate.getDate() - (8 * 7));
-    endDate.setDate(endDate.getDate() + (5 * 7));
-    
-    return [startDate, endDate];
-  }, [data, selectedDates]);
-
-
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
+    console.log('ForecastViz useEffect triggered:', { viewType, location });
+    
+    // Skip loading forecast data if we're in NHSN view
+    if (viewType === 'nhsnraw') {
+      return;
+    }
+
     const fetchData = async () => {
       // Clear existing state when switching views
       setData(null);
@@ -157,14 +150,14 @@ const ForecastViz = ({ location, onBack }) => {
       setModels([]); // Clear models list
       
       try {
-        const isRSV = viewType === 'rsvdetailed';
-        const dataType = isRSV ? 'rsv' : 'flu';
-        const fileUrl = `./processed_data/${dataType}/${location}_${dataType === 'rsv' ? 'rsv' : 'flusight'}.json`;
-        console.log('Attempting to fetch:', fileUrl);
+        // Determine which file to load based on view type
+        const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flusight';
+        const url = getDataPath(`${prefix}/${location}_${prefix}.json`);
+        console.log('Attempting to fetch:', url);
         
-        const response = await fetch(fileUrl);
+        const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`Failed to load ${dataType} data for ${location} (status ${response.status})`);
+          throw new Error(`Failed to load ${prefix} data for ${location} (status ${response.status})`);
         }
         
         const text = await response.text();
@@ -190,7 +183,7 @@ const ForecastViz = ({ location, onBack }) => {
         setData(parsedData);
         
         // Initialize dates and models
-        if (isRSV) {
+        if (viewType === 'rsvdetailed') {
           const dates = Object.keys(parsedData.forecasts || {}).sort();
           setAvailableDates(dates);
           if (dates.length > 0) {
@@ -228,24 +221,37 @@ const ForecastViz = ({ location, onBack }) => {
       }
     };
 
-    fetchData();
-    console.log('ForecastViz useEffect triggered:', { viewType, location });
-  }, [viewType, location, setSelectedDates, setSelectedModels, setActiveDate]);
+    if (location) {
+      fetchData();
+    }
+  }, [location, viewType]);
 
+  // 3. Define callbacks
+  const getDefaultRange = useCallback((forRangeslider = false) => {
+    if (!data?.ground_truth?.dates?.length || selectedDates.length === 0) return undefined;
+    
+    const firstGroundTruthDate = new Date(data.ground_truth.dates[0]);
+    const lastGroundTruthDate = new Date(data.ground_truth.dates[data.ground_truth.dates.length - 1]);
+    
+    if (forRangeslider) {
+      const rangesliderEnd = new Date(lastGroundTruthDate);
+      rangesliderEnd.setDate(rangesliderEnd.getDate() + (5 * 7));
+      return [firstGroundTruthDate, rangesliderEnd];
+    }
+    
+    const firstDate = new Date(selectedDates[0]);
+    const lastDate = new Date(selectedDates[selectedDates.length - 1]);
+    
+    const startDate = new Date(firstDate);
+    const endDate = new Date(lastDate);
+    
+    startDate.setDate(startDate.getDate() - (8 * 7));
+    endDate.setDate(endDate.getDate() + (5 * 7));
+    
+    return [startDate, endDate];
+  }, [data, selectedDates]);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const getTimeSeriesData = () => {
+  const getTimeSeriesData = useCallback(() => {
     if (!data || selectedDates.length === 0) return null;
 
     // Ground truth trace
@@ -345,9 +351,9 @@ const ForecastViz = ({ location, onBack }) => {
     );
 
     return [groundTruthTrace, ...modelTraces];
-  };
+  }, [data, selectedDates, selectedModels]);
 
-  const getRateChangeData = () => {
+  const getRateChangeData = useCallback(() => {
     if (!data || selectedDates.length === 0) return null;
 
     const categoryOrder = [
@@ -388,16 +394,14 @@ const ForecastViz = ({ location, onBack }) => {
         yaxis: 'y2'
       };
     }).filter(Boolean);
-  };
+  }, [data, selectedDates, selectedModels]);
 
-  const toggleModelSelection = (model) => {
-    setSelectedModels(prev => 
-      prev.includes(model)
-        ? prev.filter(m => m !== model)
-        : [...prev, model]
-    );
-  };
+  // 4. Now we can do the NHSN check after all hooks are declared
+  if (viewType === 'nhsnraw') {
+    return <NHSNRawView location={location} />;
+  }
 
+  // 5. Rest of the component logic
   if (loading) {
     return (
       <div className="container mx-auto p-4">
@@ -462,11 +466,12 @@ const ForecastViz = ({ location, onBack }) => {
             <span className="hidden sm:inline">Back to State Selection</span>
           </button>
 
-          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-14 w-14" />
             <h2 className="text-2xl font-bold text-blue-600">
               RespiLens<sup className="text-red-500 text-xs">α</sup>
             </h2>
+            <ViewSelector />
           </div>
 
           <InfoOverlay />
@@ -586,7 +591,7 @@ const ForecastViz = ({ location, onBack }) => {
           <div className="w-full">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-4 justify-between">
               <span className="text-xl text-center flex-grow">
-                {data.metadata.location_name} {viewType === 'rsvdetailed' ? 'RSV' : 'Flu'} Forecasts
+                {data.metadata.location_name} {viewType === 'rsvdetailed' ? 'RSV' : viewType === 'nhsnraw' ? 'NHSN' : 'Flu'} Forecasts
               </span>
               <ViewSelector />
             </h3>

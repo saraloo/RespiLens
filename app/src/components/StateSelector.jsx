@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import InfoOverlay from './InfoOverlay';
+import { getDataPath } from '../utils/paths';
 
 const StateSelector = ({ onStateSelect }) => {
   const [states, setStates] = useState([]);
@@ -9,8 +10,8 @@ const StateSelector = ({ onStateSelect }) => {
   useEffect(() => {
     const fetchStates = async () => {
       try {
-        // Fetch manifest
-        const manifestResponse = await fetch('./processed_data/flu/metadata.json');
+        // Fetch manifest using getDataPath
+        const manifestResponse = await fetch(getDataPath('flusight/metadata.json'));
         if (!manifestResponse.ok) {
           throw new Error(`Failed to fetch metadata: ${manifestResponse.statusText}`);
         }

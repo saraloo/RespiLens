@@ -7,16 +7,21 @@ const ViewSelector = () => {
     viewType, 
     setViewType,
     setSelectedDates,
-    setSelectedModels,
-    resetViews 
+    setSelectedModels
   } = useView();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleViewChange = (newView) => {
-    const isRSVSwitch = (viewType === 'rsvdetailed' && newView.includes('flu')) || 
-                        (viewType.includes('flu') && newView === 'rsvdetailed');
+    const isViewTypeSwitch = (
+      // RSV <-> Flu switch
+      (viewType === 'rsvdetailed' && newView.includes('flu')) || 
+      (viewType.includes('flu') && newView === 'rsvdetailed') ||
+      // Any <-> NHSN switch
+      (viewType === 'nhsnraw' && newView !== 'nhsnraw') ||
+      (viewType !== 'nhsnraw' && newView === 'nhsnraw')
+    );
     
-    if (isRSVSwitch) {
+    if (isViewTypeSwitch) {
       // First clear state
       setSelectedDates([]);
       setSelectedModels([]);
@@ -27,9 +32,19 @@ const ViewSelector = () => {
       const newParams = new URLSearchParams(searchParams);
       newParams.set('view', newView);
       newParams.set('location', searchParams.get('location'));
-      const oldPrefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
-      newParams.delete(`${oldPrefix}_dates`);
-      newParams.delete(`${oldPrefix}_models`);
+      
+      // Clear old parameters based on previous view type
+      let oldPrefix;
+      if (viewType === 'rsvdetailed') oldPrefix = 'rsv';
+      else if (viewType.includes('flu')) oldPrefix = 'flu';
+      else if (viewType === 'nhsnraw') oldPrefix = 'nhsn';
+      
+      if (oldPrefix) {
+        newParams.delete(`${oldPrefix}_dates`);
+        newParams.delete(`${oldPrefix}_models`);
+        newParams.delete(`${oldPrefix}_columns`); // For NHSN columns
+      }
+      
       setSearchParams(newParams, { replace: true });
     } else {
       // For flu view switches, preserve parameters
@@ -41,29 +56,16 @@ const ViewSelector = () => {
   };
 
   return (
-    <div className="flex gap-2 items-center">
-      <select
-        value={viewType}
-        onChange={(e) => handleViewChange(e.target.value)}
-        className="border rounded px-2 py-1 text-lg bg-white"
-      >
-        <option value="fludetailed">Flu - detailed</option>
-        <option value="flutimeseries">Flu - timeseries</option>
-        <option value="rsvdetailed">RSV View</option>
-      </select>
-      <button 
-        onClick={() => {
-          resetViews();
-          const newParams = new URLSearchParams();
-          newParams.set('view', viewType);
-          newParams.set('location', searchParams.get('location'));
-          setSearchParams(newParams, { replace: true });
-        }}
-        className="px-2 py-1 border rounded hover:bg-gray-100"
-      >
-        Reset Views
-      </button>
-    </div>
+    <select
+      value={viewType}
+      onChange={(e) => handleViewChange(e.target.value)}
+      className="border rounded px-2 py-1 text-lg bg-white"
+    >
+      <option value="fludetailed">Flu - detailed</option>
+      <option value="flutimeseries">Flu - timeseries</option>
+      <option value="rsvdetailed">RSV View</option>
+      <option value="nhsnraw">NHSN - raw</option>
+    </select>
   );
 };
 
