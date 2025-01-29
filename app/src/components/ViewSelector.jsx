@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useView } from '../contexts/ViewContext';
+import { DATASETS } from '../config/datasets';
 
 const ViewSelector = () => {
   const { 
@@ -11,49 +12,41 @@ const ViewSelector = () => {
   } = useView();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const getCurrentDataset = () => {
+    return Object.values(DATASETS).find(dataset => 
+      viewType.startsWith(dataset.shortName)
+    ) || DATASETS.flu;
+  };
+
   const handleViewChange = (newView) => {
-    const isViewTypeSwitch = (
-      // RSV <-> Flu switch
-      (viewType === 'rsvdetailed' && newView.includes('flu')) || 
-      (viewType.includes('flu') && newView === 'rsvdetailed') ||
-      // Any <-> NHSN switch
-      (viewType === 'nhsnall' && newView !== 'nhsnall') ||
-      (viewType !== 'nhsnall' && newView === 'nhsnall')
-    );
-    
-    if (isViewTypeSwitch) {
-      // First clear state
+    const currentDataset = getCurrentDataset();
+    const newDataset = Object.values(DATASETS).find(dataset => 
+      newView.startsWith(dataset.shortName)
+    ) || DATASETS.flu;
+
+    // Clear state if switching between different datasets
+    if (currentDataset.shortName !== newDataset.shortName) {
       setSelectedDates([]);
       setSelectedModels([]);
       
-      // Then update view and params
-      setViewType(newView);
-      
+      // Clear old parameters
       const newParams = new URLSearchParams(searchParams);
+      newParams.delete(`${currentDataset.prefix}_dates`);
+      newParams.delete(`${currentDataset.prefix}_models`);
+      if (currentDataset.shortName === 'nhsn') {
+        newParams.delete(`${currentDataset.prefix}_columns`);
+      }
+
+      // Set new view and location
       newParams.set('view', newView);
       newParams.set('location', searchParams.get('location'));
-      
-      // Clear old parameters based on previous view type
-      let oldPrefix;
-      if (viewType === 'rsvdetailed') oldPrefix = 'rsv';
-      else if (viewType.includes('flu')) oldPrefix = 'flu';
-      else if (viewType === 'nhsnall') oldPrefix = 'nhsn';
-      
-      if (oldPrefix) {
-        newParams.delete(`${oldPrefix}_dates`);
-        newParams.delete(`${oldPrefix}_models`);
-        newParams.delete(`${oldPrefix}_columns`); // For NHSN columns
-      }
-      
-      setSearchParams(newParams, { replace: true });
-    } else {
-      // For flu view switches, preserve parameters
-      setViewType(newView);
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set('view', newView);
       setSearchParams(newParams, { replace: true });
     }
+
+    setViewType(newView);
   };
+
+  const currentDataset = getCurrentDataset();
 
   return (
     <select
@@ -61,10 +54,16 @@ const ViewSelector = () => {
       onChange={(e) => handleViewChange(e.target.value)}
       className="border rounded px-2 py-1 text-lg bg-white"
     >
-      <option value="fludetailed">Flu - detailed</option>
-      <option value="flutimeseries">Flu - timeseries</option>
-      <option value="rsvdetailed">RSV View</option>
-      <option value="nhsnall">NHSN - raw</option>
+      {Object.values(DATASETS).map(dataset => (
+        dataset.views.map(view => (
+          <option 
+            key={`${dataset.shortName}-${view}`}
+            value={`${dataset.shortName}${view}`}
+          >
+            {dataset.fullName} - {view}
+          </option>
+        ))
+      ))}
     </select>
   );
 };

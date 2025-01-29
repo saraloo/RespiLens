@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { DATASETS } from '../config/datasets';
 
 const ViewContext = createContext(null);
 
@@ -8,20 +9,29 @@ export const ViewProvider = ({ children }) => {
   const [activeDate, setActiveDate] = useState(null);
   const [viewType, setViewType] = useState('fludetailed');
 
+  const getCurrentDataset = () => {
+    return Object.values(DATASETS).find(dataset => 
+      viewType.startsWith(dataset.shortName)
+    ) || DATASETS.flu;
+  };
+
   const resetViews = () => {
+    const currentDataset = getCurrentDataset();
+    
     // Clear model selection
     setSelectedModels([]);
     
-    // Keep current view type but reset URL params
-    const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flu';
+    // Reset URL params
     const params = new URLSearchParams(window.location.search);
-    params.delete(`${prefix}_dates`);
-    params.delete(`${prefix}_models`);
+    params.delete(`${currentDataset.prefix}_dates`);
+    params.delete(`${currentDataset.prefix}_models`);
+    if (currentDataset.shortName === 'nhsn') {
+      params.delete(`${currentDataset.prefix}_columns`);
+    }
     window.history.replaceState({}, '', `?${params.toString()}`);
     
-    // Set default model based on view type
-    const defaultModel = viewType === 'rsvdetailed' ? 'hub-ensemble' : 'FluSight-ensemble';
-    setSelectedModels([defaultModel]);
+    // Set default model
+    setSelectedModels([currentDataset.defaultModel]);
     
     // Set most recent date
     if (window.availableDates?.length > 0) {
@@ -40,7 +50,8 @@ export const ViewProvider = ({ children }) => {
       selectedDates, setSelectedDates,
       activeDate, setActiveDate,
       viewType, setViewType,
-      resetViews
+      resetViews,
+      getCurrentDataset
     }}>
       {children}
     </ViewContext.Provider>
