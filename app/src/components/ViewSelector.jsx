@@ -1,5 +1,4 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useView } from '../contexts/ViewContext';
 import { DATASETS } from '../config/datasets';
 
@@ -7,51 +6,15 @@ const ViewSelector = () => {
   const { 
     viewType, 
     setViewType,
-    setSelectedDates,
-    setSelectedModels
+    urlManager
   } = useView();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  const getCurrentDataset = () => {
-    return Object.values(DATASETS).find(dataset => 
-      viewType.startsWith(dataset.shortName)
-    ) || DATASETS.flu;
-  };
-
-  const handleViewChange = (newView) => {
-    const currentDataset = getCurrentDataset();
-    const newDataset = Object.values(DATASETS).find(dataset => 
-      newView.startsWith(dataset.shortName)
-    ) || DATASETS.flu;
-
-    // Clear state if switching between different datasets
-    if (currentDataset.shortName !== newDataset.shortName) {
-      setSelectedDates([]);
-      setSelectedModels([]);
-      
-      // Clear old parameters
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete(`${currentDataset.prefix}_dates`);
-      newParams.delete(`${currentDataset.prefix}_models`);
-      if (currentDataset.shortName === 'nhsn') {
-        newParams.delete(`${currentDataset.prefix}_columns`);
-      }
-
-      // Set new view and location
-      newParams.set('view', newView);
-      newParams.set('location', searchParams.get('location'));
-      setSearchParams(newParams, { replace: true });
-    }
-
-    setViewType(newView);
-  };
-
-  const currentDataset = getCurrentDataset();
+  const currentDataset = urlManager.getDatasetFromView(viewType);
 
   return (
     <select
       value={viewType}
-      onChange={(e) => handleViewChange(e.target.value)}
+      onChange={(e) => setViewType(e.target.value)}
       className="border rounded px-2 py-1 text-lg bg-white"
     >
       {Object.values(DATASETS).map(dataset => (
