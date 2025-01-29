@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import requests
 import json
@@ -5,21 +6,20 @@ from pathlib import Path
 import logging
 from datetime import datetime
 import time
+from typing import Optional
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class NHSNDataDownloader:
-    def __init__(self, output_path: str, base_path: str = "."):
+    def __init__(self, output_path: str, locations_path: Optional[str] = None):
         """Initialize the NHSN data downloader"""
         self.official_url = "https://data.cdc.gov/resource/ua7e-t2fy.json"
         self.preliminary_url = "https://data.cdc.gov/resource/mpgq-jmmr.json"
         self.output_path = Path(output_path)
+        self.locations_path = Path(locations_path) if locations_path else None
         self.output_path.mkdir(parents=True, exist_ok=True)
-        
-        # Add locations handling
-        self.locations_path = Path(base_path) / "auxiliary-data/locations.csv"
         self.locations_data = None
         
     def download_data(self, batch_size: int = 1000) -> pd.DataFrame:
@@ -152,14 +152,18 @@ class NHSNDataDownloader:
 
 def main():
     """Main execution function"""
-    output_path = "target-data/nhsn"
-    base_path = "."  # Default to current directory
+    parser = argparse.ArgumentParser(description='Download NHSN data')
+    parser.add_argument('--output-path', type=str, default='./processed_data',
+                      help='Path for output files')
+    parser.add_argument('--locations-path', type=str,
+                      help='Path to locations.csv file')
+    args = parser.parse_args()
     
     try:
-        downloader = NHSNDataDownloader(output_path, base_path)
+        downloader = NHSNDataDownloader(args.output_path, args.locations_path)
         
         # Download data
-        df = downloader.download_data()
+        df = downloader.download_data()        
         
         # Process data
         processed_df = downloader.process_data(df)
