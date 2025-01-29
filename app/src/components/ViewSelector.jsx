@@ -17,8 +17,8 @@ const ViewSelector = () => {
       (viewType === 'rsvdetailed' && newView.includes('flu')) || 
       (viewType.includes('flu') && newView === 'rsvdetailed') ||
       // Any <-> NHSN switch
-      (viewType === 'nhsnraw' && newView !== 'nhsnraw') ||
-      (viewType !== 'nhsnraw' && newView === 'nhsnraw')
+      (viewType === 'nhsnall' && newView !== 'nhsnall') ||
+      (viewType !== 'nhsnall' && newView === 'nhsnall')
     );
     
     if (isViewTypeSwitch) {
@@ -37,7 +37,7 @@ const ViewSelector = () => {
       let oldPrefix;
       if (viewType === 'rsvdetailed') oldPrefix = 'rsv';
       else if (viewType.includes('flu')) oldPrefix = 'flu';
-      else if (viewType === 'nhsnraw') oldPrefix = 'nhsn';
+      else if (viewType === 'nhsnall') oldPrefix = 'nhsn';
       
       if (oldPrefix) {
         newParams.delete(`${oldPrefix}_dates`);
@@ -64,7 +64,7 @@ const ViewSelector = () => {
       <option value="fludetailed">Flu - detailed</option>
       <option value="flutimeseries">Flu - timeseries</option>
       <option value="rsvdetailed">RSV View</option>
-      <option value="nhsnraw">NHSN - raw</option>
+      <option value="nhsnall">NHSN - raw</option>
     </select>
   );
 };

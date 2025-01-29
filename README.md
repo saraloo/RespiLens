@@ -74,17 +74,18 @@ Features
 
 
 ## Desired Behaviors
-* Reset Views button should:
-  * Set the date to the most recent available date
-  * Set the model to the right ensemble for this pathogen (FluSight-ensemble for flu, hub-ensemble for RSV)
 
-* View switching should:
-  * Maintain flu parameters (date, model) when switching between flu detailed/timeseries views
-  * Only reset parameters when switching between RSV and flu views
+There are 3 dataset and many view, some per dataset some multidateset
+* flusight with shortkey: flu
+* rsvforecasthub with shortkey rsv
+* nhsn with shortkey nhsn
+
+View switching within a dataset (e.g Flu detailed to Flu Timeseries) should preserve all url Parameters
+* View switching should between dataset should reset all url parameters to be empty and the plot to be the default
 
 * URL Parameters Format:
   * location: State abbreviation (e.g. "MA")
-  * view: "fludetailed", "flutimeseries", or "rsvdetailed"
+  * view: "fludetailed", "flutimeseries", or "rsvdetailed", or "nhsnall"
   * flu_dates: Comma-separated dates for flu views
   * flu_models: Comma-separated model names for flu views
   * rsv_dates: Comma-separated dates for RSV view

@@ -45,7 +45,7 @@ const ForecastViz = ({ location, onBack }) => {
   // 2. Define all useEffects
   useEffect(() => {
     const urlView = searchParams.get('view');
-    if (urlView && ['fludetailed', 'flutimeseries', 'rsvdetailed', 'nhsnraw'].includes(urlView)) {
+    if (urlView && ['fludetailed', 'flutimeseries', 'rsvdetailed', 'nhsnall'].includes(urlView)) {
       setViewType(urlView);
     }
   }, []);
@@ -53,7 +53,7 @@ const ForecastViz = ({ location, onBack }) => {
   useEffect(() => {
     if (selectedDates.length > 0 && selectedModels.length > 0) {
       const newParams = new URLSearchParams(searchParams);
-      const prefix = viewType === 'rsvdetailed' ? 'rsv' : viewType === 'nhsnraw' ? 'nhsn' : 'flu';
+      const prefix = viewType === 'rsvdetailed' ? 'rsv' : viewType === 'nhsnall' ? 'nhsn' : 'flu';
       newParams.set(`${prefix}_dates`, selectedDates.join(','));
       newParams.set(`${prefix}_models`, selectedModels.join(','));
       newParams.set('location', location);
@@ -66,7 +66,7 @@ const ForecastViz = ({ location, onBack }) => {
     if (!loading && data && availableDates.length > 0 && models.length > 0 && 
         (selectedDates.length === 0 || selectedModels.length === 0)) {
         
-      const prefix = viewType === 'rsvdetailed' ? 'rsv' : viewType === 'nhsnraw' ? 'nhsn' : 'flu';
+      const prefix = viewType === 'rsvdetailed' ? 'rsv' : viewType === 'nhsnall' ? 'nhsn' : 'flu';
       const urlDates = searchParams.get(`${prefix}_dates`)?.split(',') || [];
       const urlModels = searchParams.get(`${prefix}_models`)?.split(',') || [];
       
@@ -135,7 +135,7 @@ const ForecastViz = ({ location, onBack }) => {
     console.log('ForecastViz useEffect triggered:', { viewType, location });
     
     // Skip loading forecast data if we're in NHSN view
-    if (viewType === 'nhsnraw') {
+    if (viewType === 'nhsnall') {
       return;
     }
 
@@ -397,7 +397,7 @@ const ForecastViz = ({ location, onBack }) => {
   }, [data, selectedDates, selectedModels]);
 
   // 4. Now we can do the NHSN check after all hooks are declared
-  if (viewType === 'nhsnraw') {
+  if (viewType === 'nhsnall') {
     return <NHSNRawView location={location} />;
   }
 
@@ -591,7 +591,7 @@ const ForecastViz = ({ location, onBack }) => {
           <div className="w-full">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-4 justify-between">
               <span className="text-xl text-center flex-grow">
-                {data.metadata.location_name} {viewType === 'rsvdetailed' ? 'RSV' : viewType === 'nhsnraw' ? 'NHSN' : 'Flu'} Forecasts
+                {data.metadata.location_name} {viewType === 'rsvdetailed' ? 'RSV' : viewType === 'nhsnall' ? 'NHSN' : 'Flu'} Forecasts
               </span>
             </h3>
             {viewType === 'rsvdetailed' ? (
