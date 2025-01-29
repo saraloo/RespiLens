@@ -11,12 +11,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class NHSNDataDownloader:
-    def __init__(self, output_path: str):
+    def __init__(self, output_path: str, base_path: str = "."):
         """Initialize the NHSN data downloader"""
         self.official_url = "https://data.cdc.gov/resource/ua7e-t2fy.json"
         self.preliminary_url = "https://data.cdc.gov/resource/mpgq-jmmr.json"
         self.output_path = Path(output_path)
         self.output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Add locations handling
+        self.locations_path = Path(base_path) / "auxiliary-data/locations.csv"
+        self.locations_data = None
         
     def download_data(self, batch_size: int = 1000) -> pd.DataFrame:
         """Download all NHSN data using pagination from both endpoints"""
@@ -70,9 +74,23 @@ class NHSNDataDownloader:
                 
         return all_data
 
+    def load_locations(self) -> pd.DataFrame:
+        """Load and cache locations data"""
+        if self.locations_data is None:
+            logger.info("Loading locations data...")
+            self.locations_data = pd.read_csv(self.locations_path)
+        return self.locations_data
+
     def process_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Process the downloaded data into the required format"""
         logger.info("Processing NHSN data...")
+        
+        # Load locations and create mapping
+        locations = self.load_locations()
+        location_map = dict(zip(locations['location_name'], locations['location']))
+        
+        # Map jurisdiction names to location codes
+        df['jurisdiction'] = df['jurisdiction'].map(lambda x: location_map.get(x, x))
         
         # Rename key columns to match ground truth format
         df = df.rename(columns={
@@ -135,9 +153,10 @@ class NHSNDataDownloader:
 def main():
     """Main execution function"""
     output_path = "target-data/nhsn"
+    base_path = "."  # Default to current directory
     
     try:
-        downloader = NHSNDataDownloader(output_path)
+        downloader = NHSNDataDownloader(output_path, base_path)
         
         # Download data
         df = downloader.download_data()
