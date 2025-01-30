@@ -17,16 +17,16 @@ jobs:
    
    steps:
    - name: Checkout visualization repository
-     uses: actions/checkout@v3
+     uses: actions/checkout@v4
      
    - name: Checkout FluSight-forecast-hub
-     uses: actions/checkout@v3
+     uses: actions/checkout@v4
      with:
        repository: 'cdcepi/FluSight-forecast-hub'
        path: 'FluSight-forecast-hub'
        
    - name: Checkout RSV-forecast-hub
-     uses: actions/checkout@v3
+     uses: actions/checkout@v4
      with:
        repository: 'HopkinsIDD/rsv-forecast-hub'
        path: 'rsv-forecast-hub'
@@ -72,7 +72,7 @@ jobs:
    
    steps:
      - name: Checkout repository
-       uses: actions/checkout@v3
+       uses: actions/checkout@v4
 
      - name: Setup Node.js
        uses: actions/setup-node@v3
