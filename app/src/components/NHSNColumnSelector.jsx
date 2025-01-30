@@ -26,7 +26,7 @@ const NHSNColumnSelector = ({
               ...selectedColumns.filter(c => c.includes('_prelim'))
             ]);
           }}
-          getModelColor={(model, selected) => {
+          getModelColor={(model) => {
             const index = availableColumns.official.indexOf(model);
             return COLUMN_COLORS[index % COLUMN_COLORS.length];
           }}
@@ -44,7 +44,7 @@ const NHSNColumnSelector = ({
               ...newSelection
             ]);
           }}
-          getModelColor={(model, selected) => {
+          getModelColor={(model) => {
             const index = availableColumns.preliminary.indexOf(model);
             return COLUMN_COLORS[(index + availableColumns.official.length) % COLUMN_COLORS.length];
           }}
