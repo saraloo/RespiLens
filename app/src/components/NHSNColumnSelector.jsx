@@ -1,6 +1,4 @@
 import React from 'react';
-import { useView } from '../contexts/ViewContext';
-import ModelSelector from './ModelSelector';
 
 const COLUMN_COLORS = [
   '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
@@ -13,38 +11,62 @@ const NHSNColumnSelector = ({
   selectedColumns,
   setSelectedColumns,
 }) => {
+  const toggleColumn = (column, isPreview) => {
+    if (selectedColumns.includes(column)) {
+      setSelectedColumns(selectedColumns.filter(c => c !== column));
+    } else {
+      setSelectedColumns([...selectedColumns, column]);
+    }
+  };
+
   return (
     <div className="mt-4 grid grid-cols-2 gap-4">
       <div>
         <h3 className="font-bold mb-2">Official Data Columns</h3>
-        <ModelSelector
-          models={availableColumns.official}
-          selectedModels={selectedColumns.filter(c => !c.includes('_prelim'))}
-          setSelectedModels={(newSelection) => {
-            const filteredCurrent = selectedColumns.filter(c => c.includes('_prelim'));
-            setSelectedColumns(Array.isArray(newSelection) ? [...newSelection, ...filteredCurrent] : [...filteredCurrent]);
-          }}
-          getModelColor={(model) => {
-            const index = availableColumns.official.indexOf(model);
-            return COLUMN_COLORS[index % COLUMN_COLORS.length];
-          }}
-        />
+        <div className="flex flex-wrap gap-2">
+          {availableColumns.official.map((column, index) => (
+            <div
+              key={column}
+              onClick={() => toggleColumn(column, false)}
+              className={`px-3 py-1 rounded cursor-pointer text-sm transition-colors ${
+                selectedColumns.includes(column)
+                  ? 'text-white'
+                  : 'border hover:bg-gray-100'
+              }`}
+              style={
+                selectedColumns.includes(column) 
+                  ? { backgroundColor: COLUMN_COLORS[index % COLUMN_COLORS.length] }
+                  : undefined
+              }
+            >
+              {column}
+            </div>
+          ))}
+        </div>
       </div>
       
       <div>
         <h3 className="font-bold mb-2">Preliminary Data Columns</h3>
-        <ModelSelector
-          models={availableColumns.preliminary}
-          selectedModels={selectedColumns.filter(c => c.includes('_prelim'))}
-          setSelectedModels={(newSelection) => {
-            const filteredCurrent = selectedColumns.filter(c => !c.includes('_prelim'));
-            setSelectedColumns(Array.isArray(newSelection) ? [...filteredCurrent, ...newSelection] : [...filteredCurrent]);
-          }}
-          getModelColor={(model) => {
-            const index = availableColumns.preliminary.indexOf(model);
-            return COLUMN_COLORS[(index + availableColumns.official.length) % COLUMN_COLORS.length];
-          }}
-        />
+        <div className="flex flex-wrap gap-2">
+          {availableColumns.preliminary.map((column, index) => (
+            <div
+              key={column}
+              onClick={() => toggleColumn(column, true)}
+              className={`px-3 py-1 rounded cursor-pointer text-sm transition-colors ${
+                selectedColumns.includes(column)
+                  ? 'text-white'
+                  : 'border hover:bg-gray-100'
+              }`}
+              style={
+                selectedColumns.includes(column) 
+                  ? { backgroundColor: COLUMN_COLORS[(index + availableColumns.official.length) % COLUMN_COLORS.length] }
+                  : undefined
+              }
+            >
+              {column}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
