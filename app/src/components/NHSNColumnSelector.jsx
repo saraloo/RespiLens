@@ -21,10 +21,8 @@ const NHSNColumnSelector = ({
           models={availableColumns.official}
           selectedModels={selectedColumns.filter(c => !c.includes('_prelim'))}
           setSelectedModels={(newSelection) => {
-            setSelectedColumns([
-              ...newSelection,
-              ...selectedColumns.filter(c => c.includes('_prelim'))
-            ]);
+            const filteredCurrent = selectedColumns.filter(c => c.includes('_prelim'));
+            setSelectedColumns(Array.isArray(newSelection) ? [...newSelection, ...filteredCurrent] : [...filteredCurrent]);
           }}
           getModelColor={(model) => {
             const index = availableColumns.official.indexOf(model);
@@ -39,10 +37,8 @@ const NHSNColumnSelector = ({
           models={availableColumns.preliminary}
           selectedModels={selectedColumns.filter(c => c.includes('_prelim'))}
           setSelectedModels={(newSelection) => {
-            setSelectedColumns([
-              ...selectedColumns.filter(c => !c.includes('_prelim')),
-              ...newSelection
-            ]);
+            const filteredCurrent = selectedColumns.filter(c => !c.includes('_prelim'));
+            setSelectedColumns(Array.isArray(newSelection) ? [...filteredCurrent, ...newSelection] : [...filteredCurrent]);
           }}
           getModelColor={(model) => {
             const index = availableColumns.preliminary.indexOf(model);
