@@ -25,7 +25,7 @@ const getModelColor = (model, selectedModels) => {
   return index >= 0 ? MODEL_COLORS[index % MODEL_COLORS.length] : null;
 };
 
-const ForecastViz = ({ location, onBack }) => {
+const ForecastViz = ({ location, handleStateSelect }) => {
   // 1. First declare all hooks
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
