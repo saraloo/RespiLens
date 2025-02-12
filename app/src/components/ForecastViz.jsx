@@ -15,7 +15,7 @@ import { DATASETS } from '../config/datasets';
 
 // Color palette for model visualization
 const MODEL_COLORS = [
-  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
   '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
   '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
   '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5'
@@ -35,7 +35,8 @@ const ForecastViz = ({ location, handleStateSelect }) => {
     selectedModels, setSelectedModels,
     selectedDates, setSelectedDates,
     activeDate, setActiveDate,
-    viewType, currentDataset
+    viewType, setViewType,  // Add this line
+    currentDataset
   } = useView();
   const [availableDates, setAvailableDates] = useState([]);
   const [models, setModels] = useState([]);
@@ -66,19 +67,19 @@ const ForecastViz = ({ location, handleStateSelect }) => {
   }, [selectedDates, selectedModels, viewType, location, searchParams, setSearchParams]);
 
   useEffect(() => {
-    if (!loading && data && availableDates.length > 0 && models.length > 0 && 
+    if (!loading && data && availableDates.length > 0 && models.length > 0 &&
         (selectedDates.length === 0 || selectedModels.length === 0)) {
-        
+
       const prefix = viewType === 'rsvdetailed' ? 'rsv' : viewType === 'nhsnall' ? 'nhsn' : 'flu';
       const urlDates = searchParams.get(`${prefix}_dates`)?.split(',') || [];
       const urlModels = searchParams.get(`${prefix}_models`)?.split(',') || [];
-      
+
       // Only set dates if none are selected for current view type
       if (selectedDates.length === 0) {
         const validDates = urlDates
           .filter(date => availableDates.includes(date))
           .sort();  // Sort the dates chronologically
-        
+
         if (validDates.length > 0) {
           // Set all valid dates from URL instead of just the first one
           setSelectedDates(validDates);
@@ -90,7 +91,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
           setActiveDate(latestDate);
         }
       }
-      
+
       // Only set models if none are selected for current view type
       if (selectedModels.length === 0) {
         const requestedModels = urlModels.filter(Boolean); // Filter out any empty strings
@@ -104,7 +105,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
           // Try to match each requested model exactly
           const validModels = requestedModels.filter(model => models.includes(model));
           console.log('Found valid models:', validModels);
-          
+
           if (validModels.length > 0) {
             setSelectedModels(validModels);
             console.log('Setting models from URL:', validModels);
@@ -113,7 +114,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
         }
 
         // If no valid models found, set default
-        const defaultModel = viewType === 'rsvdetailed' ? 
+        const defaultModel = viewType === 'rsvdetailed' ?
           (models.includes('hub-ensemble') ? 'hub-ensemble' : models[0]) :
           (models.includes('FluSight-ensemble') ? 'FluSight-ensemble' : models[0]);
         console.log('Setting default model:', defaultModel);
@@ -136,7 +137,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
 
   useEffect(() => {
     console.log('ForecastViz useEffect triggered:', { viewType, location });
-    
+
     // Skip loading forecast data if we're in NHSN view
     if (viewType === 'nhsnall') {
       return;
@@ -151,28 +152,28 @@ const ForecastViz = ({ location, handleStateSelect }) => {
       setSelectedModels([]); // Clear models
       setAvailableDates([]); // Clear available dates
       setModels([]); // Clear models list
-      
+
       try {
         // Determine which file to load based on view type
         const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flusight';
         const url = getDataPath(`${prefix}/${location}_${prefix}.json`);
         console.log('Attempting to fetch:', url);
-        
+
         const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`Failed to load ${prefix} data for ${location} (status ${response.status})`);
         }
-        
+
         const text = await response.text();
         console.log('Raw response text:', text.slice(0, 500) + '...');
-        
+
         const parsedData = JSON.parse(text);
         console.log('Parsed JSON structure:', {
           hasMetadata: !!parsedData.metadata,
           hasGroundTruth: !!parsedData.ground_truth,
           topLevelKeys: Object.keys(parsedData)
         });
-        
+
         if (!parsedData || typeof parsedData !== 'object') {
           throw new Error('Invalid JSON response: not an object');
         }
@@ -182,9 +183,9 @@ const ForecastViz = ({ location, handleStateSelect }) => {
         if (!parsedData.ground_truth) {
           throw new Error('Invalid JSON response: missing ground_truth');
         }
-        
+
         setData(parsedData);
-        
+
         // Initialize dates and models
         if (viewType === 'rsvdetailed') {
           const dates = Object.keys(parsedData.forecasts || {}).sort();
@@ -197,14 +198,14 @@ const ForecastViz = ({ location, handleStateSelect }) => {
           // For flu view
           const dates = Object.keys(parsedData.forecasts || {}).sort();
           const extractedModels = new Set();
-          
+
           dates.forEach(date => {
             ['wk inc flu hosp', 'wk flu hosp rate change'].forEach(type => {
               const typeForecast = parsedData.forecasts[date]?.[type] || {};
               Object.keys(typeForecast).forEach(model => extractedModels.add(model));
             });
           });
-          
+
           const modelList = Array.from(extractedModels).sort((a, b) => a.localeCompare(b));
           console.log('Extracted models from data:', {
             modelList,
@@ -232,25 +233,25 @@ const ForecastViz = ({ location, handleStateSelect }) => {
   // 3. Define callbacks
   const getDefaultRange = useCallback((forRangeslider = false) => {
     if (!data?.ground_truth?.dates?.length || selectedDates.length === 0) return undefined;
-    
+
     const firstGroundTruthDate = new Date(data.ground_truth.dates[0]);
     const lastGroundTruthDate = new Date(data.ground_truth.dates[data.ground_truth.dates.length - 1]);
-    
+
     if (forRangeslider) {
       const rangesliderEnd = new Date(lastGroundTruthDate);
       rangesliderEnd.setDate(rangesliderEnd.getDate() + (5 * 7));
       return [firstGroundTruthDate, rangesliderEnd];
     }
-    
+
     const firstDate = new Date(selectedDates[0]);
     const lastDate = new Date(selectedDates[selectedDates.length - 1]);
-    
+
     const startDate = new Date(firstDate);
     const endDate = new Date(lastDate);
-    
+
     startDate.setDate(startDate.getDate() - (8 * 7));
     endDate.setDate(endDate.getDate() + (5 * 7));
-    
+
     return [startDate, endDate];
   }, [data, selectedDates]);
 
@@ -269,13 +270,13 @@ const ForecastViz = ({ location, handleStateSelect }) => {
     };
 
     // Generate traces for each selected model and date combination
-    const modelTraces = selectedModels.flatMap(model => 
+    const modelTraces = selectedModels.flatMap(model =>
       selectedDates.flatMap((date) => {
         const forecasts = data.forecasts[date] || {};
-        const forecast = 
-          forecasts['wk inc flu hosp']?.[model] || 
+        const forecast =
+          forecasts['wk inc flu hosp']?.[model] ||
           forecasts['wk flu hosp rate change']?.[model];
-      
+
         if (!forecast) return [];
 
         const forecastDates = [];
@@ -288,23 +289,23 @@ const ForecastViz = ({ location, handleStateSelect }) => {
         // Process all horizons and sort by target date
         const sortedPredictions = Object.entries(forecast.predictions || {})
           .sort((a, b) => new Date(a[1].date) - new Date(b[1].date));
-        
+
         sortedPredictions.forEach(([horizon, pred]) => {
           forecastDates.push(pred.date);
-          
+
           if (forecast.type !== 'quantile') {
             return;
           }
           const quantiles = pred.quantiles || [];
           const values = pred.values || [];
-          
+
           // Default to 0 if quantile not found
           const q95Lower = values[quantiles.indexOf(0.025)] || 0;
           const q50Lower = values[quantiles.indexOf(0.25)] || 0;
           const median = values[quantiles.indexOf(0.5)] || 0;
           const q50Upper = values[quantiles.indexOf(0.75)] || 0;
           const q95Upper = values[quantiles.indexOf(0.975)] || 0;
-          
+
           ci95Lower.push(q95Lower);
           ci50Lower.push(q50Lower);
           medianValues.push(median);
@@ -341,7 +342,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
             name: `${model} (${date})`,
             type: 'scatter',
             mode: 'lines+markers',
-            line: { 
+            line: {
               color: modelColor,
               width: 2,
               dash: 'solid'
@@ -369,21 +370,21 @@ const ForecastViz = ({ location, handleStateSelect }) => {
 
     // Only show rate change data for most recent selected date
     const lastSelectedDate = selectedDates.slice().sort().pop();
-    
+
     return selectedModels.map(model => {
       const forecast = data.forecasts[lastSelectedDate]?.['wk flu hosp rate change']?.[model];
       if (!forecast) return null;
 
       const horizon0 = forecast.predictions['0'];
       if (!horizon0) return null;
-      
+
       const modelColor = MODEL_COLORS[selectedModels.indexOf(model) % MODEL_COLORS.length];
-    
+
       const orderedData = categoryOrder.map(cat => ({
         category: cat.replace('_', '<br>'),
         value: horizon0.probabilities[horizon0.categories.indexOf(cat)] * 100
       }));
-      
+
       return {
         name: `${model} (${lastSelectedDate})`,
         y: orderedData.map(d => d.category),
@@ -404,7 +405,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
     switch(currentDataset?.shortName) {
       case 'rsv':
         return (
-          <RSVDefaultView 
+          <RSVDefaultView
             location={location}
             selectedDates={selectedDates}
             availableDates={availableDates}
@@ -419,7 +420,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
       case 'flu':
       default:
         return (
-          <FluView 
+          <FluView
             data={data}
             selectedDates={selectedDates}
             selectedModels={selectedModels}

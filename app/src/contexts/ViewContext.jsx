@@ -21,19 +21,19 @@ export const ViewProvider = ({ children }) => {
   // Handle view type changes
   const handleViewChange = useCallback((newView) => {
     const oldView = viewType;
-    
+
     if (oldView !== newView) {
       // Use URL manager to handle parameter changes
       urlManager.handleViewChange(oldView, newView);
-      
+
       // Clear state for old dataset
-      if (urlManager.getDatasetFromView(oldView)?.shortName !== 
+      if (urlManager.getDatasetFromView(oldView)?.shortName !==
           urlManager.getDatasetFromView(newView)?.shortName) {
         setSelectedDates([]);
         setSelectedModels([]);
         setActiveDate(null);
       }
-      
+
       setViewType(newView);
     }
   }, [viewType, urlManager]);
@@ -85,7 +85,7 @@ export const ViewProvider = ({ children }) => {
     activeDate,
     setActiveDate,
     viewType,
-    setViewType: handleViewChange,
+    setViewType: handleViewChange,  // Ensure this is present
     resetView,
     currentDataset: urlManager.getDatasetFromView(viewType)
   };
