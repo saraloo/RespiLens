@@ -486,46 +486,45 @@ const ForecastViz = ({ location, onBack }) => {
   });
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="border rounded-lg shadow-sm bg-white">
-        <div className="p-4 border-b flex justify-between items-center">
-          <button 
-            onClick={onBack}
-            className="flex items-center text-blue-600 hover:text-blue-800"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Back to State Selection</span>
-          </button>
+    <div className="flex h-screen">
+      <StateSelector
+        onStateSelect={onBack}
+        currentLocation={location}
+        sidebarMode={true}
+      />
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto p-4">
+          <div className="border rounded-lg shadow-sm bg-white">
+            <div className="p-4 border-b flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-14 w-14" />
+                <h2 className="text-2xl font-bold text-blue-600">
+                  RespiLens<sup className="text-red-500 text-xs">α</sup>
+                </h2>
+                <ViewSelector />
+              </div>
+              <InfoOverlay />
+            </div>
 
-          <div className="flex items-center gap-4">
-            <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-14 w-14" />
-            <h2 className="text-2xl font-bold text-blue-600">
-              RespiLens<sup className="text-red-500 text-xs">α</sup>
-            </h2>
-            <ViewSelector />
+            {currentDataset?.hasDateSelector && (
+              <div className="p-4 border-b">
+                <DateSelector
+                  availableDates={availableDates}
+                  selectedDates={selectedDates}
+                  setSelectedDates={setSelectedDates}
+                  activeDate={activeDate}
+                  setActiveDate={setActiveDate}
+                />
+              </div>
+            )}
+
+            <div className="p-4">
+              {getDatasetView()}
+            </div>
           </div>
-
-          <InfoOverlay />
-        </div>
-
-        {currentDataset?.hasDateSelector && (
-          <div className="p-4 border-b">
-            <DateSelector 
-              availableDates={availableDates}
-              selectedDates={selectedDates}
-              setSelectedDates={setSelectedDates}
-              activeDate={activeDate}
-              setActiveDate={setActiveDate}
-            />
-          </div>
-        )}
-
-        <div className="p-4">
-          {getDatasetView()}
         </div>
       </div>
     </div>
   );
-};
 
 export default ForecastViz;

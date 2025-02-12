@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import InfoOverlay from './InfoOverlay';
 import { getDataPath } from '../utils/paths';
 
-const StateSelector = ({ onStateSelect }) => {
+const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = false }) => {
   const [states, setStates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredStates = states.filter(state =>
+    state.location_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    state.abbreviation.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -62,6 +68,35 @@ const StateSelector = ({ onStateSelect }) => {
             <li>Data files are present in app/public/processed_data/</li>
             <li>manifest.json contains valid location data</li>
           </ul>
+        </div>
+      </div>
+    );
+  }
+
+  if (sidebarMode) {
+    return (
+      <div className="w-64 bg-white border-r shadow-lg p-4">
+        <input
+          type="text"
+          placeholder="Search states..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
+        <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+          {filteredStates.map((state) => (
+            <div
+              key={state.location}
+              onClick={() => onStateSelect(state.abbreviation)}
+              className={`p-2 cursor-pointer rounded transition-colors ${
+                currentLocation === state.abbreviation
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              <div className="font-medium">{state.location_name}</div>
+            </div>
+          ))}
         </div>
       </div>
     );
