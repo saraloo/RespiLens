@@ -33,7 +33,7 @@ const AppContent = () => {
     );
   }
 
-  return <ForecastViz location={selectedLocation} onBack={handleStateSelect} />;
+  return <ForecastViz location={selectedLocation} handleStateSelect={handleStateSelect} />;
 };
 
 const App = () => (

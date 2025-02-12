@@ -488,7 +488,7 @@ const ForecastViz = ({ location, onBack }) => {
   return (
     <div className="flex h-screen">
       <StateSelector
-        onStateSelect={onBack}
+        onStateSelect={handleStateSelect}
         currentLocation={location}
         sidebarMode={true}
       />
