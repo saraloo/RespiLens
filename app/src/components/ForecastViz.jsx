@@ -526,5 +526,6 @@ const ForecastViz = ({ location, onBack }) => {
       </div>
     </div>
   );
+};
 
 export default ForecastViz;
