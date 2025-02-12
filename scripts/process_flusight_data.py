@@ -19,18 +19,18 @@ class FluSightPreprocessor:
         self.output_path = Path(output_path)
         self.demo_mode = demo_mode
         self.demo_models = ['UNC_IDD-influpaint', 'FluSight-ensemble']
-        
+
         # Define paths
         self.model_output_path = self.base_path / "model-output"
         self.target_data_path = self.base_path / "target-data/target-hospital-admissions.csv"
         self.locations_path = self.base_path / "auxiliary-data/locations.csv"
-        
+
         # Validate paths exist
         self._validate_paths()
-        
+
         # Create output directory
         self.output_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Cache for processed data
         self.locations_data = None
         self.ground_truth = None
@@ -44,7 +44,7 @@ class FluSightPreprocessor:
             'target_data_path': self.target_data_path,
             'locations_path': self.locations_path
         }
-        
+
         for name, path in required_paths.items():
             if not path.exists():
                 raise ValueError(f"{name} does not exist: {path}")
@@ -62,11 +62,11 @@ class FluSightPreprocessor:
             logger.info("Loading ground truth data...")
             df = pd.read_csv(self.target_data_path)
             df['date'] = pd.to_datetime(df['date'])
-            
+
             # Filter to relevant dates and sort
             df = df[df['date'] >= pd.Timestamp('2023-10-01')].sort_values('date')
             df['date_str'] = df['date'].dt.strftime('%Y-%m-%d')
-            
+
             # Create optimized structure for visualization
             self.ground_truth = {}
             for location in df['location'].unique():
@@ -76,29 +76,29 @@ class FluSightPreprocessor:
                     'values': loc_data['value'].tolist(),
                     'rates': loc_data['weekly_rate'].tolist()
                 }
-                
+
         return self.ground_truth
 
     def read_model_outputs(self) -> Dict:
         """Read and process all model output files efficiently"""
         if self.forecast_data is not None:
             return self.forecast_data
-            
+
         logger.info("Reading model output files...")
         self.forecast_data = {}
-        
+
         # Get list of model directories
         model_dirs = [d for d in self.model_output_path.glob("*") if d.is_dir()]
         if self.demo_mode:
             model_dirs = [d for d in model_dirs if d.name in self.demo_models]
-            
+
         # Progress bar for model processing
         for model_dir in tqdm(model_dirs, desc="Processing models"):
             model_name = model_dir.name
-            
+
             # Get all CSV and parquet files
             files = list(model_dir.glob("*.csv")) + list(model_dir.glob("*.parquet"))
-            
+
             for file_path in files:
                 try:
                     # Read file based on extension
@@ -106,45 +106,45 @@ class FluSightPreprocessor:
                         df = pd.read_csv(file_path)
                     else:  # .parquet
                         df = pd.read_parquet(file_path)
-                        
+
                     # Process dates
                     # remove samples if any
                     df = df[~df['output_type'].str.contains('sample')]
                     df['reference_date'] = pd.to_datetime(df['reference_date'])
                     if 'target_end_date' in df.columns:
                         df['target_end_date'] = pd.to_datetime(df['target_end_date'])
-                    
+
                     # Group by location and organize data
                     for location, loc_group in df.groupby('location'):
                         if location not in self.forecast_data:
                             self.forecast_data[location] = {}
-                            
+
                         # Group by reference date
                         for ref_date, date_group in loc_group.groupby('reference_date'):
                             ref_date_str = ref_date.strftime('%Y-%m-%d')
-                            
+
                             if ref_date_str not in self.forecast_data[location]:
                                 self.forecast_data[location][ref_date_str] = {}
-                                
+
                             # Group by target type
                             for target, target_group in date_group.groupby('target'):
                                 if target not in self.forecast_data[location][ref_date_str]:
                                     self.forecast_data[location][ref_date_str][target] = {}
-                                    
+
                                 # Store model predictions
                                 model_data = self._process_model_predictions(target_group)
                                 self.forecast_data[location][ref_date_str][target][model_name] = model_data
-                                
+
                 except Exception as e:
                     logger.error(f"Error processing {file_path}: {str(e)}")
                     continue
-                    
+
         return self.forecast_data
 
     def _process_model_predictions(self, group_df: pd.DataFrame) -> Dict:
         """Process model predictions into an optimized format for visualization"""
         output_type = group_df['output_type'].iloc[0]
-        
+
         if output_type == 'quantile':
             # For quantiles, create a structure optimized for plotting
             predictions = {}
@@ -156,7 +156,7 @@ class FluSightPreprocessor:
                     'values': horizon_df['value'].tolist()
                 }
             return {'type': 'quantile', 'predictions': predictions}
-            
+
         elif output_type == 'pmf':
             # For probability mass functions
             predictions = {}
@@ -167,7 +167,7 @@ class FluSightPreprocessor:
                     'probabilities': horizon_df['value'].tolist()
                 }
             return {'type': 'pmf', 'predictions': predictions}
-            
+
         else:  # sample
             predictions = {}
             for horizon, horizon_df in group_df.groupby('horizon'):
@@ -180,24 +180,26 @@ class FluSightPreprocessor:
     def create_visualization_payloads(self):
         """Create optimized payloads for visualization"""
         logger.info("Creating visualization payloads...")
-        
+
         # Load required data
         locations = self.load_locations()
         ground_truth = self.load_ground_truth()
         forecast_data = self.read_model_outputs()
-        
+
         # Create output directory if it doesn't exist
         self.output_path.mkdir(parents=True, exist_ok=True)
-        
+
+        # Get all unique models from any location/date/target
+        all_models = set()
+        for loc_data in forecast_data.values():
+            for date_data in loc_data.values():
+                for target_data in date_data.values():
+                    all_models.update(target_data.keys())
+
         # Save metadata about available models
         metadata = {
             'last_updated': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'models': list(set(model 
-                for loc_data in forecast_data.values() 
-                for date_data in loc_data.values() 
-                for target_data in date_data.values() 
-                for model in target_data.keys()
-            )),
+            'models': sorted(list(all_models)),  # Sort for consistent ordering
             'locations': [
                 {
                     'location': str(row.location),
@@ -210,18 +212,18 @@ class FluSightPreprocessor:
             ],
             'demo_mode': self.demo_mode
         }
-        
+
         # Create flusight subdirectory
         payload_path = self.output_path / "flusight"
         payload_path.mkdir(parents=True, exist_ok=True)
-        
+
         with open(payload_path / 'metadata.json', 'w') as f:
             json.dump(metadata, f, indent=2)
-        
+
         # Create and save location-specific payloads
         for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
             location = location_info['location']
-            
+
             # Convert pandas Series to dict first
             metadata_dict = {
                 'location': str(location_info['location']),
@@ -239,7 +241,7 @@ class FluSightPreprocessor:
                 },
                 'forecasts': forecast_data.get(location, {})
             }
-            
+
             # Save location payload with abbreviation in filename
             # Normalize the location abbreviation and remove any whitespace
             location_abbrev = str(location_info['abbreviation']).strip()
@@ -269,24 +271,24 @@ def main():
     parser.add_argument('--log-level', type=str, default='INFO',
                       choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
                       help='Set logging level')
-    
+
     args = parser.parse_args()
-    
+
     # Set logging level
     logging.getLogger().setLevel(args.log_level)
-    
+
     try:
         logger.info(f"Current working directory: {os.getcwd()}")
         logger.info(f"Files in current directory: {os.listdir()}")
         logger.info(f"Starting preprocessing with hub path: {args.hub_path}")
         logger.info(f"Output path: {args.output_path}")
         logger.info(f"Demo mode: {args.demo}")
-        
+
         preprocessor = FluSightPreprocessor(args.hub_path, args.output_path, args.demo)
         preprocessor.create_visualization_payloads()
-        
+
         logger.info("Processing complete!")
-        
+
     except Exception as e:
         logger.error(f"Failed to run preprocessing: {str(e)}")
         raise
