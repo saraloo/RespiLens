@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import json
+import numpy as np
 from pathlib import Path
 import logging
 from typing import Optional, Dict, List
@@ -231,7 +232,11 @@ class FluSightPreprocessor:
 
             payload = {
                 'metadata': metadata_dict,
-                'ground_truth': ground_truth.get(location, {'dates': [], 'values': [], 'rates': []}),
+                'ground_truth': {
+                    'dates': ground_truth.get(location, {'dates': []})['dates'],
+                    'values': [None if pd.isna(x) else x for x in ground_truth.get(location, {'values': []})['values']],
+                    'rates': [None if pd.isna(x) else x for x in ground_truth.get(location, {'rates': []})['rates']]
+                },
                 'forecasts': forecast_data.get(location, {})
             }
             
@@ -241,7 +246,17 @@ class FluSightPreprocessor:
             if not location_abbrev:
                 continue  # Skip if no valid abbreviation
             with open(payload_path / f"{location_abbrev}_flusight.json", 'w') as f:
-                json.dump(payload, f)
+                json.dump(payload, f, cls=NpEncoder)
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj) if not np.isnan(obj) else None
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
 
 def main():
     parser = argparse.ArgumentParser(description='Process FluSight forecast data for visualization')

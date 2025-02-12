@@ -1,96 +1,97 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
-import { DATASETS } from '../config/datasets';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { URLParameterManager } from '../utils/urlManager';
+import { DATASETS } from '../config/datasets';
 
 const ViewContext = createContext(null);
 
 export const ViewProvider = ({ children }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedModels, setSelectedModels] = useState([]);
   const [selectedDates, setSelectedDates] = useState([]);
   const [activeDate, setActiveDate] = useState(null);
-  const [viewType, setViewType] = useState('fludetailed');
-  const [searchParams, setSearchParams] = useState(new URLSearchParams(window.location.search));
+  const [viewType, setViewType] = useState(() => {
+    // Initialize with URL view or default to fludetailed
+    return searchParams.get('view') || 'fludetailed';
+  });
 
   // Create URL manager instance
-  const urlManager = useMemo(() => 
-    new URLParameterManager(searchParams, setSearchParams),
-    [searchParams]
-  );
-
-  const getCurrentDataset = () => {
-    return urlManager.getDatasetFromView(viewType) || DATASETS.flu;
-  };
-
-  // Update URL parameters when state changes
-  const updateURLParams = () => {
-    const dataset = getCurrentDataset();
-    urlManager.updateDatasetParams(dataset, {
-      dates: selectedDates,
-      models: selectedModels
-    });
-  };
+  const urlManager = new URLParameterManager(searchParams, setSearchParams);
 
   // Handle view type changes
-  const handleViewChange = (newView) => {
-    urlManager.handleViewChange(viewType, newView);
-    setViewType(newView);
+  const handleViewChange = useCallback((newView) => {
+    const oldView = viewType;
+    
+    if (oldView !== newView) {
+      // Use URL manager to handle parameter changes
+      urlManager.handleViewChange(oldView, newView);
+      
+      // Clear state for old dataset
+      if (urlManager.getDatasetFromView(oldView)?.shortName !== 
+          urlManager.getDatasetFromView(newView)?.shortName) {
+        setSelectedDates([]);
+        setSelectedModels([]);
+        setActiveDate(null);
+      }
+      
+      setViewType(newView);
+    }
+  }, [viewType, urlManager]);
+
+  // Update dataset parameters
+  const updateDatasetParams = useCallback((params) => {
+    const currentDataset = urlManager.getDatasetFromView(viewType);
+    if (currentDataset) {
+      urlManager.updateDatasetParams(currentDataset, params);
+    }
+  }, [viewType, urlManager]);
+
+  // Reset current view to defaults
+  const resetView = useCallback(() => {
+    const currentDataset = urlManager.getDatasetFromView(viewType);
+    if (!currentDataset) return;
+
+    // Clear parameters
+    urlManager.clearDatasetParams(currentDataset);
+
+    // Set defaults based on dataset configuration
+    if (currentDataset.hasDateSelector) {
+      // Set most recent date
+      const latestDate = window.availableDates?.[window.availableDates.length - 1];
+      if (latestDate) {
+        setSelectedDates([latestDate]);
+        setActiveDate(latestDate);
+        updateDatasetParams({ dates: [latestDate] });
+      }
+    }
+
+    if (currentDataset.hasModelSelector && currentDataset.defaultModel) {
+      setSelectedModels([currentDataset.defaultModel]);
+      updateDatasetParams({ models: [currentDataset.defaultModel] });
+    }
+  }, [viewType, urlManager, updateDatasetParams]);
+
+  const contextValue = {
+    selectedModels,
+    setSelectedModels: (models) => {
+      setSelectedModels(models);
+      updateDatasetParams({ models });
+    },
+    selectedDates,
+    setSelectedDates: (dates) => {
+      setSelectedDates(dates);
+      updateDatasetParams({ dates });
+    },
+    activeDate,
+    setActiveDate,
+    viewType,
+    setViewType: handleViewChange,
+    resetView,
+    currentDataset: urlManager.getDatasetFromView(viewType)
   };
-
-  const resetViews = () => {
-    const dataset = getCurrentDataset();
-    
-    // Clear state
-    setSelectedModels([]);
-    setSelectedDates([]);
-    setActiveDate(null);
-    
-    // Clear URL params
-    urlManager.clearDatasetParams(dataset);
-    
-    // Set default model
-    setSelectedModels([dataset.defaultModel]);
-    
-    // Set most recent date
-    if (window.availableDates?.length > 0) {
-      const latestDate = window.availableDates[window.availableDates.length - 1];
-      setSelectedDates([latestDate]);
-      setActiveDate(latestDate);
-    }
-  };
-
-  // Initialize state from URL params on mount
-  useEffect(() => {
-    const dataset = getCurrentDataset();
-    const params = urlManager.getDatasetParams(dataset);
-    
-    if (params.dates.length > 0) {
-      setSelectedDates(params.dates);
-      setActiveDate(params.dates[params.dates.length - 1]);
-    }
-    
-    if (params.models.length > 0) {
-      setSelectedModels(params.models);
-    } else {
-      setSelectedModels([dataset.defaultModel]);
-    }
-  }, []);
-
-  // Update URL params when state changes
-  useEffect(() => {
-    updateURLParams();
-  }, [selectedDates, selectedModels, viewType]);
 
   return (
-    <ViewContext.Provider value={{
-      selectedModels, setSelectedModels,
-      selectedDates, setSelectedDates,
-      activeDate, setActiveDate,
-      viewType, 
-      setViewType: handleViewChange,
-      resetViews,
-      getCurrentDataset,
-      urlManager
-    }}>
+    <ViewContext.Provider value={contextValue}>
       {children}
     </ViewContext.Provider>
   );

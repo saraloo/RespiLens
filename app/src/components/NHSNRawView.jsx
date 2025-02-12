@@ -6,6 +6,8 @@ import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import ViewSelector from './ViewSelector';
 import InfoOverlay from './InfoOverlay';
+import { useView } from '../contexts/ViewContext';
+import NHSNColumnSelector from './NHSNColumnSelector';
 
 // Color palette for different columns
 const COLUMN_COLORS = [
@@ -14,20 +16,19 @@ const COLUMN_COLORS = [
   '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5'
 ];
 
-const NHSNRawView = ({ location, onBack }) => {
+const NHSNRawView = ({ location }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { currentDataset } = useView();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedColumns, setSelectedColumns] = useState(() => {
-    // Initialize from URL
     return searchParams.get('nhsn_columns')?.split(',') || ['totalconfflunewadm'];
   });
   const [availableColumns, setAvailableColumns] = useState({
     official: [],
     preliminary: []
   });
-  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -154,48 +155,24 @@ const NHSNRawView = ({ location, onBack }) => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="border rounded-lg shadow-sm bg-white">
-        <div className="p-4 border-b flex justify-between items-center">
-          <button 
-            onClick={onBack}
-            className="flex items-center text-blue-600 hover:text-blue-800"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Back to State Selection</span>
-          </button>
-
-          <div className="flex items-center gap-4">
-            <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-14 w-14" />
-            <h2 className="text-2xl font-bold text-blue-600">
-              RespiLens<sup className="text-red-500 text-xs">α</sup>
-            </h2>
-            <ViewSelector />
-          </div>
-
-          <InfoOverlay />
-        </div>
-
-        <div className="p-4">
-          <Plot
-            data={traces}
-            layout={layout}
-            config={{
-              responsive: true,
-              displayModeBar: true,
-              displaylogo: false,
-              modeBarButtonsToAdd: ['resetScale2d']
-            }}
-            className="w-full"
-          />
-          
-          <NHSNColumnSelector 
-            availableColumns={availableColumns}
-            selectedColumns={selectedColumns}
-            setSelectedColumns={setSelectedColumns}
-          />
-        </div>
-      </div>
+    <div className="w-full">
+      <Plot
+        data={traces}
+        layout={layout}
+        config={{
+          responsive: true,
+          displayModeBar: true,
+          displaylogo: false,
+          modeBarButtonsToAdd: ['resetScale2d']
+        }}
+        className="w-full"
+      />
+      
+      <NHSNColumnSelector 
+        availableColumns={availableColumns}
+        selectedColumns={selectedColumns}
+        setSelectedColumns={setSelectedColumns}
+      />
     </div>
   );
 };

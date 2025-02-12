@@ -3,13 +3,16 @@ import { useView } from '../contexts/ViewContext';
 import { DATASETS } from '../config/datasets';
 
 const ViewSelector = () => {
-  const { 
-    viewType, 
-    setViewType,
-    urlManager
-  } = useView();
+  const { viewType, setViewType, currentDataset } = useView();
 
-  const currentDataset = urlManager.getDatasetFromView(viewType);
+  // Generate all possible view options
+  const viewOptions = Object.values(DATASETS).flatMap(dataset => 
+    dataset.views.map(view => ({
+      value: `${dataset.shortName}${view}`,
+      label: `${dataset.fullName} - ${view}`,
+      dataset: dataset.shortName
+    }))
+  );
 
   return (
     <select
@@ -17,15 +20,15 @@ const ViewSelector = () => {
       onChange={(e) => setViewType(e.target.value)}
       className="border rounded px-2 py-1 text-lg bg-white"
     >
-      {Object.values(DATASETS).map(dataset => (
-        dataset.views.map(view => (
-          <option 
-            key={`${dataset.shortName}-${view}`}
-            value={`${dataset.shortName}${view}`}
-          >
-            {dataset.fullName} - {view}
-          </option>
-        ))
+      {viewOptions.map(option => (
+        <option 
+          key={option.value} 
+          value={option.value}
+          // Optionally group options by dataset
+          className={`${option.dataset === currentDataset?.shortName ? 'font-bold' : ''}`}
+        >
+          {option.label}
+        </option>
       ))}
     </select>
   );

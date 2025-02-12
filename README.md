@@ -86,19 +86,32 @@ View switching within a dataset (e.g Flu detailed to Flu Timeseries) should pres
 * URL Parameters Format:
   * location: State abbreviation (e.g. "MA")
   * view: "fludetailed", "flutimeseries", or "rsvdetailed", or "nhsnall"
+
+For flu views:
   * flu_dates: Comma-separated dates for flu views
   * flu_models: Comma-separated model names for flu views
+For rsv views:
   * rsv_dates: Comma-separated dates for RSV view
   * rsv_models: Comma-separated model names for RSV view
+For nshn views:
+  * prelim_col: column to display on the preliminary dataset
+  * final_col: column on the official dataset
 
 Parameter Logic:
-  * URL params are pathogen-specific (flu_ or rsv_ prefix)
+  * URL params are dataset specific (flu_ or rsv_ prefix)
   * Switching between flu views preserves flu_* params
   * Switching between RSV/flu clears old view's params
-Reset clears current view's params and sets defaults:
-  * Most recent date
+Reset clears current view's params and sets defaults. 
+
+Default for flu and rsv views: 
+  *  Most recent date
   *  Default ensemble model plotted (FluSight/hub based on view)
   *  Default axis (8 week before, 5 week after the last date.)
+  *  model selector show possible model
+
+Default for NHSN views
+* Two model selector show columns (for prelim and final data)
+* no date selector
 
 
 Location and view params always preserved
