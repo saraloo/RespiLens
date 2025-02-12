@@ -93,6 +93,10 @@ class FluSightPreprocessor:
         if self.demo_mode:
             model_dirs = [d for d in model_dirs if d.name in self.demo_models]
 
+        # Add model list
+        for model_dir in model_dirs:
+            self.all_models.add(model_dir.name)
+
         # Progress bar for model processing
         for model_dir in tqdm(model_dirs, desc="Processing models"):
             model_name = model_dir.name
@@ -139,21 +143,6 @@ class FluSightPreprocessor:
                 except Exception as e:
                     logger.error(f"Error processing {file_path}: {str(e)}")
                     continue
-
-        # Add model diversity logging and collect all models
-        all_models = set()
-        logger.info("Available locations: %s", list(self.forecast_data.keys()))
-        for location, location_data in self.forecast_data.items():
-            location_models = set()
-            for date, date_data in location_data.items():
-                for target, target_data in date_data.items():
-                    location_models.update(target_data.keys())
-                    all_models.update(target_data.keys())
-
-            logger.info(f"Location {location} models: {sorted(list(location_models))}")
-
-        # Store the all_models set as an instance variable
-        self.all_models = all_models
 
         return self.forecast_data
 
