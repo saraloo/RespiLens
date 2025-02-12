@@ -139,6 +139,21 @@ class FluSightPreprocessor:
                     logger.error(f"Error processing {file_path}: {str(e)}")
                     continue
 
+        # Add model diversity logging and collect all models
+        all_models = set()
+        logger.info("Available locations: %s", list(self.forecast_data.keys()))
+        for location, location_data in self.forecast_data.items():
+            location_models = set()
+            for date, date_data in location_data.items():
+                for target, target_data in date_data.items():
+                    location_models.update(target_data.keys())
+                    all_models.update(target_data.keys())
+
+            logger.info(f"Location {location} models: {sorted(list(location_models))}")
+
+        # Store the all_models set as an instance variable
+        self.all_models = all_models
+
         return self.forecast_data
 
     def _process_model_predictions(self, group_df: pd.DataFrame) -> Dict:
@@ -189,17 +204,10 @@ class FluSightPreprocessor:
         # Create output directory if it doesn't exist
         self.output_path.mkdir(parents=True, exist_ok=True)
 
-        # Get all unique models from any location/date/target
-        all_models = set()
-        for loc_data in forecast_data.values():
-            for date_data in loc_data.values():
-                for target_data in date_data.values():
-                    all_models.update(target_data.keys())
-
         # Save metadata about available models
         metadata = {
             'last_updated': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'models': sorted(list(all_models)),  # Sort for consistent ordering
+            'models': sorted(list(self.all_models)),  # Use the collected models from read_model_outputs
             'locations': [
                 {
                     'location': str(row.location),

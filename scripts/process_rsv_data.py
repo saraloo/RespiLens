@@ -193,19 +193,21 @@ class RSVPreprocessor:
                     logger.error(f"Error processing {file_path}: {str(e)}")
                     continue
 
-        # Add model diversity logging
+        # Add model diversity logging and collect all models
+        all_models = set()
         logger.info("Available locations: %s", list(self.forecast_data.keys()))
         for location, location_data in self.forecast_data.items():
-            models_per_date = {}
+            location_models = set()
             for date, date_data in location_data.items():
-                models_per_date[date] = set()
                 for age_group, age_data in date_data.items():
                     for target, target_data in age_data.items():
-                        models_per_date[date].update(target_data.keys())
+                        location_models.update(target_data.keys())
+                        all_models.update(target_data.keys())
 
-            logger.info(f"Location {location} models per date:")
-            for date, models in models_per_date.items():
-                logger.info(f"  {date}: {list(models)}")
+            logger.info(f"Location {location} models: {sorted(list(location_models))}")
+
+        # Store the all_models set as an instance variable
+        self.all_models = all_models
 
         return self.forecast_data
 
@@ -253,18 +255,10 @@ class RSVPreprocessor:
         # Create output directory if it doesn't exist
         self.output_path.mkdir(parents=True, exist_ok=True)
 
-        # Get all unique models from any location/date/target
-        all_models = set()
-        for loc_data in forecast_data.values():
-            for date_data in loc_data.values():
-                for age_data in date_data.values():
-                    for target_data in age_data.values():
-                        all_models.update(target_data.keys())
-
         # Save metadata about available models and age groups
         metadata = {
             'last_updated': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'models': sorted(list(all_models)),  # Sort for consistent ordering
+            'models': sorted(list(self.all_models)),  # Use the collected models from read_model_outputs
             'age_groups': self.age_groups,
             'locations': [
                 {
