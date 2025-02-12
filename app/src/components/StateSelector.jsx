@@ -22,7 +22,7 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
         if (!manifestResponse.ok) {
           throw new Error(`Failed to fetch metadata: ${manifestResponse.statusText}`);
         }
-        
+
         const metadata = await manifestResponse.json();
         console.log('Loaded metadata:', metadata);
 
@@ -31,9 +31,10 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
         }
 
         // Use the locations data directly from metadata
-        const sortedLocations = metadata.locations.sort((a, b) => 
-          (a.location_name || '').localeCompare(b.location_name || ''));
-        
+        const sortedLocations = metadata.locations.sort((a, b) =>
+          (a.location_name || '').localeCompare(b.location_name || '')
+        );
+
         setStates(sortedLocations);
         setLoading(false);
       } catch (err) {
@@ -86,22 +87,23 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
             placeholder="Search states..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
-        />
-        <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
-          {filteredStates.map((state) => (
-            <div
-              key={state.location}
-              onClick={() => onStateSelect(state.abbreviation)}
-              className={`p-2 cursor-pointer rounded transition-colors ${
-                currentLocation === state.abbreviation
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'hover:bg-gray-100'
-              }`}
-            >
-              <div className="font-medium">{state.location_name}</div>
-            </div>
-          ))}
+            className="w-full p-2 border rounded mb-4"
+          />
+          <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+            {filteredStates.map((state) => (
+              <div
+                key={state.location}
+                onClick={() => onStateSelect(state.abbreviation)}
+                className={`p-2 cursor-pointer rounded transition-colors ${
+                  currentLocation === state.abbreviation
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                <div className="font-medium">{state.location_name}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
