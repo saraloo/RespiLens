@@ -6,7 +6,7 @@ const ViewSelector = () => {
   const { viewType, setViewType, currentDataset } = useView();
 
   // Generate all possible view options
-  const viewOptions = Object.values(DATASETS).flatMap(dataset => 
+  const viewOptions = Object.values(DATASETS).flatMap(dataset =>
     dataset.views.map(view => ({
       value: `${dataset.shortName}${view}`,
       label: `${dataset.fullName} - ${view}`,
@@ -15,22 +15,21 @@ const ViewSelector = () => {
   );
 
   return (
-    <select
-      value={viewType}
-      onChange={(e) => setViewType(e.target.value)}
-      className="border rounded px-2 py-1 text-lg bg-white"
-    >
+    <div className="flex flex-col gap-2">
       {viewOptions.map(option => (
-        <option 
-          key={option.value} 
-          value={option.value}
-          // Optionally group options by dataset
-          className={`${option.dataset === currentDataset?.shortName ? 'font-bold' : ''}`}
+        <div
+          key={option.value}
+          onClick={() => setViewType(option.value)}
+          className={`p-2 cursor-pointer rounded transition-colors ${
+            viewType === option.value
+              ? 'bg-blue-100 text-blue-800'
+              : 'hover:bg-gray-100'
+          }`}
         >
-          {option.label}
-        </option>
+          <div className="font-medium">{option.label}</div>
+        </div>
       ))}
-    </select>
+    </div>
   );
 };
 

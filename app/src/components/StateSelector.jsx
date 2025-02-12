@@ -31,9 +31,12 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
         }
 
         // Use the locations data directly from metadata
-        const sortedLocations = metadata.locations.sort((a, b) =>
-          (a.location_name || '').localeCompare(b.location_name || '')
-        );
+        const sortedLocations = metadata.locations
+          .sort((a, b) => {
+            if (a.abbreviation === 'US') return -1;
+            if (b.abbreviation === 'US') return 1;
+            return (a.location_name || '').localeCompare(b.location_name || '');
+          });
 
         setStates(sortedLocations);
         setLoading(false);
@@ -79,9 +82,11 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
     return (
       <div className="w-64 bg-white border-r shadow-lg flex flex-col">
         <div className="p-4 border-b">
+          <h3 className="font-bold mb-4 text-gray-700">Select View</h3>
           <ViewSelector />
         </div>
         <div className="p-4">
+          <h3 className="font-bold mb-4 text-gray-700">Select Location</h3>
           <input
             type="text"
             placeholder="Search states..."
@@ -89,7 +94,7 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-2 border rounded mb-4"
           />
-          <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
             {filteredStates.map((state) => (
               <div
                 key={state.location}
