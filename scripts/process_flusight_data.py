@@ -19,6 +19,7 @@ class FluSightPreprocessor:
         self.output_path = Path(output_path)
         self.demo_mode = demo_mode
         self.demo_models = ['UNC_IDD-influpaint', 'FluSight-ensemble']
+        self.all_models = set()  # Add this line
 
         # Define paths
         self.model_output_path = self.base_path / "model-output"
@@ -247,7 +248,8 @@ class FluSightPreprocessor:
                     'values': [None if pd.isna(x) else x for x in ground_truth.get(location, {'values': []})['values']],
                     'rates': [None if pd.isna(x) else x for x in ground_truth.get(location, {'rates': []})['rates']]
                 },
-                'forecasts': forecast_data.get(location, {})
+                'forecasts': forecast_data.get(location, {}),
+                'available_models': sorted(list(self.all_models))  # Add this line
             }
 
             # Save location payload with abbreviation in filename

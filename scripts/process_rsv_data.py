@@ -18,6 +18,7 @@ class RSVPreprocessor:
         self.base_path = Path(base_path)
         self.output_path = Path(output_path)
         self.demo_mode = demo_mode
+        self.all_models = set()  # Add this line
 
         # Define paths
         self.model_output_path = self.base_path / "model-output"
@@ -295,7 +296,8 @@ class RSVPreprocessor:
             payload = {
                 'metadata': metadata_dict,
                 'ground_truth': ground_truth.get(location, {}),
-                'forecasts': forecast_data.get(location, {})
+                'forecasts': forecast_data.get(location, {}),
+                'available_models': sorted(list(self.all_models))  # Add this line
             }
 
             # Save location payload with abbreviation in filename
