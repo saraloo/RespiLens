@@ -502,7 +502,6 @@ const ForecastViz = ({ location, handleStateSelect }) => {
                 <h2 className="text-2xl font-bold text-blue-600">
                   RespiLens<sup className="text-red-500 text-xs">α</sup>
                 </h2>
-                <ViewSelector />
               </div>
               <InfoOverlay />
             </div>

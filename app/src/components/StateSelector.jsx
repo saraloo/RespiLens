@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ViewSelector from './ViewSelector';
 import InfoOverlay from './InfoOverlay';
 import { getDataPath } from '../utils/paths';
 
@@ -75,12 +76,16 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
 
   if (sidebarMode) {
     return (
-      <div className="w-64 bg-white border-r shadow-lg p-4">
-        <input
-          type="text"
-          placeholder="Search states..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+      <div className="w-64 bg-white border-r shadow-lg flex flex-col">
+        <div className="p-4 border-b">
+          <ViewSelector />
+        </div>
+        <div className="p-4">
+          <input
+            type="text"
+            placeholder="Search states..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full p-2 border rounded mb-4"
         />
         <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
