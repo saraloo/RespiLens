@@ -7,6 +7,7 @@ import logging
 from typing import Optional, Dict, List
 from tqdm import tqdm
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +45,13 @@ class RSVPreprocessor:
 
         # Define accepted age groups
         self.age_groups = ["0-0.99", "1-4", "5-64", "65-130", "0-130"]
+
+        # Cache file listings
+        self.model_files = {
+            model_dir.name: list(model_dir.glob("*.parquet"))
+            for model_dir in self.model_output_path.glob("*")
+            if model_dir.is_dir()
+        }
 
     def _validate_paths(self):
         """Validate all required paths exist"""
@@ -128,75 +136,95 @@ class RSVPreprocessor:
         for model_dir in model_dirs:
             self.all_models.add(model_dir.name)
 
-        # Progress bar for model processing
-        for model_dir in tqdm(model_dirs, desc="Processing models"):
+        def process_file(file_info):
+            model_name, file_path = file_info
+            try:
+                # Use engine='pyarrow' to ensure compatibility
+                df = pd.read_parquet(file_path, engine='pyarrow')
+
+                # Add default model name if not present
+                if 'model' not in df.columns:
+                    df['model'] = model_name
+
+                # Add origin_date if not present
+                if 'origin_date' not in df.columns and 'forecast_date' in df.columns:
+                    df['origin_date'] = pd.to_datetime(df['forecast_date'])
+
+                # Ensure expected columns exist
+                required_columns = ['location', 'origin_date', 'age_group', 'target', 'output_type', 'output_type_id', 'value']
+
+                missing_columns = [col for col in required_columns if col not in df.columns]
+
+                if missing_columns:
+                    logger.warning(f"Missing columns in {file_path}: {missing_columns}")
+                    return None
+
+                # Process dates and filter
+                df = df[~df['output_type'].str.contains('sample')]
+                df['origin_date'] = pd.to_datetime(df['origin_date'])
+
+                # Group by location and organize data
+                for location, loc_group in df.groupby('location'):
+                    if location not in self.forecast_data:
+                        self.forecast_data[location] = {}
+
+                    # Group by origin date
+                    for origin_date, date_group in loc_group.groupby('origin_date'):
+                        origin_date_str = origin_date.strftime('%Y-%m-%d')
+
+                        if origin_date_str not in self.forecast_data[location]:
+                            self.forecast_data[location][origin_date_str] = {}
+
+                        # Group by age group
+                        for age_group, age_group_data in date_group.groupby('age_group'):
+                            if age_group not in self.age_groups:
+                                continue
+
+                            if age_group not in self.forecast_data[location][origin_date_str]:
+                                self.forecast_data[location][origin_date_str][age_group] = {}
+
+                            # Group by target type
+                            for target, target_group in age_group_data.groupby('target'):
+                                if target not in self.forecast_data[location][origin_date_str][age_group]:
+                                    self.forecast_data[location][origin_date_str][age_group][target] = {}
+
+                                # Store model predictions
+                                model_data = self._process_model_predictions(target_group)
+                                self.forecast_data[location][origin_date_str][age_group][target][model_name] = model_data
+
+                return model_name, file_path, self.forecast_data
+            except Exception as e:
+                logger.error(f"Error processing {file_path}: {str(e)}")
+                return None
+
+        # Create list of work
+        work_items = []
+        for model_dir in model_dirs:
             model_name = model_dir.name
+            files = self.model_files[model_name]
+            work_items.extend([(model_name, f) for f in files])
 
-            # Get all parquet files (RSV hub uses only parquet)
-            files = list(model_dir.glob("*.parquet"))
-
-            for file_path in files:
-                try:
-                    # Use engine='pyarrow' to ensure compatibility
-                    df = pd.read_parquet(file_path, engine='pyarrow')
-
-                    # Log columns for diagnostic purposes
-                    logger.info(f"Processing file: {file_path}")
-                    logger.info(f"DataFrame columns: {list(df.columns)}")
-
-                    # Add default model name if not present
-                    if 'model' not in df.columns:
-                        df['model'] = model_name
-
-                    # Add origin_date if not present
-                    if 'origin_date' not in df.columns and 'forecast_date' in df.columns:
-                        df['origin_date'] = pd.to_datetime(df['forecast_date'])
-
-                    # Ensure expected columns exist
-                    required_columns = ['location', 'origin_date', 'age_group', 'target', 'output_type', 'output_type_id', 'value']
-
-                    missing_columns = [col for col in required_columns if col not in df.columns]
-
-                    if missing_columns:
-                        logger.warning(f"Missing columns in {file_path}: {missing_columns}")
-                        continue
-
-                    # Process dates and filter
-                    df = df[~df['output_type'].str.contains('sample')]
-                    df['origin_date'] = pd.to_datetime(df['origin_date'])
-
-                    # Group by location and organize data
-                    for location, loc_group in df.groupby('location'):
+        # Process in parallel
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(process_file, item) for item in work_items]
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    model_name, file_path, processed_data = result
+                    # Merge processed_data into self.forecast_data
+                    for location, location_data in processed_data.items():
                         if location not in self.forecast_data:
                             self.forecast_data[location] = {}
-
-                        # Group by origin date
-                        for origin_date, date_group in loc_group.groupby('origin_date'):
-                            origin_date_str = origin_date.strftime('%Y-%m-%d')
-
-                            if origin_date_str not in self.forecast_data[location]:
-                                self.forecast_data[location][origin_date_str] = {}
-
-                            # Group by age group
-                            for age_group, age_group_data in date_group.groupby('age_group'):
-                                if age_group not in self.age_groups:
-                                    continue
-
-                                if age_group not in self.forecast_data[location][origin_date_str]:
-                                    self.forecast_data[location][origin_date_str][age_group] = {}
-
-                                # Group by target type
-                                for target, target_group in age_group_data.groupby('target'):
-                                    if target not in self.forecast_data[location][origin_date_str][age_group]:
-                                        self.forecast_data[location][origin_date_str][age_group][target] = {}
-
-                                    # Store model predictions
-                                    model_data = self._process_model_predictions(target_group)
-                                    self.forecast_data[location][origin_date_str][age_group][target][model_name] = model_data
-
-                except Exception as e:
-                    logger.error(f"Error processing {file_path}: {str(e)}")
-                    continue
+                        for date, date_data in location_data.items():
+                            if date not in self.forecast_data[location]:
+                                self.forecast_data[location][date] = {}
+                            for age_group, age_group_data in date_data.items():
+                                if age_group not in self.forecast_data[location][date]:
+                                    self.forecast_data[location][date][age_group] = {}
+                                for target, target_data in age_group_data.items():
+                                    if target not in self.forecast_data[location][date][age_group]:
+                                        self.forecast_data[location][date][age_group][target] = {}
+                                    self.forecast_data[location][date][age_group][target].update(target_data)
 
         return self.forecast_data
 
@@ -210,11 +238,6 @@ class RSVPreprocessor:
             for horizon, horizon_df in group_df.groupby('horizon'):
                 # Sort by quantile to ensure correct order
                 horizon_df = horizon_df.sort_values('output_type_id')
-
-                # Log some additional diagnostic information
-                logger.info(f"Horizon {horizon} for model {group_df['model'].iloc[0]}:")
-                logger.info(f"Quantiles: {horizon_df['output_type_id'].tolist()}")
-                logger.info(f"Values: {horizon_df['value'].tolist()}")
 
                 predictions[str(int(horizon))] = {
                     'quantiles': horizon_df['output_type_id'].astype(float).tolist(),

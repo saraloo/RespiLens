@@ -7,6 +7,7 @@ import logging
 from typing import Optional, Dict, List
 from tqdm import tqdm
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +37,13 @@ class FluSightPreprocessor:
         self.locations_data = None
         self.ground_truth = None
         self.forecast_data = None
+
+        # Cache file listings
+        self.model_files = {
+            model_dir.name: list(model_dir.glob("*.csv")) + list(model_dir.glob("*.parquet"))
+            for model_dir in self.model_output_path.glob("*")
+            if model_dir.is_dir()
+        }
 
     def _validate_paths(self):
         """Validate all required paths exist"""
@@ -97,52 +105,73 @@ class FluSightPreprocessor:
         for model_dir in model_dirs:
             self.all_models.add(model_dir.name)
 
-        # Progress bar for model processing
-        for model_dir in tqdm(model_dirs, desc="Processing models"):
+        def process_file(file_info):
+            model_name, file_path = file_info
+            try:
+                # Read file based on extension
+                if file_path.suffix == '.csv':
+                    df = pd.read_csv(file_path)
+                else:  # .parquet
+                    df = pd.read_parquet(file_path)
+
+                # Process dates
+                # remove samples if any
+                df = df[~df['output_type'].str.contains('sample')]
+                df['reference_date'] = pd.to_datetime(df['reference_date'])
+                if 'target_end_date' in df.columns:
+                    df['target_end_date'] = pd.to_datetime(df['target_end_date'])
+
+                # Group by location and organize data
+                for location, loc_group in df.groupby('location'):
+                    if location not in self.forecast_data:
+                        self.forecast_data[location] = {}
+
+                    # Group by reference date
+                    for ref_date, date_group in loc_group.groupby('reference_date'):
+                        ref_date_str = ref_date.strftime('%Y-%m-%d')
+
+                        if ref_date_str not in self.forecast_data[location]:
+                            self.forecast_data[location][ref_date_str] = {}
+
+                        # Group by target type
+                        for target, target_group in date_group.groupby('target'):
+                            if target not in self.forecast_data[location][ref_date_str]:
+                                self.forecast_data[location][ref_date_str][target] = {}
+
+                            # Store model predictions
+                            model_data = self._process_model_predictions(target_group)
+                            self.forecast_data[location][ref_date_str][target][model_name] = model_data
+
+                return model_name, file_path, self.forecast_data
+            except Exception as e:
+                logger.error(f"Error processing {file_path}: {str(e)}")
+                return None
+
+        # Create list of work
+        work_items = []
+        for model_dir in model_dirs:
             model_name = model_dir.name
+            files = self.model_files[model_name]
+            work_items.extend([(model_name, f) for f in files])
 
-            # Get all CSV and parquet files
-            files = list(model_dir.glob("*.csv")) + list(model_dir.glob("*.parquet"))
-
-            for file_path in files:
-                try:
-                    # Read file based on extension
-                    if file_path.suffix == '.csv':
-                        df = pd.read_csv(file_path)
-                    else:  # .parquet
-                        df = pd.read_parquet(file_path)
-
-                    # Process dates
-                    # remove samples if any
-                    df = df[~df['output_type'].str.contains('sample')]
-                    df['reference_date'] = pd.to_datetime(df['reference_date'])
-                    if 'target_end_date' in df.columns:
-                        df['target_end_date'] = pd.to_datetime(df['target_end_date'])
-
-                    # Group by location and organize data
-                    for location, loc_group in df.groupby('location'):
+        # Process in parallel
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(process_file, item) for item in work_items]
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    model_name, file_path, processed_data = result
+                    # Merge processed_data into self.forecast_data
+                    for location, location_data in processed_data.items():
                         if location not in self.forecast_data:
                             self.forecast_data[location] = {}
-
-                        # Group by reference date
-                        for ref_date, date_group in loc_group.groupby('reference_date'):
-                            ref_date_str = ref_date.strftime('%Y-%m-%d')
-
-                            if ref_date_str not in self.forecast_data[location]:
-                                self.forecast_data[location][ref_date_str] = {}
-
-                            # Group by target type
-                            for target, target_group in date_group.groupby('target'):
-                                if target not in self.forecast_data[location][ref_date_str]:
-                                    self.forecast_data[location][ref_date_str][target] = {}
-
-                                # Store model predictions
-                                model_data = self._process_model_predictions(target_group)
-                                self.forecast_data[location][ref_date_str][target][model_name] = model_data
-
-                except Exception as e:
-                    logger.error(f"Error processing {file_path}: {str(e)}")
-                    continue
+                        for date, date_data in location_data.items():
+                            if date not in self.forecast_data[location]:
+                                self.forecast_data[location][date] = {}
+                            for target, target_data in date_data.items():
+                                if target not in self.forecast_data[location][date]:
+                                    self.forecast_data[location][date][target] = {}
+                                self.forecast_data[location][date][target].update(target_data)
 
         return self.forecast_data
 
