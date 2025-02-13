@@ -281,11 +281,19 @@ class RSVPreprocessor:
                 'population': float(location_info['population'])
             }
 
+            # Before the payload creation, get location-specific models
+            location_models = set()
+            if location in forecast_data:
+                for date_data in forecast_data[location].values():
+                    for age_data in date_data.values():
+                        for target_data in age_data.values():
+                            location_models.update(target_data.keys())
+
             payload = {
                 'metadata': metadata_dict,
                 'ground_truth': ground_truth.get(location, {}),
                 'forecasts': forecast_data.get(location, {}),
-                'available_models': sorted(list(self.all_models))  # Add this line
+                'available_models': sorted(list(location_models))  # Changed from self.all_models
             }
 
             # Save location payload with abbreviation in filename

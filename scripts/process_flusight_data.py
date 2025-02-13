@@ -230,6 +230,13 @@ class FluSightPreprocessor:
                 'population': float(location_info['population'])
             }
 
+            # Before the payload creation, get location-specific models
+            location_models = set()
+            if location in forecast_data:
+                for date_data in forecast_data[location].values():
+                    for target_data in date_data.values():
+                        location_models.update(target_data.keys())
+
             payload = {
                 'metadata': metadata_dict,
                 'ground_truth': {
@@ -238,7 +245,7 @@ class FluSightPreprocessor:
                     'rates': [None if pd.isna(x) else x for x in ground_truth.get(location, {'rates': []})['rates']]
                 },
                 'forecasts': forecast_data.get(location, {}),
-                'available_models': sorted(list(self.all_models))  # Add this line
+                'available_models': sorted(list(location_models))  # Changed from self.all_models
             }
 
             # Save location payload with abbreviation in filename
