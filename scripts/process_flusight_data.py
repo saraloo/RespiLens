@@ -197,7 +197,7 @@ class FluSightPreprocessor:
         # Save metadata about available models
         metadata = {
             'last_updated': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'models': sorted(list(self.all_models)),  # Use the collected models from read_model_outputs
+            'models': sorted(list(self.all_models)),  # Keep global list here
             'locations': [
                 {
                     'location': str(row.location),
@@ -245,7 +245,8 @@ class FluSightPreprocessor:
                     'rates': [None if pd.isna(x) else x for x in ground_truth.get(location, {'rates': []})['rates']]
                 },
                 'forecasts': forecast_data.get(location, {}),
-                'available_models': sorted(list(location_models))  # Changed from self.all_models
+                'available_models': sorted(list(location_models)),  # Location-specific models
+                'all_models': sorted(list(self.all_models))  # Add global model list here too
             }
 
             # Save location payload with abbreviation in filename

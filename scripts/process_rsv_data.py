@@ -247,7 +247,7 @@ class RSVPreprocessor:
         # Save metadata about available models and age groups
         metadata = {
             'last_updated': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'models': sorted(list(self.all_models)),  # Use the collected models from read_model_outputs
+            'models': sorted(list(self.all_models)),  # Keep global list here
             'age_groups': self.age_groups,
             'locations': [
                 {
@@ -293,7 +293,8 @@ class RSVPreprocessor:
                 'metadata': metadata_dict,
                 'ground_truth': ground_truth.get(location, {}),
                 'forecasts': forecast_data.get(location, {}),
-                'available_models': sorted(list(location_models))  # Changed from self.all_models
+                'available_models': sorted(list(location_models)),  # Location-specific models
+                'all_models': sorted(list(self.all_models))  # Add global model list here too
             }
 
             # Save location payload with abbreviation in filename
