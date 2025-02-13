@@ -8,6 +8,7 @@ from datetime import datetime
 import time
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -166,7 +167,7 @@ class NHSNDataDownloader:
         valid_locations = set(official_df['location'].unique()) | set(preliminary_df['location'].unique())
 
         # Create location-specific JSON files
-        for location in valid_locations:
+        for location in tqdm(valid_locations, desc="Saving location data"):
             logger.info(f"Processing location: {location}")
 
             try:

@@ -8,6 +8,7 @@ from typing import Optional, Dict, List
 from tqdm import tqdm
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +45,9 @@ class FluSightPreprocessor:
             for model_dir in self.model_output_path.glob("*")
             if model_dir.is_dir()
         }
+
+        # Add lock for thread safety
+        self.forecast_data_lock = Lock()
 
     def _validate_paths(self):
         """Validate all required paths exist"""
@@ -154,24 +158,32 @@ class FluSightPreprocessor:
             files = self.model_files[model_name]
             work_items.extend([(model_name, f) for f in files])
 
+        # Add progress tracking
+        total_files = sum(len(files) for files in self.model_files.values())
+        logger.info(f"Processing {total_files} files across {len(self.model_files)} models")
+
         # Process in parallel
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(process_file, item) for item in work_items]
-            for future in as_completed(futures):
-                result = future.result()
-                if result:
-                    model_name, file_path, processed_data = result
-                    # Merge processed_data into self.forecast_data
-                    for location, location_data in processed_data.items():
-                        if location not in self.forecast_data:
-                            self.forecast_data[location] = {}
-                        for date, date_data in location_data.items():
-                            if date not in self.forecast_data[location]:
-                                self.forecast_data[location][date] = {}
-                            for target, target_data in date_data.items():
-                                if target not in self.forecast_data[location][date]:
-                                    self.forecast_data[location][date][target] = {}
-                                self.forecast_data[location][date][target].update(target_data)
+        with tqdm(total=total_files, desc="Reading files") as pbar:
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                futures = [executor.submit(process_file, item) for item in work_items]
+                for future in as_completed(futures):
+                    pbar.update(1)
+                    result = future.result()
+                    if result:
+                        with self.forecast_data_lock:
+                            model_name, file_path, processed_data = result
+                            logger.info(f"Merging data from {model_name}")
+                            # Merge processed_data into self.forecast_data
+                            for location, location_data in processed_data.items():
+                                if location not in self.forecast_data:
+                                    self.forecast_data[location] = {}
+                                for date, date_data in location_data.items():
+                                    if date not in self.forecast_data[location]:
+                                        self.forecast_data[location][date] = {}
+                                    for target, target_data in date_data.items():
+                                        if target not in self.forecast_data[location][date]:
+                                            self.forecast_data[location][date][target] = {}
+                                        self.forecast_data[location][date][target].update(target_data)
 
         return self.forecast_data
 
