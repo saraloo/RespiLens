@@ -125,28 +125,31 @@ class FluSightPreprocessor:
                 if 'target_end_date' in df.columns:
                     df['target_end_date'] = pd.to_datetime(df['target_end_date'])
 
+                # Create a local dict for this file's data
+                processed_data = {}
+
                 # Group by location and organize data
                 for location, loc_group in df.groupby('location'):
-                    if location not in self.forecast_data:
-                        self.forecast_data[location] = {}
+                    if location not in processed_data:
+                        processed_data[location] = {}
 
                     # Group by reference date
                     for ref_date, date_group in loc_group.groupby('reference_date'):
                         ref_date_str = ref_date.strftime('%Y-%m-%d')
 
-                        if ref_date_str not in self.forecast_data[location]:
-                            self.forecast_data[location][ref_date_str] = {}
+                        if ref_date_str not in processed_data[location]:
+                            processed_data[location][ref_date_str] = {}
 
                         # Group by target type
                         for target, target_group in date_group.groupby('target'):
-                            if target not in self.forecast_data[location][ref_date_str]:
-                                self.forecast_data[location][ref_date_str][target] = {}
+                            if target not in processed_data[location][ref_date_str]:
+                                processed_data[location][ref_date_str][target] = {}
 
                             # Store model predictions
                             model_data = self._process_model_predictions(target_group)
-                            self.forecast_data[location][ref_date_str][target][model_name] = model_data
+                            processed_data[location][ref_date_str][target][model_name] = model_data
 
-                return model_name, file_path, self.forecast_data
+                return model_name, file_path, processed_data
             except Exception as e:
                 logger.error(f"Error processing {file_path}: {str(e)}")
                 return None
@@ -177,12 +180,11 @@ class FluSightPreprocessor:
                             for location, location_data in processed_data.items():
                                 if location not in self.forecast_data:
                                     self.forecast_data[location] = {}
+                                # Deep merge the data
                                 for date, date_data in location_data.items():
-                                    if date not in self.forecast_data[location]:
-                                        self.forecast_data[location][date] = {}
+                                    self.forecast_data[location][date] = self.forecast_data[location].get(date, {})
                                     for target, target_data in date_data.items():
-                                        if target not in self.forecast_data[location][date]:
-                                            self.forecast_data[location][date][target] = {}
+                                        self.forecast_data[location][date][target] = self.forecast_data[location][date].get(target, {})
                                         self.forecast_data[location][date][target].update(target_data)
 
         return self.forecast_data

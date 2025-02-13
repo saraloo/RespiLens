@@ -167,36 +167,39 @@ class RSVPreprocessor:
                 df = df[~df['output_type'].str.contains('sample')]
                 df['origin_date'] = pd.to_datetime(df['origin_date'])
 
+                # Create a local dict for this file's data
+                processed_data = {}
+
                 # Group by location and organize data
                 for location, loc_group in df.groupby('location'):
-                    if location not in self.forecast_data:
-                        self.forecast_data[location] = {}
+                    if location not in processed_data:
+                        processed_data[location] = {}
 
                     # Group by origin date
                     for origin_date, date_group in loc_group.groupby('origin_date'):
                         origin_date_str = origin_date.strftime('%Y-%m-%d')
 
-                        if origin_date_str not in self.forecast_data[location]:
-                            self.forecast_data[location][origin_date_str] = {}
+                        if origin_date_str not in processed_data[location]:
+                            processed_data[location][origin_date_str] = {}
 
                         # Group by age group
                         for age_group, age_group_data in date_group.groupby('age_group'):
                             if age_group not in self.age_groups:
                                 continue
 
-                            if age_group not in self.forecast_data[location][origin_date_str]:
-                                self.forecast_data[location][origin_date_str][age_group] = {}
+                            if age_group not in processed_data[location][origin_date_str]:
+                                processed_data[location][origin_date_str][age_group] = {}
 
                             # Group by target type
                             for target, target_group in age_group_data.groupby('target'):
-                                if target not in self.forecast_data[location][origin_date_str][age_group]:
-                                    self.forecast_data[location][origin_date_str][age_group][target] = {}
+                                if target not in processed_data[location][origin_date_str][age_group]:
+                                    processed_data[location][origin_date_str][age_group][target] = {}
 
                                 # Store model predictions
                                 model_data = self._process_model_predictions(target_group)
-                                self.forecast_data[location][origin_date_str][age_group][target][model_name] = model_data
+                                processed_data[location][origin_date_str][age_group][target][model_name] = model_data
 
-                return model_name, file_path, self.forecast_data
+                return model_name, file_path, processed_data
             except Exception as e:
                 logger.error(f"Error processing {file_path}: {str(e)}")
                 return None
@@ -227,15 +230,13 @@ class RSVPreprocessor:
                             for location, location_data in processed_data.items():
                                 if location not in self.forecast_data:
                                     self.forecast_data[location] = {}
+                                # Deep merge the data
                                 for date, date_data in location_data.items():
-                                    if date not in self.forecast_data[location]:
-                                        self.forecast_data[location][date] = {}
+                                    self.forecast_data[location][date] = self.forecast_data[location].get(date, {})
                                     for age_group, age_group_data in date_data.items():
-                                        if age_group not in self.forecast_data[location][date]:
-                                            self.forecast_data[location][date][age_group] = {}
+                                        self.forecast_data[location][date][age_group] = self.forecast_data[location][date].get(age_group, {})
                                         for target, target_data in age_group_data.items():
-                                            if target not in self.forecast_data[location][date][age_group]:
-                                                self.forecast_data[location][date][age_group][target] = {}
+                                            self.forecast_data[location][date][age_group][target] = self.forecast_data[location][date][age_group].get(target, {})
                                             self.forecast_data[location][date][age_group][target].update(target_data)
 
         return self.forecast_data
