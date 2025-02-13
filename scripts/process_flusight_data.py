@@ -111,6 +111,8 @@ class FluSightPreprocessor:
 
         def process_file(file_info):
             model_name, file_path = file_info
+            if model_name == 'CADPH-FluCAT_Ensemble':  # Add this debug logging
+                logger.info(f"Processing CADPH model file: {file_path}")
             try:
                 # Read file based on extension
                 if file_path.suffix == '.csv':
@@ -175,7 +177,8 @@ class FluSightPreprocessor:
                     if result:
                         with self.forecast_data_lock:
                             model_name, file_path, processed_data = result
-                            logger.info(f"Merging data from {model_name}")
+                            if model_name == 'CADPH-FluCAT_Ensemble':  # Add these debug logs
+                                logger.info(f"Merging CADPH data with locations: {list(processed_data.keys())}")
                             # Merge processed_data into self.forecast_data
                             for location, location_data in processed_data.items():
                                 if location not in self.forecast_data:
@@ -264,7 +267,13 @@ class FluSightPreprocessor:
         # Create and save location-specific payloads
         for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
             location = location_info['location']
-
+            if location == '06':  # California's FIPS code
+                logger.info(f"CA forecast data models: {[
+                    model
+                    for date_data in forecast_data.get('06', {}).values()
+                    for target_data in date_data.values()
+                    for model in target_data.keys()
+                ]}")
             # Convert pandas Series to dict first
             metadata_dict = {
                 'location': str(location_info['location']),
