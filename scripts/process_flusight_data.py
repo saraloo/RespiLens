@@ -268,12 +268,10 @@ class FluSightPreprocessor:
         for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
             location = location_info['location']
             if location == '06':  # California's FIPS code
-                logger.info(f"CA forecast data models: {[
-                    model
-                    for date_data in forecast_data.get('06', {}).values()
-                    for target_data in date_data.values()
-                    for model in target_data.keys()
-                ]}")
+                models = [model for date_data in forecast_data.get('06', {}).values()
+                          for target_data in date_data.values()
+                          for model in target_data.keys()]
+                logger.info(f"CA forecast data models: {models}")
             # Convert pandas Series to dict first
             metadata_dict = {
                 'location': str(location_info['location']),
