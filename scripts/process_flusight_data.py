@@ -116,9 +116,10 @@ class FluSightPreprocessor:
             try:
                 # Read file based on extension
                 if file_path.suffix == '.csv':
-                    df = pd.read_csv(file_path)
+                    df = pd.read_csv(file_path, dtype={'location': str})  # Force location as string
                 else:  # .parquet
                     df = pd.read_parquet(file_path)
+                    df['location'] = df['location'].astype(str)  # Convert location to string after reading
 
                 # Process dates
                 # remove samples if any
