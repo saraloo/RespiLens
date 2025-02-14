@@ -74,14 +74,14 @@ class RSVPreprocessor:
         """Load and cache locations data"""
         if self.locations_data is None:
             logger.info("Loading locations data...")
-            self.locations_data = pd.read_csv(self.locations_path)
+            self.locations_data = pd.read_csv(self.locations_path, dtype={'location': str})
         return self.locations_data
 
     def load_ground_truth(self) -> Dict:
         """Load and process ground truth data"""
         if self.ground_truth is None:
             logger.info("Loading ground truth data...")
-            df = pd.read_csv(self.target_data_path)
+            df = pd.read_csv(self.target_data_path, dtype={'location': str})
 
             # Filter only inc hosp rows and remove NA values
             df = df[df['target'] == 'inc hosp']
@@ -142,8 +142,6 @@ class RSVPreprocessor:
 
         def process_file(file_info):
             model_name, file_path = file_info
-            if model_name == 'CADPH-FluCAT_Ensemble':  # Add this debug logging
-                logger.info(f"Processing CADPH model file: {file_path}")
             try:
                 # Use engine='pyarrow' to ensure compatibility
                 df = pd.read_parquet(file_path, engine='pyarrow')
@@ -228,8 +226,6 @@ class RSVPreprocessor:
                     if result:
                         with self.forecast_data_lock:
                             model_name, file_path, processed_data = result
-                            if model_name == 'CADPH-FluCAT_Ensemble':  # Add these debug logs
-                                logger.info(f"Merging CADPH data with locations: {list(processed_data.keys())}")
                             # Merge processed_data into self.forecast_data
                             for location, location_data in processed_data.items():
                                 if location not in self.forecast_data:
@@ -312,21 +308,13 @@ class RSVPreprocessor:
         # Create and save location-specific payloads
         for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
             location = location_info['location']
-            if location == '06':  # California's FIPS code
-                models = [model for date_data in forecast_data.get('06', {}).values()
-                          for age_data in date_data.values()
-                          for target_data in age_data.values()
-                          for model in target_data.keys()]
-                logger.info(f"CA forecast data models: {models}")
-            # Convert pandas Series to dict first
+            # Before the payload creation, get location-specific models
             metadata_dict = {
                 'location': str(location_info['location']),
                 'abbreviation': str(location_info['abbreviation']),
                 'location_name': str(location_info['location_name']),
                 'population': float(location_info['population'])
             }
-
-            # Before the payload creation, get location-specific models
             location_models = set()
             if location in forecast_data:
                 for date_data in forecast_data[location].values():

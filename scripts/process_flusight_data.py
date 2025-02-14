@@ -111,8 +111,6 @@ class FluSightPreprocessor:
 
         def process_file(file_info):
             model_name, file_path = file_info
-            if model_name == 'CADPH-FluCAT_Ensemble':  # Add this debug logging
-                logger.info(f"Processing CADPH model file: {file_path}")
             try:
                 # Read file based on extension
                 if file_path.suffix == '.csv':
@@ -178,8 +176,6 @@ class FluSightPreprocessor:
                     if result:
                         with self.forecast_data_lock:
                             model_name, file_path, processed_data = result
-                            if model_name == 'CADPH-FluCAT_Ensemble':  # Add these debug logs
-                                logger.info(f"Merging CADPH data with locations: {list(processed_data.keys())}")
                             # Merge processed_data into self.forecast_data
                             for location, location_data in processed_data.items():
                                 if location not in self.forecast_data:
