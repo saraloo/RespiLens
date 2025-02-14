@@ -147,6 +147,7 @@ class RSVPreprocessor:
             try:
                 # Use engine='pyarrow' to ensure compatibility
                 df = pd.read_parquet(file_path, engine='pyarrow')
+                df['location'] = df['location'].astype(str)  # Convert location to string after reading
 
                 # Add default model name if not present
                 if 'model' not in df.columns:
@@ -312,13 +313,11 @@ class RSVPreprocessor:
         for _, location_info in tqdm(locations.iterrows(), desc="Creating location payloads"):
             location = location_info['location']
             if location == '06':  # California's FIPS code
-                logger.info(f"CA forecast data models: {[
-                    model
-                    for date_data in forecast_data.get('06', {}).values()
-                    for age_data in date_data.values()
-                    for target_data in age_data.values()
-                    for model in target_data.keys()
-                ]}")
+                models = [model for date_data in forecast_data.get('06', {}).values()
+                          for age_data in date_data.values()
+                          for target_data in age_data.values()
+                          for model in target_data.keys()]
+                logger.info(f"CA forecast data models: {models}")
             # Convert pandas Series to dict first
             metadata_dict = {
                 'location': str(location_info['location']),
