@@ -1,12 +1,7 @@
 import React from 'react';
+import { VISUALIZATION_COLORS } from '../config/datasets';
 
-const COLUMN_COLORS = [
-  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
-  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-  '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5'
-];
-
-const NHSNColumnSelector = ({ 
+const NHSNColumnSelector = ({
   availableColumns,
   selectedColumns,
   setSelectedColumns,
@@ -34,8 +29,8 @@ const NHSNColumnSelector = ({
                   : 'border hover:bg-gray-100'
               }`}
               style={
-                selectedColumns.includes(column) 
-                  ? { backgroundColor: COLUMN_COLORS[index % COLUMN_COLORS.length] }
+                selectedColumns.includes(column)
+                  ? { backgroundColor: VISUALIZATION_COLORS[index % VISUALIZATION_COLORS.length] }
                   : undefined
               }
             >
@@ -44,7 +39,7 @@ const NHSNColumnSelector = ({
           ))}
         </div>
       </div>
-      
+
       <div>
         <h3 className="font-bold mb-2">Preliminary Data Columns</h3>
         <div className="flex flex-wrap gap-2">
@@ -58,8 +53,8 @@ const NHSNColumnSelector = ({
                   : 'border hover:bg-gray-100'
               }`}
               style={
-                selectedColumns.includes(column) 
-                  ? { backgroundColor: COLUMN_COLORS[(index + availableColumns.official.length) % COLUMN_COLORS.length] }
+                selectedColumns.includes(column)
+                  ? { backgroundColor: VISUALIZATION_COLORS[(availableColumns.official.length + index) % VISUALIZATION_COLORS.length] }
                   : undefined
               }
             >

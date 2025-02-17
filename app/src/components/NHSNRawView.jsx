@@ -8,13 +8,7 @@ import ViewSelector from './ViewSelector';
 import InfoOverlay from './InfoOverlay';
 import { useView } from '../contexts/ViewContext';
 import NHSNColumnSelector from './NHSNColumnSelector';
-
-// Color palette for different columns
-const COLUMN_COLORS = [
-  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
-  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-  '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5'
-];
+import { VISUALIZATION_COLORS } from '../config/datasets';
 
 const NHSNRawView = ({ location }) => {
   const [data, setData] = useState(null);
@@ -36,20 +30,20 @@ const NHSNRawView = ({ location }) => {
         setLoading(true);
         const url = getDataPath(`nhsn/${location}_nhsn.json`);
         console.log('Fetching NHSN data from:', url);
-        
+
         const response = await fetch(url);
         console.log('NHSN response status:', response.status);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error('No NHSN data available for this location');
           }
           throw new Error('Failed to load NHSN data');
         }
-        
+
         const text = await response.text();
         console.log('Raw NHSN response:', text.slice(0, 500) + '...');
-        
+
         const jsonData = JSON.parse(text);
         console.log('Parsed NHSN data structure:', {
           hasMetadata: !!jsonData.metadata,
@@ -57,27 +51,27 @@ const NHSNRawView = ({ location }) => {
           hasGroundTruth: !!jsonData.ground_truth,
           topLevelKeys: Object.keys(jsonData)
         });
-        
+
         // Validate the data structure
         if (!jsonData.data || !jsonData.data.official) {
           throw new Error('Invalid data format');
         }
-        
+
         setData(jsonData);
-        
+
         // Get available columns (only those with data)
         const officialCols = Object.keys(jsonData.data.official).sort();
         const prelimCols = Object.keys(jsonData.data.preliminary || {}).sort();
-        
+
         setAvailableColumns({
           official: officialCols,
           preliminary: prelimCols
         });
-        
+
         // Get columns from URL if any, otherwise select only totalconfflunewadm
         const urlColumns = searchParams.get('nhsn_columns')?.split(',').filter(Boolean);
         if (urlColumns?.length > 0) {
-          const validColumns = urlColumns.filter(col => 
+          const validColumns = urlColumns.filter(col =>
             officialCols.includes(col) || prelimCols.includes(col)
           );
           setSelectedColumns(validColumns);
@@ -86,7 +80,7 @@ const NHSNRawView = ({ location }) => {
           const defaultColumn = officialCols.find(col => col === 'totalconfflunewadm') || officialCols[0];
           setSelectedColumns([defaultColumn]);
         }
-        
+
       } catch (err) {
         console.error('Error loading NHSN data:', err);
         setError(err.message);
@@ -116,17 +110,15 @@ const NHSNRawView = ({ location }) => {
   if (!data) return <div className="p-4">No NHSN data available for this location</div>;
 
   const traces = selectedColumns.map((column, index) => {
-    const isPrelimininary = column.includes('_prelim');
-    const dataType = isPrelimininary ? 'preliminary' : 'official';
-    
+    const columnIndex = [...availableColumns.official, ...availableColumns.preliminary].indexOf(column);
     return {
       x: data.ground_truth.dates,
       y: data.data[dataType][column],
       name: column,
       type: 'scatter',
       mode: 'lines+markers',
-      line: { 
-        color: COLUMN_COLORS[index % COLUMN_COLORS.length],
+      line: {
+        color: VISUALIZATION_COLORS[columnIndex % VISUALIZATION_COLORS.length],
         width: 2
       },
       marker: { size: 6 }
@@ -167,8 +159,8 @@ const NHSNRawView = ({ location }) => {
         }}
         className="w-full"
       />
-      
-      <NHSNColumnSelector 
+
+      <NHSNColumnSelector
         availableColumns={availableColumns}
         selectedColumns={selectedColumns}
         setSelectedColumns={setSelectedColumns}
@@ -177,4 +169,4 @@ const NHSNRawView = ({ location }) => {
   );
 };
 
-export default NHSNRawView; 
+export default NHSNRawView;
