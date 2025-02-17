@@ -88,7 +88,7 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
               <h3 className="font-bold text-blue-600">RespiLens<sup className="text-red-500 text-xs">α</sup></h3>
             </div>
           </div>
-          <div className="scale-75">
+          <div>
             <InfoOverlay />
           </div>
         </div>

@@ -16,7 +16,7 @@ const InfoOverlay = () => {
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setIsOpen(false)} />
-          <div className="bg-white p-6 rounded-lg max-w-3xl mx-4 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[101] overflow-y-auto max-h-[90vh]">
+          <div className="bg-white p-6 rounded-lg w-[90vw] max-w-3xl mx-4 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[101] overflow-y-auto max-h-[90vh]">
             <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100">
               <X className="w-5 h-5" />
             </button>
