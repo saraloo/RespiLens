@@ -110,7 +110,11 @@ const NHSNRawView = ({ location }) => {
   if (!data) return <div className="p-4">No NHSN data available for this location</div>;
 
   const traces = selectedColumns.map((column, index) => {
+    // Add this line to determine the data type
+    const isPrelimininary = column.includes('_prelim');
+    const dataType = isPrelimininary ? 'preliminary' : 'official';
     const columnIndex = [...availableColumns.official, ...availableColumns.preliminary].indexOf(column);
+
     return {
       x: data.ground_truth.dates,
       y: data.data[dataType][column],
