@@ -33,7 +33,7 @@ const InfoOverlay = () => {
             </button>
 
             <div className="flex items-center gap-2 mb-6">
-              <img src="/respilens-logo.svg" alt="RespiLens logo" className="h-8 w-8" />
+              <img src="respilens-logo.svg" alt="RespiLens logo" className="h-8 w-8" />
               <h2 className="text-2xl font-bold">RespiLens</h2>
               <a href="https://github.com/ACCIDDA/RespiLens"
                  target="_blank"
@@ -45,13 +45,13 @@ const InfoOverlay = () => {
 
             <div className="mb-6 bg-yellow-50 border border-yellow-300 rounded-lg p-4">
               <h3 className="font-bold text-lg mb-2 text-yellow-800">Alpha Version</h3>
-              <p className="text-yellow-800 flex items-center gap-2">
+              <p className="text-yellow-800 items-center">
                 This is an alpha version that may break unexpectedly. URL schemas and features may change.
                 Everyone is welcome to use it, and if you notice something that can be improved,
                 please <a href="https://github.com/ACCIDDA/RespiLens/issues"
                           target="_blank"
                           rel="noopener"
-                          className="text-yellow-700 hover:text-yellow-900 underline">raise an issue</a> on GitHub
+                          className="text-yellow-700 hover:text-yellow-900 underline">raise an issue</a> on GitHub.
               </p>
             </div>
 
