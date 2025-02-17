@@ -20,12 +20,12 @@ export class URLParameterManager {
   getDatasetParams(dataset) {
     const prefix = dataset.prefix;
     const params = {};
-    
+
     if (dataset.hasDateSelector) {
       const dates = this.searchParams.get(`${prefix}_dates`);
       params.dates = dates ? dates.split(',') : [];
     }
-    
+
     if (dataset.hasModelSelector) {
       const models = this.searchParams.get(`${prefix}_models`);
       params.models = models ? models.split(',') : [];
@@ -43,7 +43,7 @@ export class URLParameterManager {
   clearDatasetParams(dataset) {
     const newParams = new URLSearchParams(this.searchParams);
     const prefix = dataset.prefix;
-    
+
     if (dataset.hasDateSelector) {
       newParams.delete(`${prefix}_dates`);
     }
@@ -53,7 +53,7 @@ export class URLParameterManager {
     if (dataset.shortName === 'nhsn') {
       newParams.delete('nhsn_columns');
     }
-    
+
     this.setSearchParams(newParams, { replace: true });
   }
 
@@ -84,7 +84,7 @@ export class URLParameterManager {
   handleViewChange(oldView, newView) {
     const oldDataset = this.getDatasetFromView(oldView);
     const newDataset = this.getDatasetFromView(newView);
-    
+
     // If switching between datasets, clear old dataset's parameters
     if (oldDataset?.shortName !== newDataset?.shortName) {
       this.clearDatasetParams(oldDataset);
@@ -93,6 +93,33 @@ export class URLParameterManager {
     // Update view parameter
     const newParams = new URLSearchParams(this.searchParams);
     newParams.set('view', newView);
+    this.setSearchParams(newParams, { replace: true });
+  }
+
+  updateViewParam(newView) {
+    const newParams = new URLSearchParams(this.searchParams);
+    newParams.set('view', newView);
+    this.setSearchParams(newParams, { replace: true });
+  }
+
+  preserveDatasetParams(location) {
+    const newParams = new URLSearchParams(this.searchParams);
+    newParams.set('location', location);
+
+    // Get current view and dataset
+    const view = newParams.get('view');
+    const dataset = this.getDatasetFromView(view);
+
+    if (dataset) {
+      // Preserve existing dataset parameters
+      const currentParams = this.getDatasetParams(dataset);
+      Object.entries(currentParams).forEach(([key, value]) => {
+        if (Array.isArray(value) && value.length > 0) {
+          newParams.set(`${dataset.prefix}_${key}`, value.join(','));
+        }
+      });
+    }
+
     this.setSearchParams(newParams, { replace: true });
   }
 }
