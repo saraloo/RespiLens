@@ -32,14 +32,14 @@ const InfoOverlay = () => {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-4 mb-6">
               <img src="respilens-logo.svg" alt="RespiLens logo" className="h-8 w-8" />
-              <h2 className="text-2xl font-bold">RespiLens</h2>
+              <h2 className="text-2xl font-bold text-blue-600">RespiLens</h2>
               <a href="https://github.com/ACCIDDA/RespiLens"
                  target="_blank"
                  rel="noopener"
                  className="text-gray-700 hover:text-gray-900">
-                <Github className="w-6 h-6" />
+                <Github className="w-8 h-8" />
               </a>
             </div>
 
