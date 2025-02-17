@@ -10,7 +10,7 @@ const AppContent = () => {
   }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedLocation, setSelectedLocation] = useState(() => {
-    return searchParams.get('location') || null;
+    return searchParams.get('location') || 'US';
   });
 
   const handleStateSelect = (newLocation) => {
