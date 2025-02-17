@@ -506,10 +506,6 @@ const ForecastViz = ({ location, handleStateSelect }) => {
         </button>
         <div className="container mx-auto p-4">
           <div className="border rounded-lg shadow-sm bg-white">
-            <div className="p-4 border-b flex justify-end items-center">
-              {/* Remove the logo and title section, keep only any other controls you need */}
-            </div>
-
             {currentDataset?.hasDateSelector && (
               <div className="p-4 border-b">
                 <DateSelector

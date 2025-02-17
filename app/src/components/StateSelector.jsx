@@ -83,12 +83,14 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
       <div className="w-64 min-w-64 bg-white border-r shadow-lg flex flex-col h-screen overflow-hidden">
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center">
-            <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-10 w-10" />
+            <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-12 w-12" />
             <div className="ml-2">
               <h3 className="font-bold text-blue-600">RespiLens<sup className="text-red-500 text-xs">α</sup></h3>
             </div>
           </div>
-          <InfoOverlay />
+          <div className="scale-75">
+            <InfoOverlay />
+          </div>
         </div>
         <div className="p-4 border-b">
           <h3 className="font-bold mb-4 text-gray-700">Select View</h3>
