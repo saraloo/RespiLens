@@ -80,12 +80,16 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
 
   if (sidebarMode) {
     return (
-      <div className="w-64 bg-white border-r shadow-lg flex flex-col">
+      <div className="w-64 min-w-64 bg-white border-r shadow-lg flex flex-col h-screen overflow-hidden">
+        <div className="p-4 border-b flex items-center justify-center">
+          <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-10 w-10" />
+          <h3 className="font-bold ml-2 text-gray-700">RespiLens</h3>
+        </div>
         <div className="p-4 border-b">
           <h3 className="font-bold mb-4 text-gray-700">Select View</h3>
           <ViewSelector />
         </div>
-        <div className="p-4">
+        <div className="p-4 flex-1 overflow-hidden">
           <h3 className="font-bold mb-4 text-gray-700">Select Location</h3>
           <input
             type="text"
@@ -94,7 +98,7 @@ const StateSelector = ({ onStateSelect, currentLocation = null, sidebarMode = fa
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-2 border rounded mb-4"
           />
-          <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+          <div className="overflow-y-auto h-full">
             {filteredStates.map((state) => (
               <div
                 key={state.location}

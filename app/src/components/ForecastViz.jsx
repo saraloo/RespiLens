@@ -5,7 +5,7 @@ import FluView from './FluView';
 import InfoOverlay from './InfoOverlay';
 import { useView } from '../contexts/ViewContext';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ViewSelector from './ViewSelector';
 import Plot from 'react-plotly.js';
 import NHSNRawView from './NHSNRawView';
@@ -45,6 +45,7 @@ const ForecastViz = ({ location, handleStateSelect }) => {
     height: window.innerHeight
   });
   const [searchParams, setSearchParams] = useSearchParams();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // 2. Define all useEffects
   useEffect(() => {
@@ -489,12 +490,20 @@ const ForecastViz = ({ location, handleStateSelect }) => {
 
   return (
     <div className="flex h-screen">
-      <StateSelector
-        onStateSelect={handleStateSelect}
-        currentLocation={location}
-        sidebarMode={true}
-      />
-      <div className="flex-1 overflow-auto">
+      {!sidebarCollapsed && (
+        <StateSelector
+          onStateSelect={handleStateSelect}
+          currentLocation={location}
+          sidebarMode={true}
+        />
+      )}
+      <div className="flex-1 overflow-auto relative">
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white shadow hover:bg-gray-50"
+        >
+          {sidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
+        </button>
         <div className="container mx-auto p-4">
           <div className="border rounded-lg shadow-sm bg-white">
             <div className="p-4 border-b flex justify-between items-center">
