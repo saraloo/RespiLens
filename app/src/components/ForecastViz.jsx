@@ -145,16 +145,18 @@ const ForecastViz = ({ location, handleStateSelect }) => {
     }
 
     const fetchData = async () => {
-      // Clear existing state when switching views
-      setData(null);
-      setError(null);
-      setLoading(true);
-      setSelectedDates([]); // Clear dates
-      setSelectedModels([]); // Clear models
-      setAvailableDates([]); // Clear available dates
-      setModels([]); // Clear models list
-
       try {
+        // Don't clear state when fetching new data
+        setData(null);
+        setError(null);
+        setLoading(true);
+
+        // Don't clear these anymore:
+        // setSelectedDates([]);
+        // setSelectedModels([]);
+        // setAvailableDates([]);
+        // setModels([]);
+
         // Determine which file to load based on view type
         const prefix = viewType === 'rsvdetailed' ? 'rsv' : 'flusight';
         const url = getDataPath(`${prefix}/${location}_${prefix}.json`);

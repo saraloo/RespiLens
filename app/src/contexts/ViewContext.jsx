@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { URLParameterManager } from '../utils/urlManager';
 import { DATASETS } from '../config/datasets';
@@ -25,6 +25,26 @@ export const ViewProvider = ({ children }) => {
 
   // Create URL manager instance
   const urlManager = new URLParameterManager(searchParams, setSearchParams);
+
+  // Add new useEffect at the beginning of ViewProvider
+  useEffect(() => {
+    // Get current dataset and its parameters
+    const currentDataset = urlManager.getDatasetFromView(viewType);
+    if (!currentDataset) return;
+
+    const params = urlManager.getDatasetParams(currentDataset);
+
+    // Set dates if we have them in URL and none are selected
+    if (params.dates?.length > 0 && selectedDates.length === 0) {
+      setSelectedDates(params.dates);
+      setActiveDate(params.dates[params.dates.length - 1]);
+    }
+
+    // Set models if we have them in URL and none are selected
+    if (params.models?.length > 0 && selectedModels.length === 0) {
+      setSelectedModels(params.models);
+    }
+  }, [viewType, searchParams]); // Only run when view type or URL params change
 
   // Handle view type changes
   const handleViewChange = useCallback((newView) => {

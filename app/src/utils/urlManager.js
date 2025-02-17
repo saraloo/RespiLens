@@ -106,18 +106,32 @@ export class URLParameterManager {
     const newParams = new URLSearchParams(this.searchParams);
     newParams.set('location', location);
 
-    // Get current view and dataset
-    const view = newParams.get('view');
-    const dataset = this.getDatasetFromView(view);
+    // Preserve view parameter
+    const view = this.searchParams.get('view');
+    if (view) {
+      newParams.set('view', view);
 
-    if (dataset) {
-      // Preserve existing dataset parameters
-      const currentParams = this.getDatasetParams(dataset);
-      Object.entries(currentParams).forEach(([key, value]) => {
-        if (Array.isArray(value) && value.length > 0) {
-          newParams.set(`${dataset.prefix}_${key}`, value.join(','));
+      // Get current dataset
+      const dataset = this.getDatasetFromView(view);
+      if (dataset) {
+        // Get and preserve all current parameters
+        const params = this.getDatasetParams(dataset);
+
+        // Preserve dates
+        if (params.dates?.length > 0) {
+          newParams.set(`${dataset.prefix}_dates`, params.dates.join(','));
         }
-      });
+
+        // Preserve models
+        if (params.models?.length > 0) {
+          newParams.set(`${dataset.prefix}_models`, params.models.join(','));
+        }
+
+        // Preserve NHSN columns if applicable
+        if (dataset.shortName === 'nhsn' && params.columns?.length > 0) {
+          newParams.set('nhsn_columns', params.columns.join(','));
+        }
+      }
     }
 
     this.setSearchParams(newParams, { replace: true });
