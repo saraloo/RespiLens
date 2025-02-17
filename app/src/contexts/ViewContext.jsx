@@ -35,8 +35,10 @@ export const ViewProvider = ({ children }) => {
       urlManager.handleViewChange(oldView, newView);
 
       // Clear state for old dataset
-      if (urlManager.getDatasetFromView(oldView)?.shortName !==
-          urlManager.getDatasetFromView(newView)?.shortName) {
+      const oldDataset = urlManager.getDatasetFromView(oldView);
+      const newDataset = urlManager.getDatasetFromView(newView);
+      if (oldDataset?.shortName !== newDataset?.shortName) {
+        // Only clear state when switching between different datasets (e.g., flu to rsv)
         setSelectedDates([]);
         setSelectedModels([]);
         setActiveDate(null);
