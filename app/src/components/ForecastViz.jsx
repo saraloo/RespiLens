@@ -506,14 +506,8 @@ const ForecastViz = ({ location, handleStateSelect }) => {
         </button>
         <div className="container mx-auto p-4">
           <div className="border rounded-lg shadow-sm bg-white">
-            <div className="p-4 border-b flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <img src="respilens-logo.svg" alt="RespiLens Logo" className="h-14 w-14" />
-                <h2 className="text-2xl font-bold text-blue-600">
-                  RespiLens<sup className="text-red-500 text-xs">α</sup>
-                </h2>
-              </div>
-              <InfoOverlay />
+            <div className="p-4 border-b flex justify-end items-center">
+              {/* Remove the logo and title section, keep only any other controls you need */}
             </div>
 
             {currentDataset?.hasDateSelector && (
