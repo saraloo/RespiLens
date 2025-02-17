@@ -77,8 +77,14 @@ Features
 
 There are 3 dataset and many view, some per dataset some multidateset
 * flusight with shortkey: flu
-* rsvforecasthub with shortkey rsv
-* nhsn with shortkey nhsn
+* rsvforecasthub with shortkey: rsv
+* nhsn with shortkey: nhsn
+  
+There are currently 4 views:
+* Flu detailed 
+* Flu Timeserie
+* RSV View
+* NHSN View
 
 View switching within a dataset (e.g Flu detailed to Flu Timeseries) should preserve all url Parameters
 * View switching should between dataset should reset all url parameters to be empty and the plot to be the default
@@ -112,6 +118,9 @@ Default for flu and rsv views:
 Default for NHSN views
 * Two model selector show columns (for prelim and final data)
 * no date selector
+
+The information overlay:
+* should close on escape
 
 
 Location and view params always preserved
