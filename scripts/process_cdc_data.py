@@ -17,9 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class CDCData:
-    """
-    A class to retrieve and store data + metadata for a specified CDC resource.
-    """
+    
     def __init__(self, resource_id: str):
         """
         Initialize the CDCData class.
@@ -28,44 +26,56 @@ class CDCData:
             resource_id: The unique resource identifier string.
         """
         self.data_url = "https://data.cdc.gov/resource/" + f"{resource_id}.json"
-        self.metadata_url = "https://data.dcd.gov/api/views/" + f"{resource_id}.json"
+        self.metadata_url = "https://data.cdc.gov/api/views/" + f"{resource_id}.json"
     
-    def download_cdc_data(self, replace_column_names: bool = True) -> dict: # return dict with df and dict of metadata info
+    def download_cdc_data(self, replace_column_names: bool = True, get_raw_json: bool = False) -> dict: # return dict with df or json of data and dict of metadata info
         """
         Retrieves and stores data + metadata for specified resource_id.
         
         Arg:
             replace_column_names: Flag to replace short column names with long names.
+            get_raw_json: Flag to return a raw json of the data (instead of a pd.DataFrame)
         
         Returns:
-            A dictionary with;
-                'data' storing the pd.DataFrame of data, and
-                'metadata' storing a dictionary of metadata.
+            If get_raw_json = False, a dictionary with;
+                'data' storing data as a pd.Dataframe, and
+                'metadata' storing metadata as a dictionary of raw json.
+            If get_raw_json = True, a dictionary with; 
+                'data' storing the data as a dictionary of raw json, and
+                'metadata' storing the metadata as a dictionary of raw json.
         """
         
         # Initialize dictionary to hold output
         output = {}
         
-        
         # Retrieve metadata from endpoint
         logger.info(f"Retrieving metadata from {self.metadata_url}.")
-        metadata = self.download_metadata_from_endpoint()
+        metadata = self.download_data_from_endpoint_raw("metadata")
         
-        # Retrieve data from endpoint and convert to DataFrame
-        logger.info(f"Retrieving data from {self.data_url}.")
-        data_list = self.download_data_from_endpoint()
-        data_df = pd.DataFrame(data_list)
+        # Retrieve data from endpoint and convert to DataFrame (if get_raw_json = False)
+        if not get_raw_json:
+            logger.info(f"Retrieving data from {self.data_url}.")
+            data_list = self.download_data_from_endpoint_DF()
+            data = pd.DataFrame(data_list)
+            if replace_column_names:
+                data = self.replace_column_names(data, metadata)
         
-        if replace_column_names:
-            data_df = self.replace_column_names(data_df, metadata)
-        
+        # Retrieve data from endpont leave as a json
+        if get_raw_json: 
+            logger.info(f"Retrieving data from {self.data_url}.")
+            if replace_column_names: # Give warning if args conflict
+                logger.warning("replace_column_names == True, but column names will not be replaced")
+                logger.warning("because get_raw_json == True overrides. Returning data as a json.")
+            data = self.download_data_from_endpoint_raw("data")
+                    
         # Add DataFrame and metadata to output dict
         output['metadata'] = metadata  
-        output['data'] = data_df
+        output['data'] = data
         
+        logging.info("Success.")
         return output
     
-    def downlod_data_from_endpoint(self) -> list[dict]:
+    def download_data_from_endpoint_DF(self) -> list[dict]:
         """
         Download CDC data from a given endpoint with pagination.
             
@@ -102,21 +112,31 @@ class CDCData:
                 
         return all_data
     
-    def download_metadata_from_endpoint(self) -> dict: 
+    def download_data_from_endpoint_raw(self, type_of_data: str) -> dict: 
         """
-        Downlaod CDC metadata from a given endpoint.
+        Downlaod CDC data from a given endpoint as a dict (leave in json format).
         
         Returns:
-            A dictionary of the metadata for specified resource.
+            A dictionary of the data for specified resource.
         """
         
         # Retrieve metadata from endpoint 
-        metadata_response = requests.get(self.metadata_url)
-        metadata = metadata_response.json()
+        if type_of_data == "metadata":
+            metadata_response = requests.get(self.metadata_url)
+            metadata = metadata_response.json()
+            return metadata
+            
+        # Retrieve data from endpoint
+        elif type_of_data == "data":
+            data_response = requests.get(self.data_url)
+            data = data_response.json()
+            return data
         
-        return metadata
+        # Incorrect type_of_data provided
+        else:
+            raise ValueError("type_of_data parameter must be either 'metadata' or 'data'.")
     
-    def replace_column_names(data: pd.DataFrame, metadata: dict) -> pd.DataFrame:
+    def replace_column_names(self, data: pd.DataFrame, metadata: dict) -> pd.DataFrame:
         """
         Replace short-form column names with long-form column names.
         
@@ -127,5 +147,10 @@ class CDCData:
         Returns:
             A pd.DataFrame with long-form column names.
         """
-        pass # To be written
 
+        df_columns = []
+        for column_index in range(len(metadata['columns'])):
+            df_columns.append(metadata['columns'][column_index]['name'])
+        data.columns = df_columns
+        
+        return data
