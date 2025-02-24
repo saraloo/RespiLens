@@ -2,6 +2,7 @@
 module-level docs
 """
 
+import argparse
 import json
 import logging
 import time
@@ -18,31 +19,29 @@ logger = logging.getLogger(__name__)
 
 class CDCData:
     
-    def __init__(self, resource_id: str):
+    def __init__(self, resource_id: str, output_path: str):
         """
         Initialize the CDCData class.
         
         Args:
             resource_id: The unique resource identifier string.
         """
+        self.resource_id = resource_id
         self.data_url = "https://data.cdc.gov/resource/" + f"{resource_id}.json"
         self.metadata_url = "https://data.cdc.gov/api/views/" + f"{resource_id}.json"
+        self.output_path = Path(output_path)
     
-    def download_cdc_data(self, replace_column_names: bool = True, get_raw_json: bool = False) -> dict: # return dict with df or json of data and dict of metadata info
+    def download_cdc_data(self, replace_column_names: bool = True) -> dict: # return dict with DataFrame of data and dict of metadata info
         """
         Retrieves and stores data + metadata for specified resource_id.
         
         Arg:
             replace_column_names: Flag to replace short column names with long names.
-            get_raw_json: Flag to return a raw json of the data (instead of a pd.DataFrame)
         
         Returns:
-            If get_raw_json = False, a dictionary with;
+            A dictionary with;
                 'data' storing data as a pd.Dataframe, and
                 'metadata' storing metadata as a dictionary of raw json.
-            If get_raw_json = True, a dictionary with; 
-                'data' storing the data as a dictionary of raw json, and
-                'metadata' storing the metadata as a dictionary of raw json.
         """
         
         # Initialize dictionary to hold output
@@ -50,23 +49,14 @@ class CDCData:
         
         # Retrieve metadata from endpoint
         logger.info(f"Retrieving metadata from {self.metadata_url}.")
-        metadata = self.download_data_from_endpoint_raw("metadata")
+        metadata = self.download_metadata_from_endpoint()
         
-        # Retrieve data from endpoint and convert to DataFrame (if get_raw_json = False)
-        if not get_raw_json:
-            logger.info(f"Retrieving data from {self.data_url}.")
-            data_list = self.download_data_from_endpoint_DF()
-            data = pd.DataFrame(data_list)
-            if replace_column_names:
-                data = self.replace_column_names(data, metadata)
-        
-        # Retrieve data from endpont leave as a json
-        if get_raw_json: 
-            logger.info(f"Retrieving data from {self.data_url}.")
-            if replace_column_names: # Give warning if args conflict
-                logger.warning("replace_column_names == True, but column names will not be replaced")
-                logger.warning("because get_raw_json == True overrides. Returning data as a json.")
-            data = self.download_data_from_endpoint_raw("data")
+        # Retrieve data from endpoint and convert to DataFrame
+        logger.info(f"Retrieving data from {self.data_url}.")
+        data_list = self.download_data_from_endpoint()
+        data = pd.DataFrame(data_list)
+        if replace_column_names:
+            data = self.replace_column_names(data, metadata)
                     
         # Add DataFrame and metadata to output dict
         output['metadata'] = metadata  
@@ -75,7 +65,7 @@ class CDCData:
         logging.info("Success.")
         return output
     
-    def download_data_from_endpoint_DF(self) -> list[dict]:
+    def download_data_from_endpoint(self) -> list[dict]:
         """
         Download CDC data from a given endpoint with pagination.
             
@@ -112,29 +102,18 @@ class CDCData:
                 
         return all_data
     
-    def download_data_from_endpoint_raw(self, type_of_data: str) -> dict: 
+    def download_metadata_from_endpoint(self) -> dict: 
         """
-        Downlaod CDC data from a given endpoint as a dict (leave in json format).
+        Download CDC metadata from a given endpoint as a dict (leave in json format).
         
         Returns:
             A dictionary of the data for specified resource.
         """
+        # Get metadata as json (dict)
+        metadata_response = requests.get(self.metadata_url)
+        metadata = metadata_response.json()
         
-        # Retrieve metadata from endpoint 
-        if type_of_data == "metadata":
-            metadata_response = requests.get(self.metadata_url)
-            metadata = metadata_response.json()
-            return metadata
-            
-        # Retrieve data from endpoint
-        elif type_of_data == "data":
-            data_response = requests.get(self.data_url)
-            data = data_response.json()
-            return data
-        
-        # Incorrect type_of_data provided
-        else:
-            raise ValueError("type_of_data parameter must be either 'metadata' or 'data'.")
+        return metadata
     
     def replace_column_names(self, data: pd.DataFrame, metadata: dict) -> pd.DataFrame:
         """
@@ -142,7 +121,7 @@ class CDCData:
         
         Args:
             data: A pd.DataFrame of the data
-            metadat: A dictionary of metadata containing column name information
+            metadata: A dictionary of metadata containing column name information
             
         Returns:
             A pd.DataFrame with long-form column names.
@@ -154,3 +133,94 @@ class CDCData:
         data.columns = df_columns
         
         return data
+    
+    def save_data_csv(self, data: pd.DataFrame, metadata: dict) -> None:
+        """
+        A method to save data at specified output_path as a CSV.
+        
+        Args:
+            data: A pd.DataFrame containing the data.
+            metadata: A dict containing the metadata.
+        """
+        # Create directories
+        directory = self.output_path / f"cdc_{self.resource_id}"
+        directory.mkdir(parents = True, exist_ok = True)
+        logger.info(f"Saving data as CSV to {directory}...")
+        
+        # Save data to CSV, metadata to json
+        data.to_csv(f"{directory}/data.csv", index=False)
+        with open(f"{directory}/metadata.json", "w") as metadata_json_file:
+            json.dump(metadata, metadata_json_file, indent = 4)
+            
+        logger.info("Success.")
+    
+    def save_data_json(self, metadata: dict) -> None: # Don't need data arg because it will be retrieved separately as a json
+        """
+        A method to save data at specified output_path as a json.
+        """
+        # Create directories
+        directory = self.output_path / f"cdc_{self.resource_id}"
+        directory.mkdir(parents = True, exist_ok = True)
+        logger.info(f"Saving data as json to {directory}...")
+        
+        # Retrieve data as raw json
+        data_json_response = requests.get(self.data_url)
+        data_json = data_json_response.json()
+        
+        # Save data and metadata to json
+        with open(f"{directory}/data.json", "w") as data_json_file:
+            json.dump(data_json, data_json_file, indent = 4)
+        with open(f"{directory}/metadata.json", "w") as metadata_json_file:
+            json.dump(metadata, metadata_json_file, indent = 4)
+            
+        logger.info("Success.")
+        
+
+def main():
+    """
+    Main execution function.
+    """
+    # Create CL options 
+    parser = argparse.ArgumentParser(description = "Download CDC data.")
+    parser.add_argument("--resource-id",
+                       type = str,
+                       help = "Unique identifier for resource; found in resource URL.")
+    parser.add_argument("--output-path", 
+                       type = str,
+                       help = "Pathway to directory to save data to.")
+    parser.add_argument("--replace-column-names",
+                       action="store_true",  
+                       default=True, 
+                       help="Replace short-form column names with long-form.")
+    parser.add_argument("--dont-replace-column-names",
+                       action="store_false", 
+                       dest="replace_column_names",  
+                       help="Don't replace short-form column names with long-form.")
+    parser.add_argument("--save-json", # Can save as both json and csv (options are not mutually exclusive)
+                       action = "store_true",
+                       help = "Save data locally as json.")
+    parser.add_argument("--save-csv", 
+                       action = "store_true",
+                       help = "Save data locally as CSV.")
+    args = parser.parse_args()
+    
+    try:
+        # Initialize the CDCData instance
+        cdc_data = CDCData(args.resource_id, args.output_path)
+    
+        # Store data and metadata from resource_id in a dictionary 
+        data_and_metadata = cdc_data.download_cdc_data(args.replace_column_names)
+    
+        # Save data locally, according to user input
+        if args.save_csv:
+            cdc_data.save_csv(data_and_metadata["data"], data_and_metadata["metadata"])
+        if args.save_json:
+            cdc_data.save_json(data_and_metadata["metadata"])
+            
+    except Exception as e:
+        logger.error(f"Failed to download and/or save CDC data: {str(e)}")
+        raise 
+
+
+if __name__ == "__main__":
+    main()
