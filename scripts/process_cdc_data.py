@@ -213,9 +213,9 @@ def main():
     
         # Save data locally, according to user input
         if args.save_csv:
-            cdc_data.save_csv(data_and_metadata["data"], data_and_metadata["metadata"])
+            cdc_data.save_data_csv(data_and_metadata["data"], data_and_metadata["metadata"])
         if args.save_json:
-            cdc_data.save_json(data_and_metadata["metadata"])
+            cdc_data.save_data_json(data_and_metadata["metadata"])
             
     except Exception as e:
         logger.error(f"Failed to download and/or save CDC data: {str(e)}")
