@@ -14,7 +14,7 @@ from threading import Lock
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class FluSightPreprocessor:
+class NCPreprocessor:
     def __init__(self, base_path: str, output_path: str, demo_mode: bool = False):
         """Initialize preprocessor with paths and mode settings"""
         self.base_path = Path(base_path)
@@ -73,22 +73,78 @@ class FluSightPreprocessor:
         """Load and process ground truth data"""
         if self.ground_truth is None:
             logger.info("Loading ground truth data...")
+            
             df = pd.read_csv(self.target_data_path)
+            # Convert location column to strings
+            df['location'] = df['location'].astype(str)
             df['date'] = pd.to_datetime(df['date'])
 
             # Filter to relevant dates and sort
             df = df[df['date'] >= pd.Timestamp('2023-10-01')].sort_values('date')
             df['date_str'] = df['date'].dt.strftime('%Y-%m-%d')
+            locations = pd.read_csv('./FluSight-forecast-hub/auxiliary-data/locations.csv')
 
-            # Create optimized structure for visualization
-            self.ground_truth = {}
+            # Load locations
+            logger.info(f"Loading locations data from {self.target_data_path}")
+
             for location in df['location'].unique():
-                loc_data = df[df['location'] == location]
+            # print(location_array)
+            # location = location_array[0] #extract the string
+
+                loc_data = df[df['location'] == location].sort_values('date')
+
+                # Find matching location in locations data
+                matching_location = None
+                for _, row in locations.iterrows():
+                    if row['abbreviation'].upper() == location.upper() or row['location'] == location:
+                        matching_location = row.to_dict()
+                        break
+
+                if matching_location:
+                    # Use location info from locations.csv
+                    metadata = {
+                        "location": matching_location['location'],
+                        "abbreviation": matching_location['abbreviation'],
+                        "location_name": matching_location['location_name'],
+                        "population": float(matching_location['population'])
+                    }
+                else:
+                    # Fallback to Flusight location if no match
+                    logger.warning(f"Location '{location}' not found in locations file.")
+                    metadata = {
+                        "location": location,
+                        "abbreviation": location,
+                        "location_name": location,
+                        "population": 0.0
+                    }
+
+                # Process data
+                self.ground_truth = {}
+                values = []
+                dates = []
+                for _, row in loc_data.iterrows():
+                    try:
+                        values.append(float(row['value']))
+                        dates.append(pd.to_datetime(row['date']).strftime('%Y-%m-%d'))
+                    except (ValueError, TypeError):
+                        values.append(None)
+                        dates.append(pd.to_datetime(row['date']).strftime('%Y-%m-%d'))
+                
                 self.ground_truth[location] = {
-                    'dates': loc_data['date_str'].tolist(),
-                    'values': loc_data['value'].tolist(),
-                    'rates': loc_data['weekly_rate'].tolist()
+                    'dates': dates,
+                    'values': values
+                    # 'rates': loc_data['weekly_rate'].tolist()
                 }
+
+            # # Create optimized structure for visualization
+            # self.ground_truth = {}
+            # for location in df['location'].unique():
+            #     loc_data = df[df['location'] == location]
+            #     self.ground_truth[location] = {
+            #         'dates': loc_data['date_str'].tolist(),
+            #         'values': loc_data['value'].tolist(),
+            #         'rates': loc_data['weekly_rate'].tolist()
+            #     }
 
         return self.ground_truth
 
@@ -254,7 +310,7 @@ class FluSightPreprocessor:
             'demo_mode': self.demo_mode
         }
 
-        # Create flusight subdirectory
+        # Create nc-forecasts subdirectory
         payload_path = self.output_path / "flusight"
         payload_path.mkdir(parents=True, exist_ok=True)
 
@@ -289,7 +345,7 @@ class FluSightPreprocessor:
                 'ground_truth': {
                     'dates': ground_truth.get(location, {'dates': []})['dates'],
                     'values': [None if pd.isna(x) else x for x in ground_truth.get(location, {'values': []})['values']],
-                    'rates': [None if pd.isna(x) else x for x in ground_truth.get(location, {'rates': []})['rates']]
+                    # 'rates': [None if pd.isna(x) else x for x in ground_truth.get(location, {'rates': []})['rates']]
                 },
                 'forecasts': forecast_data.get(location, {}),
                 'available_models': sorted(list(location_models)),  # Location-specific models
@@ -315,9 +371,9 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 def main():
-    parser = argparse.ArgumentParser(description='Process FluSight forecast data for visualization')
-    parser.add_argument('--hub-path', type=str, default='./FluSight-forecast-hub',
-                      help='Path to FluSight forecast hub repository')
+    parser = argparse.ArgumentParser(description='Process nc-forecasts forecast data for visualization')
+    parser.add_argument('--hub-path', type=str, default='./Flusight-forecast-hub',
+                      help='Path to nc-forecasts forecast hub repository')
     parser.add_argument('--output-path', type=str, default='./processed_data',
                       help='Path for output files')
     parser.add_argument('--demo', action='store_true',
@@ -338,7 +394,7 @@ def main():
         logger.info(f"Output path: {args.output_path}")
         logger.info(f"Demo mode: {args.demo}")
 
-        preprocessor = FluSightPreprocessor(args.hub_path, args.output_path, args.demo)
+        preprocessor = NCPreprocessor(args.hub_path, args.output_path, args.demo)
         preprocessor.create_visualization_payloads()
 
         logger.info("Processing complete!")
