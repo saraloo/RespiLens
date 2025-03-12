@@ -239,7 +239,6 @@ def main():
             cdc_data.save_data_csv(data_and_metadata["data"], data_and_metadata["metadata"])
         elif args.output_format == 'json':
             cdc_data.save_data_json(data_and_metadata["data"], data_and_metadata["metadata"])
-            
         # Edge case
         else:
             raise argparse.ArgumentTypeError(f"--output-format must either be 'json' or 'csv', received {args.output_format}.")
