@@ -107,11 +107,14 @@ target <- "hosp"
 output_files <- list.files("flu_modeloutput", recursive = TRUE, 
                            full.names = TRUE,
                            pattern = "^\\d{4}-\\d{2}-\\d{2}.*\\.csv$")
+#remove files with the string "/JHU_IDD-hierarchSIM/"
+output_files <- output_files[!grepl("/JHU_IDD-hierarchSIM/", output_files)]
+output_files <- output_files[!grepl("2025-03-22-UNC_IDD", output_files)]
 
 # loop through output_files and save them in respilens folder
 for (file in output_files){
   modeloutput <- read_forecasts(file, pathogen = "flu", target = "hosp")
-  new_filename <- file.path("../NC_RespiLens/Flusight-forecast-hub/model-output", 
+  new_filename <- file.path("../RespiLens_fork/Flusight-forecast-hub/model-output", 
                             unique(modeloutput$model_id),
                             paste0(unique(modeloutput$reference_date),
                                    "_",unique(modeloutput$model_id),".csv"))
@@ -152,11 +155,12 @@ if (target_data_file %in% target_files) {
   print("Latest hosp_admissions file not found.")
 }
 
-loc_dic <- read_csv("../NC_RespiLens/Flusight-forecast-hub/auxiliary-data/locations.csv")
+loc_dic <- read_csv("../RespiLens_fork/Flusight-forecast-hub/auxiliary-data/locations.csv")
 
 # Read in NC DPH data (the ground truth)
 target_data <- read_csv(target_data_file) %>%
-  rename(date = end_week_date) %>%
+  mutate(date = lubridate::as_date(end_week_date)) %>%
+  # mutate(date = lubridate::mdy(end_week_date)) %>%
   filter(date >= "2023-09-01") %>%
   rename(value = paste("flu",target,sep = "_")) %>%
   mutate(location = "37",
@@ -167,7 +171,7 @@ target_data <- read_csv(target_data_file) %>%
   select(date, location, abbreviation, location_name, value, weekly_rate)
 
 # date,location,location_name,value,weekly_rate
-write_csv_with_dir(target_data,"../NC_RespiLens/Flusight-forecast-hub/target-data/target-hospital-admissions.csv")
+write_csv_with_dir(target_data,"../RespiLens_fork/Flusight-forecast-hub/target-data/target-hospital-admissions.csv")
 
 
 # read in flu ensemble from raw github ---------
@@ -183,7 +187,7 @@ lapply(forecast_dates, function(i) {
         filter(location == "37") %>%
         mutate(model_id = "Flusight-ensemble")
       
-      new_filename <- file.path("../NC_RespiLens/Flusight-forecast-hub/model-output",
+      new_filename <- file.path("../RespiLens_fork/Flusight-forecast-hub/model-output",
                                 unique(flu_ensemble$model_id),
                                 paste0(unique(flu_ensemble$reference_date),
                                        "_", unique(flu_ensemble$model_id), ".csv"))
@@ -234,7 +238,7 @@ lapply(forecast_dates, function(i) {
     )
   
   # Write the ensemble to a CSV file
-  new_filename <- file.path("../NC_RespiLens/Flusight-forecast-hub/model-output",
+  new_filename <- file.path("../RespiLens_fork/Flusight-forecast-hub/model-output",
                             unique(mean_ens$model_id),
                             paste0(i, "_", unique(mean_ens$model_id), ".csv"))
   
