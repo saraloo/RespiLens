@@ -1,6 +1,6 @@
 # RespiLens ![respilens-logo](https://github.com/user-attachments/assets/f4b54c2a-9d27-4453-9a85-72b1b2f965a2)
 
-https://accidda.github.io/RespiLens/ (formerly RespiView)
+https://Respilens.com(formerly RespiView)
 
 Hey, there are other flusight vizualization but realized most of them are geared towards CDC/academics instead of state health department and public. Moreover, these hub data remains not accesssible enough. The goal is to make one more with these users in mind, and to have the following important (to me only) features:
 - **ability to link a certain view to a URL to share forecast**
