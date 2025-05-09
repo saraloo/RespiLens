@@ -27,7 +27,7 @@ def respilens_data_converter(data: list, metadata: dict) -> dict:
     Returns:
         return_data:
             A dict of RespiLens-friendly json data.
-            e.g., 'CA' jurisdiction can be accessed by `return_data[respilens_data_CA`.
+            e.g., 'CA' jurisdiction can be accessed by `return_data[respilens_data_CA]`.
     """
     
     # Establish RespiLens json format
@@ -52,7 +52,7 @@ def respilens_data_converter(data: list, metadata: dict) -> dict:
             combined_jurisdictions[entry['jurisdiction']][column] = []
             
     # Populate combined jurisdiction information with lists of info
-    for entry in dat:
+    for entry in data:
         for column in entry:
             combined_jurisdictions[entry['jurisdiction']][column].append(entry[column])
     # Remove redundant jurisdiction information
