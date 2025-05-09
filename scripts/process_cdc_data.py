@@ -70,10 +70,10 @@ class CDCData:
                 data = self.replace_column_names(data, metadata)
         # If we want to save data as raw json:
         elif output_format.lower() == 'json':
-            # Retrieve data from endpoint and leave as raw json
+            # Retrieve data from endpoint and parse as JSON
             logger.info(f"Retrieving data from {self.data_url}.")
             data_response = requests.get(self.data_url)
-            data = data_response
+            data = data_response.json()
             if replace_column_names:
                 data = self.replace_column_names(data, metadata)
         
@@ -149,8 +149,20 @@ class CDCData:
             return data
         
         # Column replacement for raw json
-        elif isinstance(data, dict):
-            pass # TO DO
+        elif isinstance(data, (dict, list)):
+            if isinstance(data, dict):
+                new_data = {}
+                for i, (short_name, value) in enumerate(data.items()):
+                    new_data[long_column_names[i]] = value
+                return new_data
+            else:
+                new_data = []
+                for record in data:
+                    new_record = {}
+                    for i, (short_name, value) in enumerate(record.items()):
+                        new_record[long_column_names[i]] = value
+                    new_data.append(new_record)
+                return new_data
         
         # Edge case
         else:
@@ -232,7 +244,7 @@ def main():
         cdc_data = CDCData(args.resource_id, args.output_path)
     
         # Store data and metadata from resource_id in a dictionary 
-        data_and_metadata = cdc_data.download_cdc_data(args.replace_column_names, args.output_format)
+        data_and_metadata = cdc_data.download_cdc_data(args.output_format, args.replace_column_names)
     
         # Save data locally, according to user input
         if args.output_format == 'csv':
