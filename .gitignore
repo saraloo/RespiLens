@@ -1,6 +1,7 @@
 scripts/__pycache__/
 FluSight-forecast-hub/
 app/public/processed_data
+processed_data/
 .DS_Store
 .aider*
 
