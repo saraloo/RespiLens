@@ -10,7 +10,9 @@ Classes:
 import argparse
 import json
 import logging
+import os
 import time
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -38,18 +40,19 @@ class CDCData:
         self.metadata_url = "https://data.cdc.gov/api/views/" + f"{resource_id}.json"
         self.output_path = Path(output_path)
     
-    def download_cdc_data(self, output_format: str, replace_column_names: bool = True) -> dict: 
+    def download_cdc_data(self, replace_column_names: bool = True) -> dict: 
         """
         Retrieves and stores data + metadata for specified resource_id.
         
         Arg:
             replace_column_names: Flag to replace short column names with long names.
-            output_format: Store/save data as json/.json or as a pd.DataFrame/.csv.
         
         Returns:
             A dictionary with;
-                'data' storing data as a pd.Dataframe or a list, and
-                'metadata' storing metadata as a dictionary of raw json.
+                'data_as_DF' storing data in a pd.DataFrame,
+                'data' storing data in json format for each jurisdiction, 
+                'CDC_metadata' storing metadata from API as a dictionary of raw json, and
+                'respilens_metadata' storing RespiLens-relevant metadata as a dictionary of raw json.
         """
         
         # Initialize dictionary to hold output
@@ -58,32 +61,76 @@ class CDCData:
         # Retrieve metadata from endpoint
         logger.info(f"Retrieving metadata from {self.metadata_url}.")
         metadata_response = requests.get(self.metadata_url)
-        metadata = metadata_response.json()
+        CDC_metadata = metadata_response.json() 
+
+        # Build RespiLens-relevant metadata
+        output["respilens_metadata"] = self.build_respilens_metadata()
           
-        # Retrieve data from endpoint
-        # If we want to save data as csv:
-        if output_format.lower() == 'csv':
-            logger.info(f"Retrieving data from {self.data_url}.")
-            data_list = self.retrieve_data_from_endpoint_aslist()
-            data = pd.DataFrame(data_list)
-            if replace_column_names:
-                data = self.replace_column_names(data, metadata)
-        # If we want to save data as raw json:
-        elif output_format.lower() == 'json':
-            # Retrieve data from endpoint and parse as JSON
-            logger.info(f"Retrieving data from {self.data_url}.")
-            data_response = requests.get(self.data_url)
-            data = data_response.json()
-            if replace_column_names:
-                data = self.replace_column_names(data, metadata)
-        
-        # Edge case
+        # Retrieve data from endpoint, convert to pd.DataFrame
+        logger.info(f"Retrieving data from {self.data_url}.") 
+        data_list = self.retrieve_data_from_endpoint_aslist()
+        data = pd.DataFrame(data_list)
+        data['weekendingdate'] = pd.to_datetime(data['weekendingdate']).dt.strftime('%Y-%m-%d')
+        if replace_column_names:
+            data = self.replace_column_names(data, CDC_metadata)
+            output["data_as_DF"] = data
+            unique_regions = set(data["Geographic aggregation"])
+            print(unique_regions)
+
+            # Coerce into correct json format
+            jsons = {}
+            for region in unique_regions:
+                json_struct = { 
+                "metadata": {
+                    "dataset": "CDC",
+                    "location": f"{region}",
+                    "series_type": "official"
+                    },
+                "series": {
+                    "dates": [],
+                    "columns": {}
+                    }
+                }
+                current_loc = data[data["Geographic aggregation"] == region]
+                json_struct["series"]["dates"] = list(current_loc["Week Ending Date"])
+                for column in current_loc.columns:
+                    json_struct["series"]["columns"][column] = list(current_loc[column]) 
+            
+                del json_struct["series"]["columns"]["Geographic aggregation"]
+                del json_struct["series"]["columns"]["Week Ending Date"] 
+                jsons[region] = json_struct
         else:
-            raise argparse.ArgumentTypeError(f"--output-format must either be 'json' or 'csv', received {args.output_format}.")
+            output["data_as_DF"] = data
+            unique_regions = set(data["jurisdiction"])
+            print(unique_regions)
+
+            # Coerce into correct json format
+            jsons = {}
+            for region in unique_regions:
+                json_struct = { 
+                "metadata": {
+                    "dataset": "CDC",
+                    "location": f"{region}",
+                    "series_type": "official"
+                    },
+                "series": {
+                    "dates": [],
+                    "columns": {}
+                    }
+                }
+                current_loc = data[data["jurisdiction"] == region]
+                json_struct["series"]["dates"] = list(current_loc["weekendingdate"])
+                for column in current_loc.columns:
+                    json_struct["series"]["columns"][column] = list(current_loc[column]) 
+            
+                del json_struct["series"]["columns"]["jurisdiction"]
+                del json_struct["series"]["columns"]["weekendingdate"] 
+                jsons[region] = json_struct
+        
                     
-        # Add DataFrame and metadata to output dict
-        output['metadata'] = metadata  
-        output['data'] = data
+        # Add data and metadata variations to output dict
+        output["CDC_metadata"] = CDC_metadata  
+        output["data"] = jsons
         
         logging.info("Success.")
         return output
@@ -126,88 +173,88 @@ class CDCData:
                 
         return all_data
     
-    def replace_column_names(self, data: pd.DataFrame | dict, metadata: dict) -> pd.DataFrame | dict:
+    def build_respilens_metadata(self) -> dict:
+        metadata_struct = { 
+            "shortName": "nhsn",
+            "fullName": "National Healthcare Safety Network (NHSN)",
+            "defaultView": "nhsn",
+            "lastUpdated": date.today().strftime("%Y-%m-%d"),
+            "datsetType": "timeseries"
+        }
+        return metadata_struct
+    
+    def replace_column_names(self, data: pd.DataFrame, CDC_metadata: dict) -> pd.DataFrame:
         """
         Replace short-form column names with long-form column names.
         
         Args:
-            data: A pd.DataFrame or list (json format) of the data
-            metadata: A dictionary of metadata containing column name information
+            data: A pd.DataFrame of the data
+            CDC_metadata: A dictionary of metadata containing column name information
             
         Returns:
-            A pd.DataFrame or dict (json) with long-form column names.
+            A pd.DataFrame with long-form column names.
         """
         
         # Pull long column names from metadata
         long_column_names = []
-        for column_index in range(len(metadata['columns'])):
-            long_column_names.append(metadata['columns'][column_index]['name'])
+        for column_index in range(len(CDC_metadata['columns'])):
+            long_column_names.append(CDC_metadata['columns'][column_index]['name'])
             
-        # Column replacement for a pd.DataFrame
+        # Replace columns
         if isinstance(data, pd.DataFrame):
             data.columns = long_column_names
             return data
         
-        # Column replacement for raw json
-        elif isinstance(data, (dict, list)):
-            if isinstance(data, dict):
-                new_data = {}
-                for i, (short_name, value) in enumerate(data.items()):
-                    new_data[long_column_names[i]] = value
-                return new_data
-            else:
-                new_data = []
-                for record in data:
-                    new_record = {}
-                    for i, (short_name, value) in enumerate(record.items()):
-                        new_record[long_column_names[i]] = value
-                    new_data.append(new_record)
-                return new_data
-        
         # Edge case
         else:
-            raise TypeError("data input must either be pd.DataFrame or dict.")
+            raise TypeError("data input must be pd.DataFrame.")
     
-    def save_data_csv(self, data: pd.DataFrame, metadata: dict) -> None:
+    def save_data_csv(self, data: pd.DataFrame, respilens_metadata: dict) -> None:
         """
         A method to save data at specified output_path as a CSV.
         
         Args:
             data: A pd.DataFrame containing the data.
-            metadata: A dict containing the metadata.
+            respilens_metadata: A dict containing the metadata.
         """
         
         # Create directories
-        directory = self.output_path / f"cdc_{self.resource_id}"
-        directory.mkdir(parents = True, exist_ok = True)
-        logger.info(f"Saving data as CSV to {directory}...")
+        output_directory = self.output_path / "nhsn"
+        os.makedirs(output_directory, exist_ok=True)
+        logger.info(f"Saving data as CSV to {output_directory}...")
         
-        # Save data to CSV, metadata to json
-        data.to_csv(f"{directory}/data.csv", index=False)
-        with open(f"{directory}/metadata.json", "w") as metadata_json_file:
-            json.dump(metadata, metadata_json_file, indent = 4)
+        # Save data to CSVs, metadata to json
+        unique_regions = set(data["jurisdiction"])
+        for region in unique_regions:
+            current_loc = data[data["jurisdiction"] == region]
+            current_loc.to_csv(f"{output_directory}/nhsn/{region}.csv", index = False)
+            with open(f"{output_directory}/metadata.json", "w") as metadata_json_file:
+                json.dump(respilens_metadata, metadata_json_file, indent = 4)
             
         logger.info("Success.")
     
-    def save_data_json(self, data: list, metadata: dict) -> None:  
+    def save_data_json(self, data: dict, respilens_metadata: dict) -> None:  
         """
         A method to save data at specified output_path as a json.
         
         Args:
-            data: A list containing the data in raw json format.
-            metadata: A dict containing the metadata in raw json format. 
+            data: A dict containing the data in raw json format, separated by region
+            respilens_metadata: A dict containing the metadata in raw json format. 
         """
         
         # Create directories
-        directory = self.output_path / f"cdc_{self.resource_id}"
-        directory.mkdir(parents = True, exist_ok = True)
-        logger.info(f"Saving data as json to {directory}...")
+        output_directory = self.output_path / "nhsn"
+        os.makedirs(output_directory, exist_ok=True)
+        logger.info(f"Saving data as json to {output_directory}...")
         
         # Save data and metadata to json
-        with open(f"{directory}/data.json", "w") as data_json_file:
-            json.dump(data, data_json_file, indent = 4)
-        with open(f"{directory}/metadata.json", "w") as metadata_json_file:
-            json.dump(metadata, metadata_json_file, indent = 4)
+        for region, region_data in data.items():
+            output_file = os.path.join(output_directory, f"{region}.json")
+            with open(output_file, "w") as data_json_file:
+                json.dump(region_data, data_json_file, indent = 4)
+
+        with open(f"{output_directory}/metadata.json", "w") as metadata_json_file:
+            json.dump(respilens_metadata, metadata_json_file, indent = 4) 
             
         logger.info("Success.")
         
@@ -234,9 +281,10 @@ def main():
                        dest = "replace_column_names",  
                        help = "Don't replace short-form column names with long-form.")
     parser.add_argument("--output-format",
+                        nargs = '*',
                         choices = ['json', 'csv'],
-                        required = True, 
-                        help = "The format in which to save the data: either 'json' or 'csv'.")
+                        required = False, 
+                        help = "The format in which to save the data: 'json', 'csv', or both.")
     args = parser.parse_args()
     
     try:
@@ -244,20 +292,22 @@ def main():
         cdc_data = CDCData(args.resource_id, args.output_path)
     
         # Store data and metadata from resource_id in a dictionary 
-        data_and_metadata = cdc_data.download_cdc_data(args.output_format, args.replace_column_names)
+        data_and_metadata = cdc_data.download_cdc_data(args.replace_column_names)
     
-        # Save data locally, according to user input
-        if args.output_format == 'csv':
-            cdc_data.save_data_csv(data_and_metadata["data"], data_and_metadata["metadata"])
-        elif args.output_format == 'json':
-            cdc_data.save_data_json(data_and_metadata["data"], data_and_metadata["metadata"])
+        if args.output_format:
+            # Save data locally, according to user input
+            if "csv" in args.output_format:
+                cdc_data.save_data_csv(data_and_metadata["data_as_DF"], data_and_metadata["respilens_metadata"])
+            if "json" in args.output_format:
+                cdc_data.save_data_json(data_and_metadata["data"], data_and_metadata["respilens_metadata"])
+            
         # Edge case
         else:
             raise argparse.ArgumentTypeError(f"--output-format must either be 'json' or 'csv', received {args.output_format}.")
             
     except Exception as e:
         logger.error(f"Failed to download and/or save CDC data: {str(e)}")
-        raise 
+        raise  
 
 
 if __name__ == "__main__":
