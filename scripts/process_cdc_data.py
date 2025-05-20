@@ -75,7 +75,6 @@ class CDCData:
             data = self.replace_column_names(data, CDC_metadata)
             output["data_as_DF"] = data
             unique_regions = set(data["Geographic aggregation"])
-            print(unique_regions)
 
             # Coerce into correct json format
             jsons = {}
@@ -102,7 +101,6 @@ class CDCData:
         else:
             output["data_as_DF"] = data
             unique_regions = set(data["jurisdiction"])
-            print(unique_regions)
 
             # Coerce into correct json format
             jsons = {}
