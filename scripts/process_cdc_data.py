@@ -228,8 +228,8 @@ class CDCData:
         for region in unique_regions:
             current_loc = data[data["jurisdiction"] == region]
             current_loc.to_csv(f"{output_directory}/nhsn/{region}.csv", index = False)
-        with open(f"{output_directory}/metadata.json", "w") as metadata_json_file:
-            json.dump(respilens_metadata, metadata_json_file, indent = 4)
+            with open(f"{output_directory}/metadata.json", "w") as metadata_json_file:
+                json.dump(respilens_metadata, metadata_json_file, indent = 4)
             
         logger.info("Success.")
     
@@ -307,7 +307,7 @@ def main():
             
     except Exception as e:
         logger.error(f"Failed to download and/or save CDC data: {str(e)}")
-        raise  
+        raise    
 
 
 if __name__ == "__main__":
