@@ -113,7 +113,8 @@ output_files <- output_files[!grepl("2025-03-22-UNC_IDD", output_files)]
 
 # loop through output_files and save them in respilens folder
 for (file in output_files){
-  modeloutput <- read_forecasts(file, pathogen = "flu", target = "hosp")
+  modeloutput <- read_forecasts(file, pathogen = "flu", target = "hosp") %>% 
+    filter(horizon != -1)
   new_filename <- file.path("../RespiLens_fork/Flusight-forecast-hub/model-output", 
                             unique(modeloutput$model_id),
                             paste0(unique(modeloutput$reference_date),
